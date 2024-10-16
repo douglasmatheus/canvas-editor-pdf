@@ -135,7 +135,13 @@ export class Position {
         // 计算行偏移量（行居中、居右）
         const curRowWidth = curRow.width + (curRow.offsetX || 0)
         if (curRow.rowFlex === RowFlex.CENTER) {
+          console.log('curRow')
+          console.log(curRow)
+          console.log('innerWidth, curRowWidth')
+          console.log(innerWidth, curRowWidth)
+          console.log('x', x)
           x += (innerWidth - curRowWidth) / 2
+          console.log('x', x)
         } else if (curRow.rowFlex === RowFlex.RIGHT) {
           x += innerWidth - curRowWidth
         }

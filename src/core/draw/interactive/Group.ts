@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import { Context2d, GState } from 'jspdf'
 // import { EditorZone } from '../../../dataset/enum/Editor'
 import { ElementType } from '../../../dataset/enum/Element'
 // import { DeepRequired } from '../../../interface/Common'
@@ -9,16 +9,18 @@ import { IRange } from '../../../interface/Range'
 // import { getUUID } from '../../../utils'
 // import { RangeManager } from '../../range/RangeManager'
 import { DrawPdf } from '../DrawPdf'
+import { IEditorOption } from '@hufe921/canvas-editor'
+import { DeepRequired } from '@hufe921/canvas-editor/dist/src/editor/interface/Common'
 
 export class Group {
   private draw: DrawPdf
-  // private options: DeepRequired<IEditorOption>
+  private options: DeepRequired<IEditorOption>
   // private range: RangeManager
   private fillRectMap: Map<string, IElementFillRect>
 
   constructor(draw: DrawPdf) {
     this.draw = draw
-    // this.options = draw.getOptions()
+    this.options = draw.getDraw().getOptions()
     // this.range = draw.getRange()
     this.fillRectMap = new Map()
   }
@@ -174,25 +176,35 @@ export class Group {
 
   public render(ctx2d: Context2d) {
     if (!this.fillRectMap.size) return
+    const {
+      group: { backgroundColor, opacity, activeOpacity, activeBackgroundColor }
+    } = this.options
     // 当前激活组信息
-    // const range = this.range.getRange()
-    // const elementList = this.draw.getElementList()
-    // const anchorGroupIds = elementList[range.endIndex]?.groupIds
-    // const {
-    //   group: { backgroundColor, opacity, activeOpacity, activeBackgroundColor }
-    // } = this.options
+    const elementList = this.draw.getElementList()
+    const elementsWithGroupIds = elementList.filter(element => { return element.groupIds })
+    const anchorGroupIds = elementsWithGroupIds.reduce((accum: any[], element) => {
+      element.groupIds?.forEach(groupId => accum.push(groupId))
+
+      return accum
+    }, [])
     ctx2d.save()
-    this.fillRectMap.forEach((fillRect/*, groupId*/) => {
+    this.draw.getPdf().setGState(new GState({
+      opacity: opacity
+    }))
+    this.fillRectMap.forEach((fillRect, groupId) => {
       const { x, y, width, height } = fillRect
-      // if (anchorGroupIds?.includes(groupId)) {
-      //   ctx2d.globalAlpha = activeOpacity
-      //   ctx2d.fillStyle = activeBackgroundColor
-      // } else {
-      //   ctx2d.globalAlpha = opacity
-      //   ctx2d.fillStyle = backgroundColor
-      // }
+      if (anchorGroupIds?.includes(groupId)) {
+        ctx2d.globalAlpha = activeOpacity
+        ctx2d.fillStyle = activeBackgroundColor
+      } else {
+        ctx2d.globalAlpha = opacity
+        ctx2d.fillStyle = backgroundColor
+      }
       ctx2d.fillRect(x, y, width, height)
     })
+    this.draw.getPdf().setGState(new GState({
+      opacity: 1
+    }))
     ctx2d.restore()
     this.clearFillInfo()
   }

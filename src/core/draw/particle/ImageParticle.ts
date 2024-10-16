@@ -7,7 +7,7 @@ import { convertStringToBase64 } from '../../../utils'
 import { DrawPdf } from '../DrawPdf'
 
 export class ImageParticle {
-  private draw: DrawPdf
+  protected draw: DrawPdf
   protected options: Required<IEditorOption>
   protected imageCache: Map<string, HTMLImageElement>
   private container: HTMLDivElement
@@ -99,78 +99,49 @@ export class ImageParticle {
     x: number,
     y: number
   ) {
-    const { scale } = this.options
-    const width = element.width! * scale
-    const height = element.height! * scale
-    if (this.imageCache.has(element.id!)) {
-      const img = this.imageCache.get(element.id!)!
-      ctx2d.drawImage(img.src, x, y, width, height)
-    } else {
-      const imageLoadPromise = new Promise((resolve, reject) => {
-        const img = new Image()
-        img.setAttribute('crossOrigin', 'Anonymous')
-        img.src = element.value
-        img.onload = () => {
-          this.imageCache.set(element.id!, img)
-          resolve(element)
-          // 衬于文字下方图片需要重新首先绘制
-          if (element.imgDisplay === ImageDisplay.FLOAT_BOTTOM) {
-            this.draw.render({
-              isCompute: false,
-              isSetCursor: false,
-              isSubmitHistory: false
-            })
-          } else {
-            // call svgString2Image function
-            this.svgString2Image(element.laTexSVG!, width, height, 'png', /* callback that gets png data URL passed to it */(pngData: any) => {
-              // pngData is base64 png string
-              ctx2d.drawImage(pngData, x, y, width, height)
-              this.imageCache.set(element.value, img)
-              resolve(element)
-            })
-          }
-        }
-        img.onerror = error => {
-          const fallbackImage = this.getFallbackImage(width, height)
-          fallbackImage.onload = () => {
-            ctx2d.drawImage(fallbackImage.src, x, y, width, height)
-            this.imageCache.set(element.id!, fallbackImage)
-          }
-          reject(error)
-        }
+    // 衬于文字下方图片需要重新首先绘制
+    if (element.imgDisplay === ImageDisplay.FLOAT_BOTTOM) {
+      this.draw.render({
+        isCompute: false,
+        isSetCursor: false,
+        isSubmitHistory: false
       })
-      this.addImageObserver(imageLoadPromise)
+    } else {
+      const { scale } = this.options
+      const width = element.width! * scale
+      const height = element.height! * scale
+      ctx2d.drawImage(element.value, x, y, width, height)
     }
   }
+}
 
-  public svgString2Image(svgString: string, width: number, height: number, format: string, callback: { (pngData: any): void; (arg0: string): void }) {
-    // set default for format parameter
-    format = format ? format : 'png'
-    // SVG data URL from SVG string
-    const svgData = svgString//'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)))
-    // create canvas in memory(not in DOM)
-    const canvas = document.createElement('canvas')
-    // get canvas context for drawing on canvas
-    const context = canvas.getContext('2d')
-    // set canvas size
-    canvas.width = width
-    canvas.height = height
-    // create image in memory(not in DOM)
-    const image = new Image()
-    // later when image loads run this
-    image.onload = function () { // async (happens later)
-      if (context) {
-        // clear canvas
-        context.clearRect(0, 0, width, height)
-        // draw image with SVG data to canvas
-        context.drawImage(image, 0, 0, width, height)
-        // snapshot canvas as png
-        const pngData = canvas.toDataURL('image/' + format)
-        // pass png data URL to callback
-        callback(pngData)
-      }
-    } // end async
-    // start loading SVG data into in memory image
-    image.src = svgData
-  }
+export function svgString2Image(svgString: string, width: number, height: number, format: string, callback: { (pngData: any): void; (arg0: string): void }) {
+  // set default for format parameter
+  format = format ? format : 'png'
+  // SVG data URL from SVG string
+  const svgData = svgString//'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)))
+  // create canvas in memory(not in DOM)
+  const canvas = document.createElement('canvas')
+  // get canvas context for drawing on canvas
+  const context = canvas.getContext('2d')
+  // set canvas size
+  canvas.width = width
+  canvas.height = height
+  // create image in memory(not in DOM)
+  const image = new Image()
+  // later when image loads run this
+  image.onload = function () { // async (happens later)
+    if (context) {
+      // clear canvas
+      context.clearRect(0, 0, width, height)
+      // draw image with SVG data to canvas
+      context.drawImage(image, 0, 0, width, height)
+      // snapshot canvas as png
+      const pngData = canvas.toDataURL('image/' + format)
+      // pass png data URL to callback
+      callback(pngData)
+    }
+  } // end async
+  // start loading SVG data into in memory image
+  image.src = svgData
 }

@@ -246,8 +246,8 @@ export class DrawPdf {
   }
 
   private _addFont() {
-    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei', 'normal')
-    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei', 'bold')
+    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei', 'normal')
+    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei', 'bold')
     this.pdf.setFont('Yahei')
   }
 
@@ -1603,8 +1603,8 @@ export class DrawPdf {
       for (let j = 0; j < curRow.elementList.length; j++) {
         const element = curRow.elementList[j]
         const metrics = element.metrics
-        console.log('element')
-        console.log(element)
+        // console.log('element')
+        // console.log(element)
         // 当前元素位置信息
         const {
           ascent: offsetY,
@@ -1703,6 +1703,9 @@ export class DrawPdf {
           if (element.left) {
             this.textParticle.complete()
           }
+          // console.log('element')
+          // console.log(element)
+          // if (element.rowFlex)
           this.textParticle.record(this.getCtx2d(), element, x, y + offsetY)
           // 如果设置字宽、字间距、标点符号（避免浏览器排版缩小间距）需单独绘制
           if (
