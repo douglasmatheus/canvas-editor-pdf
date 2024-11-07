@@ -29,12 +29,12 @@ export class SeparatorParticle {
     const offsetY = Math.round(y) // 四舍五入避免绘制模糊
     ctx2d.translate(0, ctx2d.lineWidth / 2)
     ctx2d.beginPath()
-    ctx2d.moveTo(x, offsetY + 20)
+    ctx2d.moveTo(x, offsetY)
     // console.log("element")
     // console.log(element)
     // console.log("offsetY, y")
     // console.log(offsetY, y)
-    ctx2d.lineTo(x + element.width! * scale, offsetY + 20)
+    ctx2d.lineTo(x + element.width! * scale, offsetY)
     ctx2d.stroke()
     ctx2d.restore()
   }

@@ -9,14 +9,14 @@ import { DrawPdf } from '../DrawPdf'
 export class HyperlinkParticle {
   private draw: DrawPdf
   private options: Required<IEditorOption>
-  private container: HTMLDivElement
+  // private container: HTMLDivElement
   private hyperlinkPopupContainer: HTMLDivElement
   private hyperlinkDom: HTMLAnchorElement
 
   constructor(draw: DrawPdf) {
     this.draw = draw
     this.options = draw.getOptions()
-    this.container = draw.getContainer()
+    // this.container = draw.getContainer()
     const { hyperlinkPopupContainer, hyperlinkDom } =
       this._createHyperlinkPopupDom()
     this.hyperlinkDom = hyperlinkDom
@@ -30,7 +30,7 @@ export class HyperlinkParticle {
     hyperlinkDom.target = '_blank'
     hyperlinkDom.rel = 'noopener'
     hyperlinkPopupContainer.append(hyperlinkDom)
-    this.container.append(hyperlinkPopupContainer)
+    // this.container.append(hyperlinkPopupContainer)
     return { hyperlinkPopupContainer, hyperlinkDom }
   }
 

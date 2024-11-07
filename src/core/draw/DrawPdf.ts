@@ -37,7 +37,7 @@ import { SeparatorParticle } from './particle/Separator'
 import { PageBreakParticle } from './particle/PageBreak'
 import { Watermark } from './frame/Watermark'
 import {
-  EditorComponent,
+  // EditorComponent,
   EditorMode,
   EditorZone,
   PageMode,
@@ -61,7 +61,7 @@ import { formatElementList } from '../../utils/element'
 import { DateParticle } from './particle/date/DateParticle'
 import { IMargin } from '../../interface/Margin'
 import { BlockParticle } from './particle/block/BlockParticle'
-import { EDITOR_COMPONENT } from '../../dataset/constant/Editor'
+// import { EDITOR_COMPONENT } from '../../dataset/constant/Editor'
 import { I18n } from '../i18n/I18n'
 import { ImageObserver } from '../observer/ImageObserver'
 import { Footer } from './frame/Footer'
@@ -77,17 +77,17 @@ import { LineBreakParticle } from './particle/LineBreakParticle'
 import { LineNumber } from './frame/LineNumber'
 import { PageBorder } from './frame/PageBorder'
 import jsPDF, { Context2d } from 'jspdf'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
+// import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { IEditorData, IElement } from '@hufe921/canvas-editor'
 import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
 import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
 export class DrawPdf {
-  private draw: Draw
+  // private draw: Draw
   private fakeCanvas: HTMLCanvasElement
   private fakeCtx: CanvasRenderingContext2D
-  private container: HTMLDivElement
-  private pageList: HTMLCanvasElement[]
+  // private container: HTMLDivElement
+  private pageList: any[]
   private ctxList: CanvasRenderingContext2D[]
   private ctxListInfos: any[]
   private pageNo: number
@@ -137,13 +137,13 @@ export class DrawPdf {
 
   constructor(
     options: DeepRequired<IEditorOption>,
-    data: IEditorData,
-    draw: Draw
+    data: IEditorData
+    // draw: Draw
   ) {
-    this.draw = draw
+    // this.draw = draw
     this.fakeCanvas = document.createElement('canvas')
     this.fakeCtx = this.fakeCanvas.getContext('2d')!
-    this.container = draw.getContainer()
+    // this.container = draw.getContainer()
     this.pageList = []
     this.ctxList = []
     this.ctxListInfos = []
@@ -154,6 +154,7 @@ export class DrawPdf {
     let headerElementList: IElement[] = []
     let mainElementList: IElement[] = []
     let footerElementList: IElement[] = []
+    data = deepClone(data)
     if (Array.isArray(data)) {
       mainElementList = data
     } else {
@@ -168,7 +169,7 @@ export class DrawPdf {
     ]
     pageComponentData.forEach(elementList => {
       formatElementList(elementList, {
-        editorOptions: draw.getOptions(),
+        editorOptions: this.getOptions(),
         isForceCompensation: true
       })
     })
@@ -185,7 +186,7 @@ export class DrawPdf {
     this.pdf.setDocumentProperties({
       author: 'canvas-editor'
     })
-    this._addFont()
+    this._addDefaultFont()
     this._createPage(0)
 
     this.i18n = new I18n()
@@ -209,14 +210,14 @@ export class DrawPdf {
     this.header = new Header(this, data.header)
     this.footer = new Footer(this, data.footer)
     this.hyperlinkParticle = new HyperlinkParticle(this)
-    this.dateParticle = new DateParticle(this.draw)
+    this.dateParticle = new DateParticle(this)
     this.separatorParticle = new SeparatorParticle(this)
     this.pageBreakParticle = new PageBreakParticle(this)
     this.superscriptParticle = new SuperscriptParticle()
     this.subscriptParticle = new SubscriptParticle()
     this.checkboxParticle = new CheckboxParticle(this)
     this.radioParticle = new RadioParticle(this)
-    this.blockParticle = new BlockParticle(this.draw)
+    this.blockParticle = new BlockParticle(this)
     this.listParticle = new ListParticle(this)
     this.lineBreakParticle = new LineBreakParticle(this)
     // this.control = new Control(this)
@@ -233,9 +234,9 @@ export class DrawPdf {
     this.pageRowList = []
   }
 
-  public getDraw(): Draw {
-    return this.draw
-  }
+  // public getDraw(): Draw {
+  //   return this.draw
+  // }
 
   public getCtx2d(): Context2d {
     return this.pdf.context2d
@@ -245,10 +246,70 @@ export class DrawPdf {
     return this.fakeCtx
   }
 
-  private _addFont() {
-    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei', 'normal')
-    this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei', 'bold')
-    this.pdf.setFont('Yahei')
+  public measureText(font: string, text: string): TextMetrics {
+    this.fakeCtx.save()
+    this.fakeCtx.font = font
+    const textMetrics = this.fakeCtx.measureText(text)
+    this.fakeCtx.restore()
+    return textMetrics
+  }
+
+  public async _addDefaultFont() {
+    const url = 'https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf'
+    const $this = this
+    const imageUrlToBase64 = async (url: string, fileName: string, id: string, type: string) => {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      return new Promise((onSuccess, onError) => {
+        try {
+          const reader = new FileReader()
+          reader.onload = function () {
+            const base64: any = this.result
+            // console.log('base64')
+            // console.log(base64)
+            $this.pdf.addFileToVFS(fileName, base64.split('base64,')[1])
+            $this.pdf.addFont(fileName, id, type)
+            onSuccess(this.result)
+          }
+          reader.readAsDataURL(blob)
+        } catch (e) {
+          onError(e)
+        }
+      })
+    }
+    await imageUrlToBase64(url, 'Yahei.ttf', 'Yahei', 'normal')
+    // $this.pdf.setFont('Yahei')
+    await imageUrlToBase64('https://raw.githubusercontent.com/matomo-org/travis-scripts/refs/heads/master/fonts/Arial.ttf', 'Arial.ttf', 'Arial', 'normal')
+    // jsPDFAPI.addFileToVFS("[Your font's name]","[Base64-encoded string of your font]");
+    // fetch('https://polisoftware.com.br/polisoftware/crud/pedido/impressao/app/public/font/msyh.ttf', {
+    //   mode: 'cors',
+    //   headers: {
+    //     // 'type': 'json',
+    //     // 'Content-Type': 'application/json',
+    //     'Access-Control-Allow-Origin': '*'
+    //   }
+    // })
+    //   .then(function (response: any) {
+    //     if (response.ok) {
+    //       return response.blob()
+    //     } else {
+    //       throw new Error(response)
+    //     }
+    //   })
+    //   .then(data => {
+    //     let reader = new FileReader() 
+    //     reader.onload = function(){ callback(this.result) }
+    //     reader.readAsDataURL(blob)
+    //     // this.pdf.addFileToVFS('Yahei-normal.ttf', data)
+    //     // this.pdf.addFont('Yahei-normal.ttf', 'Yahei', 'normal')
+    //   })
+    // this.pdf.addFileToVFS('Yahei-normal.ttf', font);
+    // this.pdf.addFont('Yahei-normal.ttf', 'Yahei', 'normal');
+    // this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei', 'normal')
+    // this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei', 'bold')
+    // this.pdf.addFont('Arial', 'Arial', 'normal')
+    // console.log(this.pdf.getFontList())
+    return true
   }
 
   public getFont(el: IElement): string {
@@ -300,12 +361,17 @@ export class DrawPdf {
   }
 
   public getCanvasWidth(pageNo = -1): number {
-    const page = this.draw.getPage(pageNo)
+    // console.log('page')
+    // console.log(pageNo)
+    const page = this.ctxListInfos[pageNo]//this.getPdf().getPageInfo(pageNo + 1)
+    // console.log(this.getCtx2d())
+    // console.log(page)
     return page.width
   }
 
   public getCanvasHeight(pageNo = -1): number {
-    const page = this.draw.getPage(pageNo)
+    const page = this.ctxListInfos[pageNo]//this.getPdf().getPageInfo(pageNo + 1)
+    // const page = this.getPdf().getPageInfo(pageNo)
     return page.height
   }
 
@@ -376,9 +442,9 @@ export class DrawPdf {
     return <IPadding>tdPadding.map(m => m * scale)
   }
 
-  public getContainer(): HTMLDivElement {
-    return this.container
-  }
+  // public getContainer(): HTMLDivElement {
+  //   return this.container
+  // }
 
   public getPageNo(): number {
     return this.pageNo
@@ -651,12 +717,31 @@ export class DrawPdf {
     return dataUrlList
   }
 
+  public async setValue(payload: Partial<IEditorData>) {
+    const { header, main, footer } = deepClone(payload)
+    if (!header && !main && !footer) return
+    const pageComponentData = [header, main, footer]
+    for (let i = 0; i < pageComponentData.length; i++) {
+      const data = pageComponentData[i]
+      if (!data) return
+      await formatElementList(data, {
+        editorOptions: this.options,
+        isForceCompensation: true
+      })
+    }
+    this.setEditorData({
+      header,
+      main,
+      footer
+    })
+  }
+
   public setPageScale(payload: number) {
     const dpr = this.getPagePixelRatio()
     this.options.scale = payload
     const width = this.getWidth()
     const height = this.getHeight()
-    this.container.style.width = `${width}px`
+    // this.container.style.width = `${width}px`
     this.pageList.forEach((p, i) => {
       p.width = width * dpr
       p.height = height * dpr
@@ -709,7 +794,7 @@ export class DrawPdf {
     const dpr = this.getPagePixelRatio()
     const realWidth = this.getWidth()
     const realHeight = this.getHeight()
-    this.container.style.width = `${realWidth}px`
+    // this.container.style.width = `${realWidth}px`
     this.pageList.forEach((p, i) => {
       p.width = realWidth * dpr
       p.height = realHeight * dpr
@@ -728,7 +813,7 @@ export class DrawPdf {
     this.options.paperDirection = payload
     const width = this.getWidth()
     const height = this.getHeight()
-    this.container.style.width = `${width}px`
+    // this.container.style.width = `${width}px`
     this.pageList.forEach((p, i) => {
       p.width = width * dpr
       p.height = height * dpr
@@ -796,9 +881,9 @@ export class DrawPdf {
 
   private _formatContainer() {
     // 容器宽度需跟随纸张宽度
-    this.container.style.position = 'relative'
-    this.container.style.width = `${this.getWidth()}px`
-    this.container.setAttribute(EDITOR_COMPONENT, EditorComponent.MAIN)
+    // this.container.style.position = 'relative'
+    // this.container.style.width = `${this.getWidth()}px`
+    // this.container.setAttribute(EDITOR_COMPONENT, EditorComponent.MAIN)
   }
 
   private _createPage(pageNo: number) {
@@ -809,6 +894,13 @@ export class DrawPdf {
 
     const orientation = this.getOptions().paperDirection === PaperDirection.VERTICAL ? 'p' : 'l'
     this.ctxListInfos.push({
+      width,
+      height,
+      background: '#ffffff',
+      marginBottom: `${this.getPageGap()}px`,
+      index: String(pageNo)
+    })
+    this.pageList.push({
       width,
       height,
       background: '#ffffff',
@@ -891,6 +983,8 @@ export class DrawPdf {
     let listIndex = 0
     // 控件最小宽度
     let controlRealWidth = 0
+    // console.log('elementList')
+    // console.log(elementList)
     for (let i = 0; i < elementList.length; i++) {
       const curRow: IRow = rowList[rowList.length - 1]
       const element = elementList[i]
@@ -907,6 +1001,11 @@ export class DrawPdf {
         curRow.offsetX ||
         (element.listId && listStyleMap.get(element.listId)) ||
         0
+      // console.log('innerWidth, offsetX')
+      // console.log(i)
+      // console.log(innerWidth, startX, offsetX)
+      // console.log('element.type')
+      // console.log(element.type)
       const availableWidth = innerWidth - offsetX
       // 增加起始位置坐标偏移量
       x += curRow.elementList.length === 1 ? offsetX : 0
@@ -1223,6 +1322,8 @@ export class DrawPdf {
         metrics.height = (element.actualSize || size) * scale
         this.getCtx2d().font = this.getElementFont(element)
         const fontMetrics = this.textParticle.measureText(this.getCtx2d(), element)
+        // console.log('fontMetrics')
+        // console.log(fontMetrics)
         metrics.width = fontMetrics.width * scale
         if (element.letterSpacing) {
           metrics.width += element.letterSpacing * scale
@@ -1250,6 +1351,8 @@ export class DrawPdf {
         metrics.boundingBoxAscent +
         metrics.boundingBoxDescent +
         rowMargin
+      // console.log('height')
+      // console.log(height)
       const rowElement: IRowElement = Object.assign(element, {
         metrics,
         left: 0,
@@ -1317,6 +1420,9 @@ export class DrawPdf {
       }
       listId = element.listId
       // 计算四周环绕导致的元素偏移量
+      // console.log('rowElement')
+      // console.log(rowElement, curRow)
+      // console.log(availableWidth)
       const surroundPosition = this.position.setSurroundPosition({
         pageNo,
         rowElement,
@@ -1346,8 +1452,14 @@ export class DrawPdf {
         (i !== 0 && element.value === ZERO)
       // 是否宽度不足导致换行
       const isWidthNotEnough = curRowWidth > availableWidth
+      // console.log('isForceBreak, isWidthNotEnough, curRowWidth, availableWidth')
+      // console.log(isForceBreak, isWidthNotEnough, curRowWidth, availableWidth)
       const isWrap = isForceBreak || isWidthNotEnough
       // 新行数据处理
+      // console.log('isWrap')
+      // console.log(isWrap)
+      // console.log(preElement)
+      // console.log(element)
       if (isWrap) {
         const row: IRow = {
           width: metrics.width,
@@ -1424,6 +1536,8 @@ export class DrawPdf {
           curRow.width = availableWidth
         }
       }
+      // console.log('----curRow----')
+      // console.log(curRow)
       // 重新计算坐标、页码、下一行首行元素环绕交叉
       if (isWrap) {
         x = startX
@@ -1460,57 +1574,62 @@ export class DrawPdf {
         x += metrics.width
       }
     }
+    // console.log('elementList')
+    // console.log(elementList)
     return rowList
   }
 
-  // private _computePageList(): IRow[][] {
-  //   const pageRowList: IRow[][] = [[]]
-  //   const {
-  //     pageMode,
-  //     pageNumber: { maxPageNo }
-  //   } = this.options
-  //   const height = this.getHeight()
-  //   const marginHeight = this.getMainOuterHeight()
-  //   let pageHeight = marginHeight
-  //   let pageNo = 0
-  //   if (pageMode === PageMode.CONTINUITY) {
-  //     pageRowList[0] = this.rowList
-  //     // 重置高度
-  //     pageHeight += this.rowList.reduce((pre, cur) => pre + cur.height, 0)
-  //     const dpr = this.getPagePixelRatio()
-  //     const pageDom = this.pageList[0]
-  //     const pageDomHeight = Number(pageDom.style.height.replace('px', ''))
-  //     if (pageHeight > pageDomHeight) {
-  //       pageDom.style.height = `${pageHeight}px`
-  //       pageDom.height = pageHeight * dpr
-  //     } else {
-  //       const reduceHeight = pageHeight < height ? height : pageHeight
-  //       pageDom.style.height = `${reduceHeight}px`
-  //       pageDom.height = reduceHeight * dpr
-  //     }
-  //     this._initPageContext(this.ctxList[0])
-  //   } else {
-  //     for (let i = 0; i < this.rowList.length; i++) {
-  //       const row = this.rowList[i]
-  //       if (
-  //         row.height + pageHeight > height ||
-  //         this.rowList[i - 1]?.isPageBreak
-  //       ) {
-  //         if (Number.isInteger(maxPageNo) && pageNo >= maxPageNo!) {
-  //           this.elementList = this.elementList.slice(0, row.startIndex)
-  //           break
-  //         }
-  //         pageHeight = marginHeight + row.height
-  //         pageRowList.push([row])
-  //         pageNo++
-  //       } else {
-  //         pageHeight += row.height
-  //         pageRowList[pageNo].push(row)
-  //       }
-  //     }
-  //   }
-  //   return pageRowList
-  // }
+  private _computePageList(): IRow[][] {
+    const pageRowList: IRow[][] = [[]]
+    const {
+      pageMode,
+      pageNumber: { maxPageNo }
+    } = this.options
+    const height = this.getHeight()
+    const marginHeight = this.getMainOuterHeight()
+    let pageHeight = marginHeight
+    let pageNo = 0
+    if (pageMode === PageMode.CONTINUITY) {
+      pageRowList[0] = this.rowList
+      // 重置高度
+      pageHeight += this.rowList.reduce((pre, cur) => pre + cur.height, 0)
+      const dpr = this.getPagePixelRatio()
+      const pageDom = this.pageList[0]
+      const pageDomHeight = Number(pageDom.style.height.replace('px', ''))
+      if (pageHeight > pageDomHeight) {
+        pageDom.style.height = `${pageHeight}px`
+        pageDom.height = pageHeight * dpr
+      } else {
+        const reduceHeight = pageHeight < height ? height : pageHeight
+        pageDom.style.height = `${reduceHeight}px`
+        pageDom.height = reduceHeight * dpr
+      }
+      this._initPageContext(this.ctxList[0])
+    } else {
+      for (let i = 0; i < this.rowList.length; i++) {
+        const row = this.rowList[i]
+        // console.log('row.height + pageHeight, height')
+        // console.log(i, row.height + pageHeight, height)
+        // console.log(row)
+        if (
+          row.height + pageHeight > height ||
+          this.rowList[i - 1]?.isPageBreak
+        ) {
+          if (Number.isInteger(maxPageNo) && pageNo >= maxPageNo!) {
+            this.elementList = this.elementList.slice(0, row.startIndex)
+            break
+          }
+          pageHeight = marginHeight + row.height
+          pageRowList.push([row])
+          pageNo++
+        } else {
+          pageHeight += row.height
+          pageRowList[pageNo].push(row)
+        }
+      }
+    }
+    return pageRowList
+  }
 
   private _drawHighlight(
     ctx2d: Context2d,
@@ -1956,7 +2075,7 @@ export class DrawPdf {
 
   private _clearPage(pageNo: number) {
     const ctx = this.getCtx2d()
-    const pageDom = this.draw.getPageList()[pageNo]
+    const pageDom = this.getPageList()[pageNo]
     if (pageDom) {
       ctx.clearRect(
         0,
@@ -2053,7 +2172,7 @@ export class DrawPdf {
   }
 
   private _immediateRender() {
-    const positionList = this.draw.getPosition().getOriginalMainPositionList()
+    const positionList = this.getPosition().getOriginalMainPositionList()
     const elementList = this.getOriginalMainElementList()
     for (let i = 0; i < this.pageRowList.length; i++) {
       this._drawPage({
@@ -2106,7 +2225,10 @@ export class DrawPdf {
         elementList: this.elementList
       })!
       // 页面信息
-      this.pageRowList = this.draw.getPageRowList()
+      this.pageRowList = this._computePageList()//this.draw.getPageRowList()
+      // console.log('this.pageList')
+      // console.log(this.pageRowList)
+      // console.log(this.draw.getPageRowList())
       // 位置信息
       this.position.computePositionList()
       // // 控件关键词高亮
@@ -2131,21 +2253,21 @@ export class DrawPdf {
           this.getPdf().deletePage(index + 1)
         })
     }
-    if (this.getPdf().getNumberOfPages() > this.draw.getPageList().length) {
-      const deleteCount = this.getPdf().getNumberOfPages() - this.draw.getPageList().length
+    if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
+      const deleteCount = this.getPdf().getNumberOfPages() - this.getPageList().length
       for (let i = 1; i <= deleteCount; i++) {
         this.getPdf().deletePage(i)
       }
     }
-    if (this.getPdf().getNumberOfPages() < this.draw.getPageList().length) {
-      const addCount = this.draw.getPageList().length - this.getPdf().getNumberOfPages()
+    if (this.getPdf().getNumberOfPages() < this.getPageList().length) {
+      const addCount = this.getPageList().length - this.getPdf().getNumberOfPages()
       for (let i = 1; i <= addCount; i++) {
         this.getPdf().addPage()
       }
     }
     this._immediateRender()
-    if (this.getPdf().getNumberOfPages() > this.draw.getPageList().length) {
-      const deleteCount = this.getPdf().getNumberOfPages() - this.draw.getPageList().length
+    if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
+      const deleteCount = this.getPdf().getNumberOfPages() - this.getPageList().length
       for (let i = 1; i <= deleteCount; i++) {
         this.getPdf().deletePage(i)
       }
@@ -2153,6 +2275,6 @@ export class DrawPdf {
   }
 
   public destroy() {
-    this.container.remove()
+    // this.container.remove()
   }
 }

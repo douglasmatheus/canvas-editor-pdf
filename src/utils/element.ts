@@ -11,7 +11,6 @@ import {
 import {
   EditorMode,
   ElementType,
-  IEditorOption,
   IElement,
   ImageDisplay,
   ListStyle,
@@ -52,6 +51,8 @@ import { IControlSelect } from '../interface/Control'
 import { IRowElement } from '../interface/Row'
 import { ITd } from '../interface/table/Td'
 import { ITr } from '../interface/table/Tr'
+import { IEditorOption } from '../interface/Editor'
+import { svgString2Image } from '..'
 // import { mergeOption } from './option'
 
 export function unzipElementList(elementList: IElement[]): IElement[] {
@@ -72,7 +73,7 @@ interface IFormatElementListOption {
   editorOptions: DeepRequired<IEditorOption>
 }
 
-export function formatElementList(
+export async function formatElementList(
   elementList: IElement[],
   options: IFormatElementListOption
 ) {
@@ -472,6 +473,10 @@ export function formatElementList(
       el.height = el.height || height
       el.laTexSVG = svg
       el.id = getUUID()
+      await svgString2Image(el.laTexSVG, width, height, 'png', (pngData: any) => {
+        // pngData is base64 png string
+        el.laTexSVG = pngData
+      })
     }
     i++
   }

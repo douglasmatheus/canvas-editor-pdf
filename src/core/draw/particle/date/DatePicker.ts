@@ -4,7 +4,7 @@ import {
 } from '../../../../dataset/constant/Editor'
 import { EditorComponent } from '../../../../dataset/enum/Editor'
 import { IElementPosition } from '../../../../interface/Element'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
+import { DrawPdf } from '../../DrawPdf'
 
 export interface IDatePickerLang {
   now: string
@@ -63,7 +63,7 @@ interface IRenderOption {
 }
 
 export class DatePicker {
-  private draw: Draw
+  private draw: DrawPdf
   private options: IDatePickerOption
   private now: Date
   private dom: IDatePickerDom
@@ -72,7 +72,7 @@ export class DatePicker {
   private pickDate: Date | null
   private lang: IDatePickerLang
 
-  constructor(draw: Draw, options: IDatePickerOption = {}) {
+  constructor(draw: DrawPdf, options: IDatePickerOption = {}) {
     this.draw = draw
     this.options = options
     this.lang = this._getLang()
@@ -182,7 +182,7 @@ export class DatePicker {
     datePickerContainer.append(dateWrap)
     datePickerContainer.append(timeWrap)
     datePickerContainer.append(datePickerMenu)
-    this.draw.getContainer().append(datePickerContainer)
+    // this.draw.getContainer().append(datePickerContainer)
     return {
       container: datePickerContainer,
       dateWrap,

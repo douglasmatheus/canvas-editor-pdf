@@ -1,13 +1,16 @@
 import { Context2d } from 'jspdf'
-import { ElementType, IEditorOption, IElement, RenderMode } from '@hufe921/canvas-editor'
 import {
   PUNCTUATION_LIST,
   METRICS_BASIS_TEXT
 } from '../../../dataset/constant/Common'
-import { DeepRequired } from '../../../interface/Common'
 import { IRowElement } from '../../../interface/Row'
 import { ITextMetrics } from '../../../interface/Text'
 import { DrawPdf } from '../DrawPdf'
+import { DeepRequired } from '../../../interface/Common'
+import { IElement } from '../../../interface/Element'
+import { IEditorOption } from '../../../interface/Editor'
+import { ElementType } from '../../../dataset/enum/Element'
+import { RenderMode } from '../../../dataset/enum/Editor'
 
 export interface IMeasureWordResult {
   width: number
@@ -28,7 +31,7 @@ export class TextParticle {
 
   constructor(draw: DrawPdf) {
     this.draw = draw
-    this.options = draw.getDraw().getOptions()
+    this.options = draw.getOptions()
     this.ctx2d = draw.getCtx2d()
     this.curX = -1
     this.curY = -1
@@ -108,7 +111,8 @@ export class TextParticle {
     if (cacheTextMetrics) {
       return cacheTextMetrics
     }
-    const textMetrics = this.draw.getFakeCtx().measureText(element.value)
+    const font = this.draw.getFont(element)
+    const textMetrics = this.draw.measureText(font, element.value)
     this.cacheMeasureText.set(id, textMetrics)
     return textMetrics
   }
@@ -163,6 +167,11 @@ export class TextParticle {
       this.curStyle = this.curStyle.replace('Microsoft YaHei', 'Yahei')
     }
     this.ctx2d.font = this.curStyle
+    // console.log(this.curStyle.split('px ')[1])
+    this.draw.getPdf().setFont(this.curStyle.split('px ')[1])
+    this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
+    // this.ctx2d.save()
+    // console.log(this.curStyle)
     this.ctx2d.fillStyle = this.curColor || this.options.defaultColor
     this.ctx2d.fillText(this.text, this.curX, this.curY)
     this.ctx2d.restore()

@@ -17,8 +17,8 @@ export class Watermark {
       watermark: { data, opacity, font, size, color, repeat, gap },
       scale
     } = this.options
-    const width = this.draw.getDraw().getWidth()
-    const height = this.draw.getDraw().getHeight()
+    const width = this.draw.getWidth()
+    const height = this.draw.getHeight()
     // 开始绘制
     ctx2d.save()
     this.draw.getPdf().setGState(new GState({
@@ -75,7 +75,7 @@ export class Watermark {
       // 移动到中心位置再旋转
       ctx2d.translate(x, y)
       ctx2d.rotate((-45 * Math.PI) / 180)
-      console.log(size, y)
+      // console.log(size, y)
       ctx2d.fillText(
         data,
         -measureText.width / 2,

@@ -4,11 +4,32 @@ Pdf exporter to [canvas-editor](https://github.com/Hufe921/canvas-editor).
 This project currently replicates the same code as canvas-editor to be used with the jsPdf library. Making the appropriate specific modifications for jsPdf. I will be updating this repository with all the modifications to canvas-editor so that it does not become obsolete over time.
 
 ## Usage
-At the moment this project is for internal use in canvas-editor, and it is necessary to create a function within CommandAdapt for the editor to use it. In the future I intend to decouple it so that it can be used independently. That said, first install it:
+As of version 0.1.0, the library is completely decoupled from the editor. You only need to pass the data from the editor - at instantiation or later through the setValue() function. If you use a version prior to 0.1.0, see how to use it below.
 
 ```
 npm i canvas-editor-pdf --save
 ```
+
+It is recommended to instantiate the library before exporting the PDF, as the UI may crash. This is because jspdf loads fonts synchronously.
+
+First you create the library instance:
+```javascript
+  const instancePdf = new DrawPdf(
+    instance.command.getValue().options,
+    instance.command.getValue().data
+  )
+```
+
+When you want to export the pdf:
+```javascript
+  // If you want to update the data, you need to use await so that internally you can convert latex from svg to png - jspdf does not support svg
+  await instancePdf.setValue(instance.command.getValue().data)
+  instancePdf.render() // you need to call render to process and create the data within jspdf
+  instancePdf.getPdf().save(`test.pdf`) // pdf download
+```
+
+## Usage before version 0.1.0
+At the moment this project is for internal use in canvas-editor, and it is necessary to create a function within CommandAdapt for the editor to use it. In the future I intend to decouple it so that it can be used independently. That said, first install it:
 
 Now inside the editor in src > editor > core > command > CommandAdapt.ts place this function at the end:
 

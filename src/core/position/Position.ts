@@ -135,13 +135,13 @@ export class Position {
         // 计算行偏移量（行居中、居右）
         const curRowWidth = curRow.width + (curRow.offsetX || 0)
         if (curRow.rowFlex === RowFlex.CENTER) {
-          console.log('curRow')
-          console.log(curRow)
-          console.log('innerWidth, curRowWidth')
-          console.log(innerWidth, curRowWidth)
-          console.log('x', x)
+          // console.log('curRow')
+          // console.log(curRow)
+          // console.log('innerWidth, curRowWidth')
+          // console.log(innerWidth, curRowWidth)
+          // console.log('x', x)
           x += (innerWidth - curRowWidth) / 2
-          console.log('x', x)
+          // console.log('x', x)
         } else if (curRow.rowFlex === RowFlex.RIGHT) {
           x += innerWidth - curRowWidth
         }
@@ -810,6 +810,10 @@ export class Position {
           // 下个元素起始位置：浮动元素右坐标 - 元素宽度
           x = surroundRect.x + surroundRect.width
           // 检测宽度是否足够，不够则移动到下一行，并还原状态
+          console.log('availableWidth')
+          console.log(availableWidth)
+          console.log(row)
+          console.log(rowElement)
           if (row.width + rowElement.metrics.width > availableWidth) {
             rowElement.left = 0
             row.width -= rowIncreaseWidth

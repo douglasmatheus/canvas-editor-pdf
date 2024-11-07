@@ -1,21 +1,21 @@
 import { EDITOR_PREFIX } from '../../../../dataset/constant/Editor'
 import { ElementType } from '../../../../dataset/enum/Element'
 import { IRowElement } from '../../../../interface/Row'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { BaseBlock } from './modules/BaseBlock'
+import { DrawPdf } from '../../DrawPdf'
 
 export class BlockParticle {
-  private draw: Draw
-  private container: HTMLDivElement
+  private draw: DrawPdf
+  // private container: HTMLDivElement
   private blockContainer: HTMLDivElement
   private blockMap: Map<string, BaseBlock>
 
-  constructor(draw: Draw) {
+  constructor(draw: DrawPdf) {
     this.draw = draw
-    this.container = draw.getContainer()
+    // this.container = draw.getContainer()
     this.blockMap = new Map()
     this.blockContainer = this._createBlockContainer()
-    this.container.append(this.blockContainer)
+    // this.container.append(this.blockContainer)
   }
 
   private _createBlockContainer(): HTMLDivElement {
@@ -24,7 +24,7 @@ export class BlockParticle {
     return blockContainer
   }
 
-  public getDraw(): Draw {
+  public getDraw(): DrawPdf {
     return this.draw
   }
 

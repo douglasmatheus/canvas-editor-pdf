@@ -9,8 +9,8 @@ import { IRange } from '../../../interface/Range'
 // import { getUUID } from '../../../utils'
 // import { RangeManager } from '../../range/RangeManager'
 import { DrawPdf } from '../DrawPdf'
-import { IEditorOption } from '@hufe921/canvas-editor'
-import { DeepRequired } from '@hufe921/canvas-editor/dist/src/editor/interface/Common'
+import { DeepRequired } from '../../../interface/Common'
+import { IEditorOption } from '../../../interface/Editor'
 
 export class Group {
   private draw: DrawPdf
@@ -20,7 +20,7 @@ export class Group {
 
   constructor(draw: DrawPdf) {
     this.draw = draw
-    this.options = draw.getDraw().getOptions()
+    this.options = draw.getOptions()
     // this.range = draw.getRange()
     this.fillRectMap = new Map()
   }

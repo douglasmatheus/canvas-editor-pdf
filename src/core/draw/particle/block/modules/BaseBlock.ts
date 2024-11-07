@@ -1,13 +1,13 @@
 import { EDITOR_PREFIX } from '../../../../../dataset/constant/Editor'
 import { BlockType } from '../../../../../dataset/enum/Block'
 import { IRowElement } from '../../../../../interface/Row'
-import { Draw } from '../../../DrawPdf'
+import { DrawPdf } from '../../../DrawPdf'
 import { BlockParticle } from '../BlockParticle'
 import { IFrameBlock } from './IFrameBlock'
 import { VideoBlock } from './VideoBlock'
 
 export class BaseBlock {
-  private draw: Draw
+  private draw: DrawPdf
   private element: IRowElement
   private block: IFrameBlock | VideoBlock | null
   private blockContainer: HTMLDivElement

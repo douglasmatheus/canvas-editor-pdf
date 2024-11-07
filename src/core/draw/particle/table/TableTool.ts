@@ -3,8 +3,8 @@ import { EDITOR_PREFIX } from '../../../../dataset/constant/Editor'
 import { TableOrder } from '../../../../dataset/enum/table/TableTool'
 import { DeepRequired } from '../../../../interface/Common'
 import { IEditorOption } from '../../../../interface/Editor'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
-import { Position } from '@hufe921/canvas-editor/dist/src/editor/core/position/Position'
+import { DrawPdf } from '../../DrawPdf'
+import { Position } from '../../../position/Position'
 
 interface IAnchorMouseDown {
   evt: MouseEvent
@@ -30,11 +30,11 @@ export class TableTool {
   // 快速选择工具偏移值
   private readonly TABLE_SELECT_OFFSET = 20
 
-  private draw: Draw
+  private draw: DrawPdf
   private canvas: HTMLCanvasElement
   private options: DeepRequired<IEditorOption>
   private position: Position
-  private container: HTMLDivElement
+  // private container: HTMLDivElement
   private toolRowContainer: HTMLDivElement | null
   private toolRowAddBtn: HTMLDivElement | null
   private toolColAddBtn: HTMLDivElement | null
@@ -45,12 +45,12 @@ export class TableTool {
   private mousedownX: number
   private mousedownY: number
 
-  constructor(draw: Draw) {
+  constructor(draw: DrawPdf) {
     this.draw = draw
     this.canvas = draw.getPage()
     this.options = draw.getOptions()
     this.position = draw.getPosition()
-    this.container = draw.getContainer()
+    // this.container = draw.getContainer()
     // x、y轴
     this.toolRowContainer = null
     this.toolRowAddBtn = null
@@ -110,21 +110,16 @@ export class TableTool {
     tableSelectBtn.style.height = `${tableHeight * scale}`
     tableSelectBtn.style.left = `${tableX}px`
     tableSelectBtn.style.top = `${tableY}px`
-    tableSelectBtn.style.transform = `translate(-${
-      this.TABLE_SELECT_OFFSET * scale
-    }px, ${-this.TABLE_SELECT_OFFSET * scale}px)`
-    tableSelectBtn.onclick = () => {
-      this.draw.getTableOperate().tableSelectAll()
-    }
-    this.container.append(tableSelectBtn)
+    tableSelectBtn.style.transform = `translate(-${this.TABLE_SELECT_OFFSET * scale
+      }px, ${-this.TABLE_SELECT_OFFSET * scale}px)`
+    // this.container.append(tableSelectBtn)
     this.toolTableSelectBtn = tableSelectBtn
     // 渲染行工具
     const rowHeightList = trList!.map(tr => tr.height)
     const rowContainer = document.createElement('div')
     rowContainer.classList.add(`${EDITOR_PREFIX}-table-tool__row`)
-    rowContainer.style.transform = `translateX(-${
-      this.ROW_COL_OFFSET * scale
-    }px)`
+    rowContainer.style.transform = `translateX(-${this.ROW_COL_OFFSET * scale
+      }px)`
     for (let r = 0; r < rowHeightList.length; r++) {
       const rowHeight = rowHeightList[r] * scale
       const rowItem = document.createElement('div')
@@ -148,7 +143,7 @@ export class TableTool {
     }
     rowContainer.style.left = `${tableX}px`
     rowContainer.style.top = `${tableY}px`
-    this.container.append(rowContainer)
+    // this.container.append(rowContainer)
     this.toolRowContainer = rowContainer
     // 添加行按钮
     const rowAddBtn = document.createElement('div')
@@ -156,27 +151,16 @@ export class TableTool {
     rowAddBtn.style.height = `${tableHeight * scale}`
     rowAddBtn.style.left = `${tableX}px`
     rowAddBtn.style.top = `${tableY + tableHeight}px`
-    rowAddBtn.style.transform = `translate(-${
-      this.ROW_COL_QUICK_POSITION * scale
-    }px, ${this.ROW_COL_QUICK_OFFSET * scale}px)`
-    rowAddBtn.onclick = () => {
-      this.position.setPositionContext({
-        index,
-        isTable: true,
-        trIndex: trList!.length - 1,
-        tdIndex: 0
-      })
-      this.draw.getTableOperate().insertTableBottomRow()
-    }
-    this.container.append(rowAddBtn)
+    rowAddBtn.style.transform = `translate(-${this.ROW_COL_QUICK_POSITION * scale
+      }px, ${this.ROW_COL_QUICK_OFFSET * scale}px)`
+    // this.container.append(rowAddBtn)
     this.toolRowAddBtn = rowAddBtn
     // 渲染列工具
     const colWidthList = colgroup!.map(col => col.width)
     const colContainer = document.createElement('div')
     colContainer.classList.add(`${EDITOR_PREFIX}-table-tool__col`)
-    colContainer.style.transform = `translateY(-${
-      this.ROW_COL_OFFSET * scale
-    }px)`
+    colContainer.style.transform = `translateY(-${this.ROW_COL_OFFSET * scale
+      }px)`
     for (let c = 0; c < colWidthList.length; c++) {
       const colWidth = colWidthList[c] * scale
       const colItem = document.createElement('div')
@@ -200,7 +184,7 @@ export class TableTool {
     }
     colContainer.style.left = `${tableX}px`
     colContainer.style.top = `${tableY}px`
-    this.container.append(colContainer)
+    // this.container.append(colContainer)
     this.toolColContainer = colContainer
     // 添加列按钮
     const colAddBtn = document.createElement('div')
@@ -208,19 +192,9 @@ export class TableTool {
     colAddBtn.style.height = `${tableHeight * scale}`
     colAddBtn.style.left = `${tableX + tableWidth}px`
     colAddBtn.style.top = `${tableY}px`
-    colAddBtn.style.transform = `translate(${
-      this.ROW_COL_QUICK_OFFSET * scale
-    }px, -${this.ROW_COL_QUICK_POSITION * scale}px)`
-    colAddBtn.onclick = () => {
-      this.position.setPositionContext({
-        index,
-        isTable: true,
-        trIndex: 0,
-        tdIndex: trList![0].tdList.length - 1 || 0
-      })
-      this.draw.getTableOperate().insertTableRightCol()
-    }
-    this.container.append(colAddBtn)
+    colAddBtn.style.transform = `translate(${this.ROW_COL_QUICK_OFFSET * scale
+      }px, -${this.ROW_COL_QUICK_POSITION * scale}px)`
+    // this.container.append(colAddBtn)
     this.toolColAddBtn = colAddBtn
     // 渲染单元格边框拖拽工具
     const borderContainer = document.createElement('div')
@@ -237,9 +211,8 @@ export class TableTool {
         rowBorder.classList.add(`${EDITOR_PREFIX}-table-tool__border__row`)
         rowBorder.style.width = `${td.width! * scale}px`
         rowBorder.style.height = `${this.BORDER_VALUE}px`
-        rowBorder.style.top = `${
-          (td.y! + td.height!) * scale - this.BORDER_VALUE / 2
-        }px`
+        rowBorder.style.top = `${(td.y! + td.height!) * scale - this.BORDER_VALUE / 2
+          }px`
         rowBorder.style.left = `${td.x! * scale}px`
         rowBorder.onmousedown = evt => {
           this._mousedown({
@@ -255,9 +228,8 @@ export class TableTool {
         colBorder.style.width = `${this.BORDER_VALUE}px`
         colBorder.style.height = `${td.height! * scale}px`
         colBorder.style.top = `${td.y! * scale}px`
-        colBorder.style.left = `${
-          (td.x! + td.width!) * scale - this.BORDER_VALUE / 2
-        }px`
+        colBorder.style.left = `${(td.x! + td.width!) * scale - this.BORDER_VALUE / 2
+          }px`
         colBorder.onmousedown = evt => {
           this._mousedown({
             evt,
@@ -269,7 +241,7 @@ export class TableTool {
         borderContainer.appendChild(colBorder)
       }
     }
-    this.container.append(borderContainer)
+    // this.container.append(borderContainer)
     this.toolBorderContainer = borderContainer
   }
 
@@ -307,7 +279,7 @@ export class TableTool {
     }
     anchorLine.style.left = `${startX}px`
     anchorLine.style.top = `${startY}px`
-    this.container.append(anchorLine)
+    // this.container.append(anchorLine)
     this.anchorLine = anchorLine
     // 追加全局事件
     let dx = 0
