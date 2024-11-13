@@ -12,6 +12,11 @@ npm i canvas-editor-pdf --save
 
 It is recommended to instantiate the library before exporting the PDF, as the UI may crash. This is because jspdf loads fonts synchronously.
 
+Import the class from pdf:
+```javascript
+  import { DrawPdf } from 'canvas-editor-pdf'
+```
+
 First you create the library instance:
 ```javascript
   const instancePdf = new DrawPdf(

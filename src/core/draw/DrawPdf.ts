@@ -1644,43 +1644,45 @@ export class DrawPdf {
       const curRow = rowList[i]
       for (let j = 0; j < curRow.elementList.length; j++) {
         const element = curRow.elementList[j]
-        // const preElement = curRow.elementList[j - 1]
-        //     if (
-        //       element.highlight ||
-        //       (activeBackgroundColor &&
-        //         activeControlElement &&
-        //         element.controlId === activeControlElement.controlId &&
-        //         !this.control.getIsRangeInPostfix())
-        //     ) {
-        //       // 高亮元素相连需立即绘制，并记录下一元素坐标
-        //       if (
-        //         preElement &&
-        //         preElement.highlight &&
-        //         preElement.highlight !== element.highlight
-        //       ) {
-        //         this.highlight.render(ctx2d)
-        //       }
-        // 当前元素位置信息记录
-        const {
-          coordinate: {
-            leftTop: [x, y]
-          }
-        } = positionList[curRow.startIndex + j]
-        // 元素向左偏移量
-        const offsetX = element.left || 0
-        this.highlight.recordFillInfo(
-          ctx2d,
-          x - offsetX,
-          y,
-          element.metrics.width + offsetX,
-          curRow.height,
-          element.highlight || activeBackgroundColor
-        )
-        //     } else 
-        // if (preElement?.highlight) {
-        //   // 之前是高亮元素，当前不是需立即绘制
-        this.highlight.render(ctx2d)
-        // }
+        if (element.highlight) {
+          // const preElement = curRow.elementList[j - 1]
+          //     if (
+          //       element.highlight ||
+          //       (activeBackgroundColor &&
+          //         activeControlElement &&
+          //         element.controlId === activeControlElement.controlId &&
+          //         !this.control.getIsRangeInPostfix())
+          //     ) {
+          //       // 高亮元素相连需立即绘制，并记录下一元素坐标
+          //       if (
+          //         preElement &&
+          //         preElement.highlight &&
+          //         preElement.highlight !== element.highlight
+          //       ) {
+          //         this.highlight.render(ctx2d)
+          //       }
+          // 当前元素位置信息记录
+          const {
+            coordinate: {
+              leftTop: [x, y]
+            }
+          } = positionList[curRow.startIndex + j]
+          // 元素向左偏移量
+          const offsetX = element.left || 0
+          this.highlight.recordFillInfo(
+            ctx2d,
+            x - offsetX,
+            y,
+            element.metrics.width + offsetX,
+            curRow.height,
+            element.highlight || activeBackgroundColor
+          )
+          //     } else 
+          // if (preElement?.highlight) {
+          //   // 之前是高亮元素，当前不是需立即绘制
+          this.highlight.render(ctx2d)
+          // }
+        }
       }
       // this.highlight.render(ctx2d)
     }

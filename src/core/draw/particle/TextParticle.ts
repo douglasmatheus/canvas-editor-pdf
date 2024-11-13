@@ -169,8 +169,8 @@ export class TextParticle {
     this.ctx2d.font = this.curStyle
     // console.log(this.curStyle.split('px ')[1])
     this.draw.getPdf().setFont(this.curStyle.split('px ')[1])
-    this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
-    // this.ctx2d.save()
+    // this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
+    this.ctx2d.save()
     // console.log(this.curStyle)
     this.ctx2d.fillStyle = this.curColor || this.options.defaultColor
     this.ctx2d.fillText(this.text, this.curX, this.curY)

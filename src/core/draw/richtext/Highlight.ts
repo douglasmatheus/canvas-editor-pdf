@@ -16,7 +16,9 @@ export class Highlight extends AbstractRichText {
   public render(ctx2d: Context2d) {
     if (!this.fillRect.width) return
     const { highlightAlpha } = this.options
+    console.log(highlightAlpha)
     const { x, y, width, height } = this.fillRect
+    console.log(x, y, width, height)
     ctx2d.save()
     this.draw.getPdf().setGState(new GState({
       opacity: highlightAlpha
