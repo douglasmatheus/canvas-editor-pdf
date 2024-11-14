@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -74,7 +74,8 @@
   },
   "dependencies": {
     "jspdf": "^2.5.1",
-    "prismjs": "^1.27.0"
+    "prismjs": "^1.27.0",
+    "vite-plugin-dts": "^4.3.0"
   },
   "simple-git-hooks": {
     "pre-commit": "npm run lint && npm run type:check",

@@ -3,7 +3,7 @@ import { ZERO } from '../../../dataset/constant/Common'
 import { TEXTLIKE_ELEMENT_TYPE } from '../../../dataset/constant/Element'
 import { ControlComponent } from '../../../dataset/enum/Control'
 import { EditorContext } from '../../../dataset/enum/Editor'
-import { ElementType } from '../../../dataset/enum/Element'
+// import { ElementType } from '../../../dataset/enum/Element'
 import { IEditorOption } from '../../../interface/Editor'
 import { IElement, IElementPosition } from '../../../interface/Element'
 import { ISearchResult, ISearchResultRestArgs } from '../../../interface/Search'
@@ -141,11 +141,11 @@ export class Search {
         ? this.searchNavigateIndex / this.searchKeyword.length + 1
         : 0
     let count = 0
-    let groupId = null
+    // let groupId = null
     for (let s = 0; s < this.searchMatchList.length; s++) {
-      const match = this.searchMatchList[s]
-      if (groupId === match.groupId) continue
-      groupId = match.groupId
+      // const match = this.searchMatchList[s]
+      // if (groupId === match.groupId) continue
+      // groupId = match.groupId
       count += 1
     }
     return {
@@ -170,10 +170,10 @@ export class Search {
     // 查找表格所在位置
     const tableIndexList = []
     for (let e = 0; e < originalElementListLength; e++) {
-      const element = originalElementList[e]
-      if (element.type === ElementType.TABLE) {
-        tableIndexList.push(e)
-      }
+      // const element = originalElementList[e]
+      // if (element.type === ElementType.TABLE) {
+      //   tableIndexList.push(e)
+      // }
     }
     let i = 0
     let elementIndex = 0
@@ -222,7 +222,7 @@ export class Search {
       const matchStartIndexList = []
       let index = text.indexOf(payload)
       while (index !== -1) {
-        matchStartIndexList.push(index)
+        // matchStartIndexList.push(index)
         index = text.indexOf(payload, index + payload.length)
       }
       for (let m = 0; m < matchStartIndexList.length; m++) {

@@ -67,7 +67,7 @@ import { ControlComponent, ControlType } from '../../../../dataset/enum/Control'
 // import { IRange } from '../../../../interface/Range'
 import { nextTick, omitObject, pickObject, splitText } from '../../../../utils'
 import { formatElementContext, formatElementList, zipElementList } from '../../../../utils/element'
-import { CONTROL_CONTEXT_ATTR, CONTROL_STYLE_ATTR, LIST_CONTEXT_ATTR, TITLE_CONTEXT_ATTR } from '../../../../dataset/constant/Element'
+import { CONTROL_STYLE_ATTR, LIST_CONTEXT_ATTR, TITLE_CONTEXT_ATTR } from '../../../../dataset/constant/Element'
 import { ElementType } from '../../../../dataset/enum/Element'
 import { EditorZone } from '../../../../dataset/enum/Editor'
 import { MoveDirection } from '../../../../dataset/enum/Observer'
@@ -645,9 +645,9 @@ export class Control {
             nextElement.controlComponent === ControlComponent.VALUE
           ) {
             textControlValue += nextElement.value
-            textControlElementList.push(
-              omitObject(nextElement, CONTROL_CONTEXT_ATTR)
-            )
+            // textControlElementList.push(
+            //   omitObject(nextElement, CONTROL_CONTEXT_ATTR)
+            // )
           }
           j++
         }

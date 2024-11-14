@@ -15,6 +15,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
+    "emitDeclarationOnly": true,
+    "noImplicitAny": false,
     "outDir": "./dist",
     "rootDir": "./src" // Define a raiz como a pasta src
   },

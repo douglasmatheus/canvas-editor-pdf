@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import typescript from '@rollup/plugin-typescript'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import * as path from 'path'
+import dts from 'vite-plugin-dts'
 
 export default defineConfig(({ mode }) => {
   const name = 'canvas-editor-pdf'
@@ -15,13 +16,16 @@ export default defineConfig(({ mode }) => {
         {
           ...typescript({
             tsconfig: './tsconfig.json',
-            include: ['./src/editor/**']
+            include: ['./src/**']
           }),
           apply: 'build',
           declaration: true,
           declarationDir: 'types/',
           rootDir: '/'
-        }
+        },
+        dts({
+          insertTypesEntry: true,
+        })
       ],
       build: {
         lib: {

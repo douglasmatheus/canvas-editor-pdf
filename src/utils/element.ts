@@ -1551,7 +1551,7 @@ export function replaceHTMLElementTag(
 }
 
 export function pickSurroundElementList(elementList: IElement[]) {
-  const surroundElementList = []
+  const surroundElementList: IElement[] = []
   for (let e = 0; e < elementList.length; e++) {
     const element = elementList[e]
     if (element.imgDisplay === ImageDisplay.SURROUND) {
