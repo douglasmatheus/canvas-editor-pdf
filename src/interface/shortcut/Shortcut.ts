@@ -1,4 +1,5 @@
-import { Command } from '../../core/command/Command'
+// import { Command } from '../../core/command/Command'
+import { Command } from '@hufe921/canvas-editor'
 import { KeyMap } from '../../dataset/enum/KeyMap'
 
 export interface IRegisterShortcut {

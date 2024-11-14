@@ -5,9 +5,11 @@ import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { Position } from '../../position/Position'
 import { DrawPdf } from '../DrawPdf'
-import { IElement } from '@hufe921/canvas-editor'
-import { IElementPosition } from '@hufe921/canvas-editor/dist/src/editor/interface/Element'
-import { IRow } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
+import { IElement, IElementPosition } from '../../../interface/Element'
+import { IRow } from '../../../interface/Row'
+// import { IElement } from '@hufe921/canvas-editor'
+// import { IElementPosition } from '@hufe921/canvas-editor/dist/src/editor/interface/Element'
+// import { IRow } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
 export class Footer {
   private draw: DrawPdf

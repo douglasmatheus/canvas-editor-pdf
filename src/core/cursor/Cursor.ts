@@ -143,9 +143,8 @@ export class Cursor {
       leftTop[1] + ascent + descent - (cursorHeight - increaseHeight) + preY
     const cursorLeft = hitLineStartIndex ? leftTop[0] : rightTop[0]
     agentCursorDom.style.left = `${cursorLeft}px`
-    agentCursorDom.style.top = `${
-      cursorTop + cursorHeight - defaultOffsetHeight
-    }px`
+    agentCursorDom.style.top = `${cursorTop + cursorHeight - defaultOffsetHeight
+      }px`
     // 模拟光标显示
     if (!isShow) {
       this.recoveryCursor()

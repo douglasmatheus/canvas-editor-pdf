@@ -1,7 +1,8 @@
 import { Context2d, GState } from 'jspdf'
-import { IEditorOption } from '@hufe921/canvas-editor'
+// import { IEditorOption } from '@hufe921/canvas-editor'
 import { DeepRequired } from '../../../interface/Common'
 import { DrawPdf } from '../DrawPdf'
+import { IEditorOption } from '../../../interface/Editor'
 
 export class Watermark {
   private draw: DrawPdf

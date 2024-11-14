@@ -1,22 +1,22 @@
-import { ElementType } from '../../../../dataset/enum/Element'
-import { DeepRequired } from '../../../../interface/Common'
-import { IEditorOption } from '../../../../interface/Editor'
+// import { ElementType } from '../../../../dataset/enum/Element'
+// import { DeepRequired } from '../../../../interface/Common'
+// import { IEditorOption } from '../../../../interface/Editor'
 import { IElement, IElementPosition } from '../../../../interface/Element'
-import { formatElementContext } from '../../../../utils/element'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
+// import { formatElementContext } from '../../../../utils/element'
+// import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { DatePicker } from './DatePicker'
 // import { RangeManager } from '@hufe921/canvas-editor/dist/src/editor/core/range/RangeManager'
 import { DrawPdf } from '../../DrawPdf'
 
 export class DateParticle {
-  private draw: DrawPdf
+  // private draw: DrawPdf
   // private range: RangeManager
   private datePicker: DatePicker
-  private options: DeepRequired<IEditorOption>
+  // private options: DeepRequired<IEditorOption>
 
   constructor(draw: DrawPdf) {
-    this.draw = draw
-    this.options = draw.getOptions()
+    // this.draw = draw
+    // this.options = draw.getOptions()
     // this.range = draw.getRange()
     this.datePicker = new DatePicker(draw, {
       // onSubmit: this._setValue.bind(this)
@@ -95,8 +95,9 @@ export class DateParticle {
   }
 
   public renderDatePicker(element: IElement, position: IElementPosition) {
-    console.log('passando aqui pra criar datepicker...')
-    const elementList = this.draw.getElementList()
+    console.log(element, position)
+    // console.log('passando aqui pra criar datepicker...')
+    // const elementList = this.draw.getElementList()
     // const range = this.getDateElementRange()
     // const value = range
     //   ? elementList

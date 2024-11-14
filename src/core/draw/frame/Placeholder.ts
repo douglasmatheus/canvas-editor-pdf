@@ -1,12 +1,13 @@
 import { Context2d } from 'jspdf'
-import { IEditorOption, IElement } from '@hufe921/canvas-editor'
+// import { IEditorOption, IElement } from '@hufe921/canvas-editor'
 import { DeepRequired } from '../../../interface/Common'
-import { IElementPosition } from '../../../interface/Element'
+import { IElement, IElementPosition } from '../../../interface/Element'
 import { IRow } from '../../../interface/Row'
 import { formatElementList } from '../../../utils/element'
 import { Position } from '../../position/Position'
 import { DrawPdf } from '../DrawPdf'
 import { LineBreakParticle } from '../particle/LineBreakParticle'
+import { IEditorOption } from '../../../interface/Editor'
 
 export class Placeholder {
   private draw: DrawPdf

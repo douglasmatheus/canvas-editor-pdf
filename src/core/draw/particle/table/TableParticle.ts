@@ -1,14 +1,17 @@
 import { Context2d } from 'jspdf'
-import { /*ElementType,*/ IElement, TableBorder } from '@hufe921/canvas-editor'
-import { TdBorder, TdSlash } from '../../../../dataset/enum/table/Table'
+// import { /*ElementType,*/ IElement, TableBorder } from '@hufe921/canvas-editor'
+import { TableBorder, TdBorder, TdSlash } from '../../../../dataset/enum/table/Table'
 import { DeepRequired } from '../../../../interface/Common'
 import { IEditorOption } from '../../../../interface/Editor'
 import { ITd } from '../../../../interface/table/Td'
 import { deepClone } from '../../../../utils'
 // import { RangeManager } from '../../../range/RangeManager'
 import { DrawPdf } from '../../DrawPdf'
-import { ITr } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Tr'
-import { IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
+import { ITr } from '../../../../interface/table/Tr'
+import { IRowElement } from '../../../../interface/Row'
+import { IElement } from '../../../../interface/Element'
+// import { ITr } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Tr'
+// import { IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
 interface IDrawTableBorderOption {
   ctx2d: Context2d

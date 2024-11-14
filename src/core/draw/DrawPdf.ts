@@ -10,10 +10,12 @@ import {
   IGetValueOption,
 } from '../../interface/Draw'
 import {
+  IEditorData,
   IEditorOption,
   IEditorResult,
 } from '../../interface/Editor'
 import {
+  IElement,
   IElementMetrics,
 } from '../../interface/Element'
 import { deepClone, getUUID } from '../../utils'
@@ -77,10 +79,12 @@ import { LineBreakParticle } from './particle/LineBreakParticle'
 import { LineNumber } from './frame/LineNumber'
 import { PageBorder } from './frame/PageBorder'
 import jsPDF, { Context2d } from 'jspdf'
+import { IRow, IRowElement } from '../../interface/Row'
+import { ITd } from '../../interface/table/Td'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
-import { IEditorData, IElement } from '@hufe921/canvas-editor'
-import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
-import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
+// import { IEditorData } from '@hufe921/canvas-editor'
+// import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
+// import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
 export class DrawPdf {
   // private draw: Draw
@@ -280,6 +284,66 @@ export class DrawPdf {
     await imageUrlToBase64(url, 'Yahei.ttf', 'Yahei', 'normal')
     // $this.pdf.setFont('Yahei')
     await imageUrlToBase64('https://raw.githubusercontent.com/matomo-org/travis-scripts/refs/heads/master/fonts/Arial.ttf', 'Arial.ttf', 'Arial', 'normal')
+    await imageUrlToBase64('https://raw.githubusercontent.com/douglasmatheus/canvas-editor-pdf/refs/heads/main/public/font/Inkfree.ttf', 'Inkfree.ttf', 'Ink Free', 'normal')
+    // jsPDFAPI.addFileToVFS("[Your font's name]","[Base64-encoded string of your font]");
+    // fetch('https://polisoftware.com.br/polisoftware/crud/pedido/impressao/app/public/font/msyh.ttf', {
+    //   mode: 'cors',
+    //   headers: {
+    //     // 'type': 'json',
+    //     // 'Content-Type': 'application/json',
+    //     'Access-Control-Allow-Origin': '*'
+    //   }
+    // })
+    //   .then(function (response: any) {
+    //     if (response.ok) {
+    //       return response.blob()
+    //     } else {
+    //       throw new Error(response)
+    //     }
+    //   })
+    //   .then(data => {
+    //     let reader = new FileReader() 
+    //     reader.onload = function(){ callback(this.result) }
+    //     reader.readAsDataURL(blob)
+    //     // this.pdf.addFileToVFS('Yahei-normal.ttf', data)
+    //     // this.pdf.addFont('Yahei-normal.ttf', 'Yahei', 'normal')
+    //   })
+    // this.pdf.addFileToVFS('Yahei-normal.ttf', font);
+    // this.pdf.addFont('Yahei-normal.ttf', 'Yahei', 'normal');
+    // this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei', 'normal')
+    // this.pdf.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei', 'bold')
+    // this.pdf.addFont('Arial', 'Arial', 'normal')
+    // console.log(this.pdf.getFontList())
+    return true
+  }
+
+  public async addFont() {
+    const url = 'https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf'
+    const $this = this
+    const imageUrlToBase64 = async (url: string, fileName: string, id: string, type: string) => {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      return new Promise((onSuccess, onError) => {
+        try {
+          const reader = new FileReader()
+          reader.onload = function () {
+            const base64: any = this.result
+            // console.log('base64')
+            // console.log(base64)
+            $this.pdf.addFileToVFS(fileName, base64.split('base64,')[1])
+            $this.pdf.addFont(fileName, id, type)
+            onSuccess(this.result)
+          }
+          reader.readAsDataURL(blob)
+        } catch (e) {
+          onError(e)
+        }
+      })
+    }
+    await imageUrlToBase64(url, 'Yahei.ttf', 'Yahei', 'normal')
+    // $this.pdf.setFont('Yahei')
+    await imageUrlToBase64('https://raw.githubusercontent.com/matomo-org/travis-scripts/refs/heads/master/fonts/Arial.ttf', 'Arial.ttf', 'Arial', 'normal')
+    await imageUrlToBase64('https://raw.githubusercontent.com/douglasmatheus/canvas-editor-pdf/refs/heads/main/public/font/Inkfree.ttf', 'Inkfree.ttf', 'Ink Free', 'normal')
     // jsPDFAPI.addFileToVFS("[Your font's name]","[Base64-encoded string of your font]");
     // fetch('https://polisoftware.com.br/polisoftware/crud/pedido/impressao/app/public/font/msyh.ttf', {
     //   mode: 'cors',

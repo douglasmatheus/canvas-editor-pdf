@@ -1,8 +1,12 @@
-import { IElement, ImageDisplay, IRange } from '@hufe921/canvas-editor'
+// import { IElement, ImageDisplay, IRange } from '@hufe921/canvas-editor'
 import { EditorZone } from '../dataset/enum/Editor'
-import { IElementFillRect, IElementPosition } from './Element'
-import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
-import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
+import { IElement, IElementFillRect, IElementPosition } from './Element'
+import { ITd } from './table/Td'
+import { IRow, IRowElement } from './Row'
+import { ImageDisplay } from '../dataset/enum/Common'
+import { IRange } from './Range'
+// import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
+// import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
 
 export interface ICurrentPosition {
   index: number

@@ -1,84 +1,101 @@
-import { ControlComponent, ControlType } from '@hufe921/canvas-editor/dist/src/editor/dataset/enum/Control'
-import { EditorZone } from '@hufe921/canvas-editor'
-import { ElementType } from '@hufe921/canvas-editor'
-import { DeepRequired } from '@hufe921/canvas-editor/dist/src/editor/interface/Common'
-import {
-  IControl,
-  IControlContext,
-  IControlHighlight,
-  IControlInitOption,
-  IControlInstance,
-  IControlOption,
-  IControlRuleOption,
-  IGetControlValueOption,
-  IGetControlValueResult,
-  IInitNextControlOption,
-  INextControlContext,
-  IRepaintControlOption,
-  ISetControlExtensionOption,
-  ISetControlProperties,
-  ISetControlValueOption
-} from '@hufe921/canvas-editor/dist/src/editor/interface/Control'
-import { IEditorData, IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
-import { IElement, IElementPosition } from '@hufe921/canvas-editor/dist/src/editor/interface/Element'
-import { EventBusMap } from '@hufe921/canvas-editor/dist/src/editor/interface/EventBus'
-import { IRange } from '@hufe921/canvas-editor/dist/src/editor/interface/Range'
-import {
-  deepClone,
-  nextTick,
-  omitObject,
-  pickObject,
-  splitText
-} from '@hufe921/canvas-editor/dist/src/editor/utils'
-import {
-  formatElementContext,
-  formatElementList,
-  pickElementAttr,
-  zipElementList
-} from '@hufe921/canvas-editor/dist/src/editor/utils/element'
-import { EventBus } from '@hufe921/canvas-editor/dist/src/editor/core/event/eventbus/EventBus'
-import { Listener } from '@hufe921/canvas-editor/dist/src/editor/core/listener/Listener'
-import { RangeManager } from '@hufe921/canvas-editor/dist/src/editor/core/range/RangeManager'
-import { CheckboxControl } from './checkbox/CheckboxControl'
-import { RadioControl } from './radio/RadioControl'
-import { ControlSearch } from './interactive/ControlSearch'
-import { ControlBorder } from './richtext/Border'
-import { SelectControl } from './select/SelectControl'
-import { TextControl } from './text/TextControl'
-import { DateControl } from './date/DateControl'
-import { MoveDirection } from '../../../dataset/enum/Observer'
-import {
-  CONTROL_CONTEXT_ATTR,
-  CONTROL_STYLE_ATTR,
-  LIST_CONTEXT_ATTR,
-  TITLE_CONTEXT_ATTR
-} from '../../../dataset/constant/Element'
+// import { ControlComponent, ControlType } from '@hufe921/canvas-editor/dist/src/editor/dataset/enum/Control'
+// import { EditorZone } from '@hufe921/canvas-editor'
+// import { ElementType } from '@hufe921/canvas-editor'
+// import { DeepRequired } from '@hufe921/canvas-editor/dist/src/editor/interface/Common'
+// import {
+//   IControl,
+//   IControlContext,
+//   IControlHighlight,
+//   IControlInitOption,
+//   IControlInstance,
+//   IControlOption,
+//   IControlRuleOption,
+//   IGetControlValueOption,
+//   IGetControlValueResult,
+//   IInitNextControlOption,
+//   INextControlContext,
+//   IRepaintControlOption,
+//   ISetControlExtensionOption,
+//   ISetControlProperties,
+//   ISetControlValueOption
+// } from '@hufe921/canvas-editor/dist/src/editor/interface/Control'
+// import { IEditorData, IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
+// import { IElement, IElementPosition } from '@hufe921/canvas-editor/dist/src/editor/interface/Element'
+// import { EventBusMap } from '@hufe921/canvas-editor/dist/src/editor/interface/EventBus'
+// import { IRange } from '@hufe921/canvas-editor/dist/src/editor/interface/Range'
+// import {
+//   deepClone,
+//   nextTick,
+//   omitObject,
+//   pickObject,
+//   splitText
+// } from '@hufe921/canvas-editor/dist/src/editor/utils'
+// import {
+//   formatElementContext,
+//   formatElementList,
+//   pickElementAttr,
+//   zipElementList
+// } from '@hufe921/canvas-editor/dist/src/editor/utils/element'
+// import { EventBus } from '@hufe921/canvas-editor/dist/src/editor/core/event/eventbus/EventBus'
+// import { Listener } from '@hufe921/canvas-editor/dist/src/editor/core/listener/Listener'
+// import { RangeManager } from '@hufe921/canvas-editor/dist/src/editor/core/range/RangeManager'
+// import { CheckboxControl } from './checkbox/CheckboxControl'
+// import { RadioControl } from './radio/RadioControl'
+// import { ControlSearch } from './interactive/ControlSearch'
+// import { ControlBorder } from './richtext/Border'
+// import { SelectControl } from './select/SelectControl'
+// import { TextControl } from './text/TextControl'
+// import { DateControl } from './date/DateControl'
+// import { MoveDirection } from '../../../dataset/enum/Observer'
+// import {
+//   CONTROL_CONTEXT_ATTR,
+//   CONTROL_STYLE_ATTR,
+//   LIST_CONTEXT_ATTR,
+//   TITLE_CONTEXT_ATTR
+// } from '../../../dataset/constant/Element'
 import { Context2d } from 'jspdf'
-import { DrawPdf } from '../Draw'
+// import { DrawPdf } from '../Draw'
+import { IElement } from '../../../../interface/Element'
+// import { RangeManager } from '../../../../core/range/RangeManager'
+// import { Listener } from '../../../../core/listener/Listener'
+// import { EventBus } from '../../../../core/event/eventbus/EventBus'
+// import { EventBusMap } from '../../../../interface/EventBus'
+import { DeepRequired } from '../../../../interface/Common'
+import { IEditorData, IEditorOption } from '../../../../interface/Editor'
+import { IControlContext, IControlHighlight, IControlInitOption, IControlInstance, IControlOption, IGetControlValueOption, IGetControlValueResult, IInitNextControlOption, INextControlContext, IRepaintControlOption, ISetControlExtensionOption, ISetControlProperties, ISetControlValueOption } from '../../../../interface/Control'
+import { ControlComponent, ControlType } from '../../../../dataset/enum/Control'
+// import { IRange } from '../../../../interface/Range'
+import { nextTick, omitObject, pickObject, splitText } from '../../../../utils'
+import { formatElementContext, formatElementList, zipElementList } from '../../../../utils/element'
+import { CONTROL_CONTEXT_ATTR, CONTROL_STYLE_ATTR, LIST_CONTEXT_ATTR, TITLE_CONTEXT_ATTR } from '../../../../dataset/constant/Element'
+import { ElementType } from '../../../../dataset/enum/Element'
+import { EditorZone } from '../../../../dataset/enum/Editor'
+import { MoveDirection } from '../../../../dataset/enum/Observer'
+import { DrawPdf } from '../../../../core/draw/DrawPdf'
 
 interface IMoveCursorResult {
   newIndex: number
   newElement: IElement
 }
 export class Control {
-  private controlBorder: ControlBorder
+  // private controlBorder: ControlBorder
   private draw: DrawPdf
-  private range: RangeManager
-  private listener: Listener
-  private eventBus: EventBus<EventBusMap>
-  private controlSearch: ControlSearch
+  // private range: RangeManager
+  // private listener: Listener
+  // private eventBus: EventBus<EventBusMap>
+  // private controlSearch: ControlSearch
   private options: DeepRequired<IEditorOption>
   private controlOptions: IControlOption
   private activeControl: IControlInstance | null
 
   constructor(draw: DrawPdf) {
-    this.controlBorder = new ControlBorder(draw)
+    // this.controlBorder = new ControlBorder(draw)
 
     this.draw = draw
-    this.range = draw.getRange()
-    this.listener = draw.getListener()
-    this.eventBus = draw.getEventBus()
-    this.controlSearch = new ControlSearch(this)
+    // this.range = draw.getRange()
+    // this.listener = draw.getListener()
+    // this.eventBus = draw.getEventBus()
+    // this.controlSearch = new ControlSearch(this)
 
     this.options = draw.getOptions()
     this.controlOptions = this.options.control
@@ -87,21 +104,23 @@ export class Control {
 
   // 搜索高亮匹配
   public setHighlightList(payload: IControlHighlight[]) {
-    this.controlSearch.setHighlightList(payload)
+    console.log(payload)
+    // this.controlSearch.setHighlightList(payload)
   }
 
   public computeHighlightList() {
-    const highlightList = this.controlSearch.getHighlightList()
-    if (highlightList.length) {
-      this.controlSearch.computeHighlightList()
-    }
+    // const highlightList = this.controlSearch.getHighlightList()
+    // if (highlightList.length) {
+    //   this.controlSearch.computeHighlightList()
+    // }
   }
 
   public renderHighlightList(ctx2d: Context2d, pageNo: number) {
-    const highlightMatchResult = this.controlSearch.getHighlightMatchResult()
-    if (highlightMatchResult.length) {
-      this.controlSearch.renderHighlightList(ctx2d, pageNo)
-    }
+    console.log(ctx2d, pageNo)
+    // const highlightMatchResult = this.controlSearch.getHighlightMatchResult()
+    // if (highlightMatchResult.length) {
+    //   this.controlSearch.renderHighlightList(ctx2d, pageNo)
+    // }
   }
 
   public getDraw(): DrawPdf {
@@ -110,85 +129,88 @@ export class Control {
 
   // 过滤控件辅助元素（前后缀、背景提示）
   public filterAssistElement(elementList: IElement[]): IElement[] {
-    return elementList.filter(element => {
-      if (element.type === ElementType.TABLE) {
-        const trList = element.trList!
-        for (let r = 0; r < trList.length; r++) {
-          const tr = trList[r]
-          for (let d = 0; d < tr.tdList.length; d++) {
-            const td = tr.tdList[d]
-            td.value = this.filterAssistElement(td.value)
-          }
-        }
-      }
-      if (!element.controlId) return true
-      if (element.control?.minWidth) {
-        if (
-          element.controlComponent === ControlComponent.PREFIX ||
-          element.controlComponent === ControlComponent.POSTFIX
-        ) {
-          element.value = ''
-          return true
-        }
-      }
-      return (
-        element.controlComponent !== ControlComponent.PREFIX &&
-        element.controlComponent !== ControlComponent.POSTFIX &&
-        element.controlComponent !== ControlComponent.PLACEHOLDER
-      )
-    })
+    console.log(elementList)
+    return elementList
+    // return elementList.filter(element => {
+    //   if (element.type === ElementType.TABLE) {
+    //     const trList = element.trList!
+    //     for (let r = 0; r < trList.length; r++) {
+    //       const tr = trList[r]
+    //       for (let d = 0; d < tr.tdList.length; d++) {
+    //         const td = tr.tdList[d]
+    //         td.value = this.filterAssistElement(td.value)
+    //       }
+    //     }
+    //   }
+    //   if (!element.controlId) return true
+    //   if (element.control?.minWidth) {
+    //     if (
+    //       element.controlComponent === ControlComponent.PREFIX ||
+    //       element.controlComponent === ControlComponent.POSTFIX
+    //     ) {
+    //       element.value = ''
+    //       return true
+    //     }
+    //   }
+    //   return (
+    //     element.controlComponent !== ControlComponent.PREFIX &&
+    //     element.controlComponent !== ControlComponent.POSTFIX &&
+    //     element.controlComponent !== ControlComponent.PLACEHOLDER
+    //   )
+    // })
   }
 
   // 是否属于控件可以捕获事件的选区
   public getIsRangeCanCaptureEvent(): boolean {
-    if (!this.activeControl) return false
-    const { startIndex, endIndex } = this.getRange()
-    if (!~startIndex && !~endIndex) return false
-    const elementList = this.getElementList()
-    const startElement = elementList[startIndex]
-    // 闭合光标在后缀处
-    if (
-      startIndex === endIndex &&
-      startElement.controlComponent === ControlComponent.POSTFIX
-    ) {
-      return true
-    }
-    // 在控件内
-    const endElement = elementList[endIndex]
-    if (
-      startElement.controlId &&
-      startElement.controlId === endElement.controlId &&
-      endElement.controlComponent !== ControlComponent.POSTFIX
-    ) {
-      return true
-    }
+    // if (!this.activeControl) return false
+    // const { startIndex, endIndex } = this.getRange()
+    // if (!~startIndex && !~endIndex) return false
+    // const elementList = this.getElementList()
+    // const startElement = elementList[startIndex]
+    // // 闭合光标在后缀处
+    // if (
+    //   startIndex === endIndex &&
+    //   startElement.controlComponent === ControlComponent.POSTFIX
+    // ) {
+    //   return true
+    // }
+    // // 在控件内
+    // const endElement = elementList[endIndex]
+    // if (
+    //   startElement.controlId &&
+    //   startElement.controlId === endElement.controlId &&
+    //   endElement.controlComponent !== ControlComponent.POSTFIX
+    // ) {
+    //   return true
+    // }
     return false
   }
 
   // 判断选区是否在后缀处
   public getIsRangeInPostfix(): boolean {
-    if (!this.activeControl) return false
-    const { startIndex, endIndex } = this.getRange()
-    if (startIndex !== endIndex) return false
-    const elementList = this.getElementList()
-    const element = elementList[startIndex]
-    return element.controlComponent === ControlComponent.POSTFIX
+    return false
+    // if (!this.activeControl) return false
+    // const { startIndex, endIndex } = this.getRange()
+    // if (startIndex !== endIndex) return false
+    // const elementList = this.getElementList()
+    // const element = elementList[startIndex]
+    // return element.controlComponent === ControlComponent.POSTFIX
   }
 
   // 判断选区是否在控件内
   public getIsRangeWithinControl(): boolean {
-    const { startIndex, endIndex } = this.getRange()
-    if (!~startIndex && !~endIndex) return false
-    const elementList = this.getElementList()
-    const startElement = elementList[startIndex]
-    const endElement = elementList[endIndex]
-    if (
-      startElement.controlId &&
-      startElement.controlId === endElement.controlId &&
-      endElement.controlComponent !== ControlComponent.POSTFIX
-    ) {
-      return true
-    }
+    // const { startIndex, endIndex } = this.getRange()
+    // if (!~startIndex && !~endIndex) return false
+    // const elementList = this.getElementList()
+    // const startElement = elementList[startIndex]
+    // const endElement = elementList[endIndex]
+    // if (
+    //   startElement.controlId &&
+    //   startElement.controlId === endElement.controlId &&
+    //   endElement.controlComponent !== ControlComponent.POSTFIX
+    // ) {
+    //   return true
+    // }
     return false
   }
 
@@ -210,135 +232,137 @@ export class Control {
   }
 
   public getIsDisabledControl(context: IControlContext = {}): boolean {
-    if (this.draw.isDesignMode() || !this.activeControl) return false
-    const { startIndex, endIndex } = context.range || this.range.getRange()
-    if (startIndex === endIndex && ~startIndex && ~endIndex) {
-      const elementList = context.elementList || this.getElementList()
-      const startElement = elementList[startIndex]
-      if (startElement.controlComponent === ControlComponent.POSTFIX) {
-        return false
-      }
-    }
-    return !!this.activeControl.getElement()?.control?.disabled
+    console.log(context)
+    return false
+    // if (this.draw.isDesignMode() || !this.activeControl) return false
+    // const { startIndex, endIndex } = context.range || this.range.getRange()
+    // if (startIndex === endIndex && ~startIndex && ~endIndex) {
+    //   const elementList = context.elementList || this.getElementList()
+    //   const startElement = elementList[startIndex]
+    //   if (startElement.controlComponent === ControlComponent.POSTFIX) {
+    //     return false
+    //   }
+    // }
+    // return !!this.activeControl.getElement()?.control?.disabled
   }
 
-  public getContainer(): HTMLDivElement {
-    return this.draw.getContainer()
-  }
+  // public getContainer(): HTMLDivElement {
+  //   return this.draw.getContainer()
+  // }
 
   public getElementList(): IElement[] {
     return this.draw.getElementList()
   }
 
-  public getPosition(): IElementPosition | null {
-    const positionList = this.draw.getPosition().getPositionList()
-    const { endIndex } = this.range.getRange()
-    return positionList[endIndex] || null
-  }
+  // public getPosition(): IElementPosition | null {
+  //   const positionList = this.draw.getPosition().getPositionList()
+  //   const { endIndex } = this.range.getRange()
+  //   return positionList[endIndex] || null
+  // }
 
-  public getPreY(): number {
-    const height = this.draw.getHeight()
-    const pageGap = this.draw.getPageGap()
-    const pageNo = this.getPosition()?.pageNo ?? this.draw.getPageNo()
-    return pageNo * (height + pageGap)
-  }
+  // public getPreY(): number {
+  //   const height = this.draw.getHeight()
+  //   const pageGap = this.draw.getPageGap()
+  //   const pageNo = this.getPosition()?.pageNo ?? this.draw.getPageNo()
+  //   return pageNo * (height + pageGap)
+  // }
 
-  public getRange(): IRange {
-    return this.range.getRange()
-  }
+  // public getRange(): IRange {
+  //   return this.range.getRange()
+  // }
 
-  public shrinkBoundary(context: IControlContext = {}) {
-    this.range.shrinkBoundary(context)
-  }
+  // public shrinkBoundary(context: IControlContext = {}) {
+  //   this.range.shrinkBoundary(context)
+  // }
 
   public getActiveControl(): IControlInstance | null {
     return this.activeControl
   }
 
   public initControl() {
-    const isReadonly = this.draw.isReadonly()
-    if (isReadonly) return
-    const elementList = this.getElementList()
-    const range = this.getRange()
-    const element = elementList[range.startIndex]
+    // const isReadonly = this.draw.isReadonly()
+    // if (isReadonly) return
+    // const elementList = this.getElementList()
+    // const range = this.getRange()
+    // const element = elementList[range.startIndex]
     // 判断控件是否已经激活
     if (this.activeControl) {
-      // 弹窗类控件唤醒弹窗，后缀处移除弹窗
-      if (
-        this.activeControl instanceof SelectControl ||
-        this.activeControl instanceof DateControl
-      ) {
-        if (element.controlComponent === ControlComponent.POSTFIX) {
-          this.activeControl.destroy()
-        } else {
-          this.activeControl.awake()
-        }
-      }
-      const controlElement = this.activeControl.getElement()
-      if (element.controlId === controlElement.controlId) return
+      // // 弹窗类控件唤醒弹窗，后缀处移除弹窗
+      // if (
+      //   this.activeControl instanceof SelectControl ||
+      //   this.activeControl instanceof DateControl
+      // ) {
+      //   if (element.controlComponent === ControlComponent.POSTFIX) {
+      //     this.activeControl.destroy()
+      //   } else {
+      //     this.activeControl.awake()
+      //   }
+      // }
+      // const controlElement = this.activeControl.getElement()
+      // if (element.controlId === controlElement.controlId) return
     }
     // 销毁旧激活控件
     this.destroyControl()
-    // 激活控件
-    const control = element.control!
-    if (control.type === ControlType.TEXT) {
-      this.activeControl = new TextControl(element, this)
-    } else if (control.type === ControlType.SELECT) {
-      const selectControl = new SelectControl(element, this)
-      this.activeControl = selectControl
-      selectControl.awake()
-    } else if (control.type === ControlType.CHECKBOX) {
-      this.activeControl = new CheckboxControl(element, this)
-    } else if (control.type === ControlType.RADIO) {
-      this.activeControl = new RadioControl(element, this)
-    } else if (control.type === ControlType.DATE) {
-      const dateControl = new DateControl(element, this)
-      this.activeControl = dateControl
-      dateControl.awake()
-    }
+    // // 激活控件
+    // const control = element.control!
+    // if (control.type === ControlType.TEXT) {
+    //   this.activeControl = new TextControl(element, this)
+    // } else if (control.type === ControlType.SELECT) {
+    //   const selectControl = new SelectControl(element, this)
+    //   this.activeControl = selectControl
+    //   selectControl.awake()
+    // } else if (control.type === ControlType.CHECKBOX) {
+    //   this.activeControl = new CheckboxControl(element, this)
+    // } else if (control.type === ControlType.RADIO) {
+    //   this.activeControl = new RadioControl(element, this)
+    // } else if (control.type === ControlType.DATE) {
+    //   const dateControl = new DateControl(element, this)
+    //   this.activeControl = dateControl
+    //   dateControl.awake()
+    // }
     // 激活控件回调
     nextTick(() => {
-      const controlChangeListener = this.listener.controlChange
-      const isSubscribeControlChange =
-        this.eventBus.isSubscribe('controlChange')
-      if (!controlChangeListener && !isSubscribeControlChange) return
-      let payload: IControl
-      const value = this.activeControl?.getValue()
-      if (value && value.length) {
-        payload = zipElementList(value)[0].control!
-      } else {
-        payload = pickElementAttr(deepClone(element)).control!
-      }
-      if (controlChangeListener) {
-        controlChangeListener(payload)
-      }
-      if (isSubscribeControlChange) {
-        this.eventBus.emit('controlChange', payload)
-      }
+      // const controlChangeListener = this.listener.controlChange
+      // const isSubscribeControlChange =
+      //   this.eventBus.isSubscribe('controlChange')
+      // if (!controlChangeListener && !isSubscribeControlChange) return
+      // let payload: IControl
+      // const value = this.activeControl?.getValue()
+      // if (value && value.length) {
+      //   payload = zipElementList(value)[0].control!
+      // } else {
+      //   payload = pickElementAttr(deepClone(element)).control!
+      // }
+      // if (controlChangeListener) {
+      //   controlChangeListener(payload)
+      // }
+      // if (isSubscribeControlChange) {
+      //   this.eventBus.emit('controlChange', payload)
+      // }
     })
   }
 
   public destroyControl() {
     if (this.activeControl) {
-      if (
-        this.activeControl instanceof SelectControl ||
-        this.activeControl instanceof DateControl
-      ) {
-        this.activeControl.destroy()
-      }
+      // if (
+      //   this.activeControl instanceof SelectControl ||
+      //   this.activeControl instanceof DateControl
+      // ) {
+      //   this.activeControl.destroy()
+      // }
       this.activeControl = null
       // 销毁控件回调
       nextTick(() => {
-        const controlChangeListener = this.listener.controlChange
-        const isSubscribeControlChange =
-          this.eventBus.isSubscribe('controlChange')
-        if (!controlChangeListener && !isSubscribeControlChange) return
-        if (controlChangeListener) {
-          controlChangeListener(null)
-        }
-        if (isSubscribeControlChange) {
-          this.eventBus.emit('controlChange', null)
-        }
+        // const controlChangeListener = this.listener.controlChange
+        // const isSubscribeControlChange =
+        //   this.eventBus.isSubscribe('controlChange')
+        // if (!controlChangeListener && !isSubscribeControlChange) return
+        // if (controlChangeListener) {
+        //   controlChangeListener(null)
+        // }
+        // if (isSubscribeControlChange) {
+        //   this.eventBus.emit('controlChange', null)
+        // }
       })
     }
   }
@@ -346,43 +370,43 @@ export class Control {
   public repaintControl(options: IRepaintControlOption = {}) {
     const {
       curIndex,
-      isCompute = true,
-      isSubmitHistory = true,
-      isSetCursor = true
+      // isCompute = true,
+      // isSubmitHistory = true,
+      // isSetCursor = true
     } = options
     // 重新渲染
     if (curIndex === undefined) {
-      this.range.clearRange()
-      this.draw.render({
-        isCompute,
-        isSubmitHistory,
-        isSetCursor: false
-      })
+      // this.range.clearRange()
+      // this.draw.render({
+      //   isCompute,
+      //   isSubmitHistory,
+      //   isSetCursor: false
+      // })
     } else {
-      this.range.setRange(curIndex, curIndex)
-      this.draw.render({
-        curIndex,
-        isCompute,
-        isSetCursor,
-        isSubmitHistory
-      })
+      // this.range.setRange(curIndex, curIndex)
+      // this.draw.render({
+      //   curIndex,
+      //   isCompute,
+      //   isSetCursor,
+      //   isSubmitHistory
+      // })
     }
   }
 
   public reAwakeControl() {
-    if (!this.activeControl) return
-    const elementList = this.getElementList()
-    const range = this.getRange()
-    const element = elementList[range.startIndex]
-    this.activeControl.setElement(element)
-    if (
-      (this.activeControl instanceof DateControl ||
-        this.activeControl instanceof SelectControl) &&
-      this.activeControl.getIsPopup()
-    ) {
-      this.activeControl.destroy()
-      this.activeControl.awake()
-    }
+    // if (!this.activeControl) return
+    // const elementList = this.getElementList()
+    // const range = this.getRange()
+    // const element = elementList[range.startIndex]
+    // this.activeControl.setElement(element)
+    // if (
+    //   (this.activeControl instanceof DateControl ||
+    //     this.activeControl instanceof SelectControl) &&
+    //   this.activeControl.getIsPopup()
+    // ) {
+    //   this.activeControl.destroy()
+    //   this.activeControl.awake()
+    // }
   }
 
   public moveCursor(position: IControlInitOption): IMoveCursorResult {
@@ -460,11 +484,11 @@ export class Control {
   ): number | null {
     const elementList = context.elementList || this.getElementList()
     const startElement = elementList[startIndex]
-    // 设计模式不验证删除权限
-    if (!this.draw.isDesignMode()) {
-      const { deletable = true } = startElement.control!
-      if (!deletable) return null
-    }
+    // // 设计模式不验证删除权限
+    // if (!this.draw.isDesignMode()) {
+    //   const { deletable = true } = startElement.control!
+    //   if (!deletable) return null
+    // }
     let leftIndex = -1
     let rightIndex = -1
     // 向左查找
@@ -519,8 +543,8 @@ export class Control {
           // 删除占位符时替换前一个历史记录
           if (!isHasSubmitHistory) {
             isHasSubmitHistory = true
-            this.draw.getHistoryManager().popUndo()
-            this.draw.submitHistory(startIndex)
+            // this.draw.getHistoryManager().popUndo()
+            // this.draw.submitHistory(startIndex)
           }
           elementList.splice(index, 1)
         } else {
@@ -715,61 +739,61 @@ export class Control {
           if (nextElement.controlId !== element.controlId) break
           currentEndIndex++
         }
-        // 模拟光标选区上下文
-        const fakeRange = {
-          startIndex: i - 1,
-          endIndex: currentEndIndex - 2
-        }
-        const controlContext: IControlContext = {
-          range: fakeRange,
-          elementList
-        }
-        const controlRule: IControlRuleOption = {
-          isIgnoreDisabledRule: true
-        }
+        // // 模拟光标选区上下文
+        // const fakeRange = {
+        //   startIndex: i - 1,
+        //   endIndex: currentEndIndex - 2
+        // }
+        // const controlContext: IControlContext = {
+        //   range: fakeRange,
+        //   elementList
+        // }
+        // const controlRule: IControlRuleOption = {
+        //   isIgnoreDisabledRule: true
+        // }
         if (type === ControlType.TEXT) {
           const formatValue = Array.isArray(value) ? value : [{ value }]
           formatElementList(formatValue, {
             isHandleFirstElement: false,
             editorOptions: this.options
           })
-          const text = new TextControl(element, this)
-          this.activeControl = text
-          if (value) {
-            text.setValue(formatValue, controlContext, controlRule)
-          } else {
-            text.clearValue(controlContext, controlRule)
-          }
+          // const text = new TextControl(element, this)
+          // this.activeControl = text
+          // if (value) {
+          //   text.setValue(formatValue, controlContext, controlRule)
+          // } else {
+          //   text.clearValue(controlContext, controlRule)
+          // }
         } else if (type === ControlType.SELECT) {
           if (Array.isArray(value)) continue
-          const select = new SelectControl(element, this)
-          this.activeControl = select
-          if (value) {
-            select.setSelect(value, controlContext, controlRule)
-          } else {
-            select.clearSelect(controlContext, controlRule)
-          }
+          // const select = new SelectControl(element, this)
+          // this.activeControl = select
+          // if (value) {
+          //   select.setSelect(value, controlContext, controlRule)
+          // } else {
+          //   select.clearSelect(controlContext, controlRule)
+          // }
         } else if (type === ControlType.CHECKBOX) {
           if (Array.isArray(value)) continue
-          const checkbox = new CheckboxControl(element, this)
-          this.activeControl = checkbox
-          const codes = value ? value.split(',') : []
-          checkbox.setSelect(codes, controlContext, controlRule)
+          // const checkbox = new CheckboxControl(element, this)
+          // this.activeControl = checkbox
+          // const codes = value ? value.split(',') : []
+          // checkbox.setSelect(codes, controlContext, controlRule)
         } else if (type === ControlType.RADIO) {
           if (Array.isArray(value)) continue
-          const radio = new RadioControl(element, this)
-          this.activeControl = radio
-          const codes = value ? [value] : []
-          radio.setSelect(codes, controlContext, controlRule)
+          // const radio = new RadioControl(element, this)
+          // this.activeControl = radio
+          // const codes = value ? [value] : []
+          // radio.setSelect(codes, controlContext, controlRule)
         } else if (type === ControlType.DATE) {
           if (Array.isArray(value)) continue
-          const date = new DateControl(element, this)
-          this.activeControl = date
-          if (value) {
-            date.setSelect(value, controlContext, controlRule)
-          } else {
-            date.clearSelect(controlContext, controlRule)
-          }
+          // const date = new DateControl(element, this)
+          // this.activeControl = date
+          // if (value) {
+          //   date.setSelect(value, controlContext, controlRule)
+          // } else {
+          //   date.clearSelect(controlContext, controlRule)
+          // }
         }
         // 模拟控件激活后销毁
         this.activeControl = null
@@ -963,13 +987,13 @@ export class Control {
     })
   }
 
-  public recordBorderInfo(x: number, y: number, width: number, height: number) {
-    this.controlBorder.recordBorderInfo(x, y, width, height)
-  }
+  // public recordBorderInfo(x: number, y: number, width: number, height: number) {
+  //   this.controlBorder.recordBorderInfo(x, y, width, height)
+  // }
 
-  public drawBorder(ctx2d: Context2d) {
-    this.controlBorder.render(ctx2d)
-  }
+  // public drawBorder(ctx2d: Context2d) {
+  //   this.controlBorder.render(ctx2d)
+  // }
 
   public getPreControlContext(): INextControlContext | null {
     if (!this.activeControl) return null
@@ -1037,18 +1061,18 @@ export class Control {
       }
       return null
     }
-    // 当前上下文控件信息
-    const { startIndex } = this.range.getRange()
-    const elementList = this.getElementList()
-    const context = getPreContext(elementList, startIndex)
-    if (context) {
-      return {
-        positionContext: positionContext.isTable
-          ? positionContext
-          : context.positionContext,
-        nextIndex: context.nextIndex
-      }
-    }
+    // // 当前上下文控件信息
+    // const { startIndex } = this.range.getRange()
+    // const elementList = this.getElementList()
+    // const context = getPreContext(elementList, startIndex)
+    // if (context) {
+    //   return {
+    //     positionContext: positionContext.isTable
+    //       ? positionContext
+    //       : context.positionContext,
+    //     nextIndex: context.nextIndex
+    //   }
+    // }
     // 控件在单元内时继续循环
     if (controlElement.tableId) {
       const originalElementList = this.draw.getOriginalElementList()
@@ -1145,18 +1169,18 @@ export class Control {
       }
       return null
     }
-    // 当前上下文控件信息
-    const { endIndex } = this.range.getRange()
-    const elementList = this.getElementList()
-    const context = getNextContext(elementList, endIndex)
-    if (context) {
-      return {
-        positionContext: positionContext.isTable
-          ? positionContext
-          : context.positionContext,
-        nextIndex: context.nextIndex
-      }
-    }
+    // // 当前上下文控件信息
+    // const { endIndex } = this.range.getRange()
+    // const elementList = this.getElementList()
+    // const context = getNextContext(elementList, endIndex)
+    // if (context) {
+    //   return {
+    //     positionContext: positionContext.isTable
+    //       ? positionContext
+    //       : context.positionContext,
+    //     nextIndex: context.nextIndex
+    //   }
+    // }
     // 控件在单元内时继续循环
     if (controlElement.tableId) {
       const originalElementList = this.draw.getOriginalElementList()
@@ -1208,14 +1232,14 @@ export class Control {
       context = this.getNextControlContext()
     }
     if (!context) return
-    const { nextIndex, positionContext } = context
-    const position = this.draw.getPosition()
-    // 设置上下文
-    position.setPositionContext(positionContext)
-    this.draw.getRange().replaceRange({
-      startIndex: nextIndex,
-      endIndex: nextIndex
-    })
+    const { nextIndex } = context
+    // const position = this.draw.getPosition()
+    // // 设置上下文
+    // position.setPositionContext(positionContext)
+    // this.draw.getRange().replaceRange({
+    //   startIndex: nextIndex,
+    //   endIndex: nextIndex
+    // })
     // 重新渲染并定位
     this.draw.render({
       curIndex: nextIndex,
@@ -1223,10 +1247,10 @@ export class Control {
       isSetCursor: true,
       isSubmitHistory: false
     })
-    const positionList = position.getPositionList()
-    this.draw.getCursor().moveCursorToVisible({
-      cursorPosition: positionList[nextIndex],
-      direction
-    })
+    // const positionList = position.getPositionList()
+    // this.draw.getCursor().moveCursorToVisible({
+    //   cursorPosition: positionList[nextIndex],
+    //   direction
+    // })
   }
 }

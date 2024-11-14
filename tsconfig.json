@@ -12,18 +12,19 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "declaration": true,
-    "noEmit": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "outDir": "dist",
-    "rootDir": "",
+    "outDir": "./dist",
+    "rootDir": "./src" // Define a raiz como a pasta src
   },
   "include": [
+    "index.ts",
     "./src/"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "public"
   ]
 }

@@ -1,4 +1,4 @@
-import { Position } from '@hufe921/canvas-editor/dist/src/editor/core/position/Position'
+// import { Position } from '@hufe921/canvas-editor/dist/src/editor/core/position/Position'
 import { ZERO } from '../../../dataset/constant/Common'
 import { TEXTLIKE_ELEMENT_TYPE } from '../../../dataset/constant/Element'
 import { ControlComponent } from '../../../dataset/enum/Control'
@@ -8,7 +8,9 @@ import { IEditorOption } from '../../../interface/Editor'
 import { IElement, IElementPosition } from '../../../interface/Element'
 import { ISearchResult, ISearchResultRestArgs } from '../../../interface/Search'
 import { getUUID } from '../../../utils'
-import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
+import { DrawPdf } from '../DrawPdf'
+// import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
+// import { Position } from '../../position/Position'
 
 export interface INavigateInfo {
   index: number
@@ -16,17 +18,17 @@ export interface INavigateInfo {
 }
 
 export class Search {
-  private draw: Draw
+  private draw: DrawPdf
   private options: Required<IEditorOption>
-  private position: Position
+  // private position: Position
   private searchKeyword: string | null
   private searchNavigateIndex: number | null
   private searchMatchList: ISearchResult[]
 
-  constructor(draw: Draw) {
+  constructor(draw: DrawPdf) {
     this.draw = draw
     this.options = draw.getOptions()
-    this.position = draw.getPosition()
+    // this.position = draw.getPosition()
     this.searchNavigateIndex = null
     this.searchKeyword = null
     this.searchMatchList = []
@@ -111,12 +113,11 @@ export class Search {
     // 扩大搜索词尺寸，使可视范围更广
     const ANCHOR_OVERFLOW_SIZE = 50
     anchor.style.width = `${rightTop[0] - leftTop[0] + ANCHOR_OVERFLOW_SIZE}px`
-    anchor.style.height = `${
-      leftBottom[1] - leftTop[1] + ANCHOR_OVERFLOW_SIZE
-    }px`
+    anchor.style.height = `${leftBottom[1] - leftTop[1] + ANCHOR_OVERFLOW_SIZE
+      }px`
     anchor.style.left = `${leftTop[0]}px`
     anchor.style.top = `${leftTop[1] + preY}px`
-    this.draw.getContainer().append(anchor)
+    // this.draw.getContainer().append(anchor)
     // 移动到可视范围
     anchor.scrollIntoView(false)
     anchor.remove()
@@ -210,8 +211,8 @@ export class Search {
       const text = elementList
         .map(e =>
           !e.type ||
-          (TEXTLIKE_ELEMENT_TYPE.includes(e.type) &&
-            e.controlComponent !== ControlComponent.CHECKBOX)
+            (TEXTLIKE_ELEMENT_TYPE.includes(e.type) &&
+              e.controlComponent !== ControlComponent.CHECKBOX)
             ? e.value
             : ZERO
         )
@@ -282,7 +283,7 @@ export class Search {
     }
     const { searchMatchAlpha, searchMatchColor, searchNavigateMatchColor } =
       this.options
-    const positionList = this.position.getOriginalPositionList()
+    // const positionList = this.position.getOriginalPositionList()
     const elementList = this.draw.getOriginalElementList()
     ctx.save()
     ctx.globalAlpha = searchMatchAlpha
@@ -295,7 +296,7 @@ export class Search {
           elementList[tableIndex!]?.trList![trIndex!].tdList[tdIndex!]
             ?.positionList![index]
       } else {
-        position = positionList[searchMatch.index]
+        // position = positionList[searchMatch.index]
       }
       if (!position) continue
       const {

@@ -1,4 +1,5 @@
-import { Command } from '../../core/command/Command'
+// import { Command } from '../../core/command/Command'
+import { Command } from '@hufe921/canvas-editor'
 import { EditorZone } from '../../dataset/enum/Editor'
 import { DeepRequired } from '../Common'
 import { IEditorOption } from '../Editor'

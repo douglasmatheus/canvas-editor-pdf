@@ -1,7 +1,7 @@
-import { IElement } from '@hufe921/canvas-editor'
+// import { IElement } from '@hufe921/canvas-editor'
 import { ImageDisplay } from '../dataset/enum/Common'
 import { EditorMode, EditorZone } from '../dataset/enum/Editor'
-import { IElementPosition } from './Element'
+import { IElement, IElementPosition } from './Element'
 import { IRow } from './Row'
 
 export interface IDrawOption {

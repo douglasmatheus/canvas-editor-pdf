@@ -1,4 +1,4 @@
-import { ElementType, ListStyle, RowFlex, VerticalAlign } from '@hufe921/canvas-editor'
+// import { ElementType, ListStyle, RowFlex, VerticalAlign } from '@hufe921/canvas-editor'
 import { ZERO } from '../../dataset/constant/Common'
 import { ControlComponent } from '../../dataset/enum/Control'
 import {
@@ -24,6 +24,10 @@ import { DeepRequired } from '../../interface/Common'
 // import { EventBus } from '../event/eventbus/EventBus'
 // import { EventBusMap } from '../../interface/EventBus'
 import { getIsBlockElement } from '../../utils/element'
+import { RowFlex } from '../../dataset/enum/Row'
+import { ElementType } from '../../dataset/enum/Element'
+import { VerticalAlign } from '../../dataset/enum/VerticalAlign'
+import { ListStyle } from '../../dataset/enum/List'
 
 export class Position {
   private cursorPosition: IElementPosition | null

@@ -1,10 +1,11 @@
-import { IElement } from '@hufe921/canvas-editor'
+// import { IElement } from '@hufe921/canvas-editor'
 import { EDITOR_PREFIX } from '../../../../dataset/constant/Editor'
 import { TableOrder } from '../../../../dataset/enum/table/TableTool'
 import { DeepRequired } from '../../../../interface/Common'
 import { IEditorOption } from '../../../../interface/Editor'
 import { DrawPdf } from '../../DrawPdf'
 import { Position } from '../../../position/Position'
+import { IElement } from '../../../../interface/Element'
 
 interface IAnchorMouseDown {
   evt: MouseEvent

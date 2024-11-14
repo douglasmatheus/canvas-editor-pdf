@@ -1,6 +1,8 @@
-import { IEditorOption, IElement } from '@hufe921/canvas-editor'
+// import { IEditorOption, IElement } from '@hufe921/canvas-editor'
 import { EDITOR_CLIPBOARD } from '../dataset/constant/Editor'
 import { DeepRequired } from '../interface/Common'
+import { IEditorOption } from '../interface/Editor'
+import { IElement } from '../interface/Element'
 import { createDomFromElementList, zipElementList } from './element'
 
 export interface IClipboardData {

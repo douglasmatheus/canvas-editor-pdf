@@ -1,8 +1,8 @@
 import { Context2d } from 'jspdf'
-import { IElement } from '@hufe921/canvas-editor'
+// import { IElement } from '@hufe921/canvas-editor'
 import { EDITOR_PREFIX } from '../../../dataset/constant/Editor'
 import { IEditorOption } from '../../../interface/Editor'
-import { IElementPosition } from '../../../interface/Element'
+import { IElement, IElementPosition } from '../../../interface/Element'
 import { IRowElement } from '../../../interface/Row'
 import { DrawPdf } from '../DrawPdf'
 

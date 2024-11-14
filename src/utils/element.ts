@@ -8,17 +8,17 @@ import {
   pickObject,
   splitText
 } from '.'
-import {
-  EditorMode,
-  ElementType,
-  IElement,
-  ImageDisplay,
-  ListStyle,
-  ListType,
-  RowFlex,
-  TableBorder,
-  TdBorder
-} from '@hufe921/canvas-editor'
+// import {
+//   EditorMode,
+//   ElementType,
+//   IElement,
+//   ImageDisplay,
+//   ListStyle,
+//   ListType,
+//   RowFlex,
+//   TableBorder,
+//   TdBorder
+// } from '@hufe921/canvas-editor'
 import { LaTexParticle } from '../core/draw/particle/latex/LaTexParticle'
 import { NON_BREAKING_SPACE, ZERO } from '../dataset/constant/Common'
 import {
@@ -45,7 +45,7 @@ import {
   titleSizeMapping
 } from '../dataset/constant/Title'
 import { ControlComponent, ControlType } from '../dataset/enum/Control'
-import { UlStyle } from '../dataset/enum/List'
+import { ListStyle, ListType, UlStyle } from '../dataset/enum/List'
 import { DeepRequired } from '../interface/Common'
 import { IControlSelect } from '../interface/Control'
 import { IRowElement } from '../interface/Row'
@@ -53,6 +53,12 @@ import { ITd } from '../interface/table/Td'
 import { ITr } from '../interface/table/Tr'
 import { IEditorOption } from '../interface/Editor'
 import { svgString2Image } from '..'
+import { IElement } from '../interface/Element'
+import { ElementType } from '../dataset/enum/Element'
+import { RowFlex } from '../dataset/enum/Row'
+import { EditorMode } from '../dataset/enum/Editor'
+import { TableBorder, TdBorder } from '../dataset/enum/table/Table'
+import { ImageDisplay } from '../dataset/enum/Common'
 // import { mergeOption } from './option'
 
 export function unzipElementList(elementList: IElement[]): IElement[] {

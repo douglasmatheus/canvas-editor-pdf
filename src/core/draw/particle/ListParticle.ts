@@ -6,12 +6,12 @@ import { KeyMap } from '../../../dataset/enum/KeyMap'
 import { ListStyle, ListType, UlStyle } from '../../../dataset/enum/List'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
-import { IElementPosition } from '../../../interface/Element'
+import { IElement, IElementPosition } from '../../../interface/Element'
 import { IRow, IRowElement } from '../../../interface/Row'
 // import { getUUID } from '../../../utils'
 // import { RangeManager } from '../../range/RangeManager'
 import { DrawPdf } from '../DrawPdf'
-import { IElement } from '@hufe921/canvas-editor'
+// import { IElement } from '@hufe921/canvas-editor'
 
 export class ListParticle {
   private draw: DrawPdf

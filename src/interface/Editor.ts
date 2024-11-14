@@ -1,4 +1,4 @@
-import { IElement, LocationPosition } from '@hufe921/canvas-editor'
+// import { IElement, LocationPosition } from '@hufe921/canvas-editor'
 import {
   EditorMode,
   PageMode,
@@ -26,6 +26,8 @@ import { ISeparatorOption } from './Separator'
 import { ITableOption } from './table/Table'
 import { ILineNumberOption } from './LineNumber'
 import { IPageBorderOption } from './PageBorder'
+import { IElement } from './Element'
+import { LocationPosition } from '../dataset/enum/Common'
 
 export interface IEditorData {
   header?: IElement[]
