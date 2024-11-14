@@ -890,7 +890,7 @@ export class DrawPdf {
     const width = this.getWidth()
     const height = this.getHeight()
     // // 调整分辨率
-    const dpr = this.getPagePixelRatio()
+    const dpr = 1//this.getPagePixelRatio()
 
     const orientation = this.getOptions().paperDirection === PaperDirection.VERTICAL ? 'p' : 'l'
     this.ctxListInfos.push({
