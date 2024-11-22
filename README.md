@@ -20,7 +20,7 @@ Import the class from pdf:
 First you create the library instance:
 ```javascript
   const instancePdf = new DrawPdf(
-    JSON.parse(JSON.stringify(instance.command.getValue().data)), // make a copy of the editor settings and avoid type conflicts
+    JSON.parse(JSON.stringify(instance.command.getValue().options)), // make a copy of the editor settings and avoid type conflicts
     instance.command.getValue().data
   )
 ```
