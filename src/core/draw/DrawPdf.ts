@@ -138,6 +138,7 @@ export class DrawPdf {
   private WORD_LIKE_REG: RegExp
   private rowList: IRow[]
   private pageRowList: IRow[][]
+  private printModeData: Required<IEditorData> | null
 
   constructor(
     options: DeepRequired<IEditorOption>,
@@ -176,6 +177,13 @@ export class DrawPdf {
         editorOptions: this.getOptions(),
         isForceCompensation: true
       })
+    })
+    pageComponentData.forEach(datas => {
+      if (datas) {
+        datas = this.filterAssistElement(
+          datas
+        )
+      }
     })
     this.elementList = data.main
 
@@ -236,6 +244,7 @@ export class DrawPdf {
     )
     this.rowList = []
     this.pageRowList = []
+    this.printModeData = null
   }
 
   // public getDraw(): Draw {
@@ -308,6 +317,64 @@ export class DrawPdf {
 
   public getMode(): EditorMode {
     return this.mode
+  }
+
+  public filterAssistElement(elementList: IElement[]): IElement[] {
+    return elementList.filter(element => {
+      if (element.type === ElementType.TABLE) {
+        const trList = element.trList!
+        for (let r = 0; r < trList.length; r++) {
+          const tr = trList[r]
+          for (let d = 0; d < tr.tdList.length; d++) {
+            const td = tr.tdList[d]
+            td.value = this.filterAssistElement(td.value)
+          }
+        }
+      }
+      if (!element.controlId) return true
+      // if (element.control?.minWidth) {
+      if (
+        element.controlComponent === ControlComponent.PREFIX ||
+        element.controlComponent === ControlComponent.POSTFIX ||
+        element.controlComponent === ControlComponent.PLACEHOLDER
+      ) {
+        element.value = ''
+        return true
+      }
+      // }
+      return true
+      // return (
+      //   element.controlComponent !== ControlComponent.PREFIX &&
+      //   element.controlComponent !== ControlComponent.POSTFIX &&
+      //   element.controlComponent !== ControlComponent.PLACEHOLDER
+      // )
+    })
+  }
+
+  public setMode(payload: EditorMode) {
+    // if (this.mode === payload) return
+    if (payload === EditorMode.PRINT) {
+      this.printModeData = {
+        header: this.header.getElementList(),
+        main: this.elementList,
+        footer: this.footer.getElementList()
+      }
+      const clonePrintModeData = deepClone(this.printModeData)
+      const editorDataKeys: (keyof IEditorData)[] = ['header', 'main', 'footer']
+      editorDataKeys.forEach(key => {
+        clonePrintModeData[key] = this.filterAssistElement(
+          clonePrintModeData[key]
+        )
+      })
+      // this.setEditorData(clonePrintModeData)
+    }
+    // if (this.mode === EditorMode.PRINT && this.printModeData) {
+    //   this.setEditorData(this.printModeData)
+    //   this.printModeData = null
+    // }
+    this.clearSideEffect()
+    this.mode = payload
+    this.options.mode = payload
   }
 
   public getOriginalWidth(): number {
@@ -709,6 +776,13 @@ export class DrawPdf {
         isForceCompensation: true
       })
     }
+    pageComponentData.forEach(datas => {
+      if (datas) {
+        datas = this.filterAssistElement(
+          datas
+        )
+      }
+    })
     this.setEditorData({
       header,
       main,
@@ -2231,7 +2305,9 @@ export class DrawPdf {
       this.pageList
         .splice(curPageCount, deleteCount)
         .forEach((page, index) => {
-          page.remove()
+          if (page.remove) {
+            page.remove()
+          }
           this.getPdf().deletePage(index + 1)
         })
     }
@@ -2258,5 +2334,12 @@ export class DrawPdf {
 
   public destroy() {
     // this.container.remove()
+  }
+
+  public clearSideEffect() {
+    // this.getTableTool().dispose()
+    this.getHyperlinkParticle().clearHyperlinkPopup()
+    // æ¥ææ§ä»¶
+    this.getDateParticle().clearDatePicker()
   }
 }
