@@ -36,7 +36,7 @@ import { Header } from './frame/Header'
 import { SuperscriptParticle } from './particle/Superscript'
 import { SubscriptParticle } from './particle/Subscript'
 import { SeparatorParticle } from './particle/Separator'
-import { PageBreakParticle } from './particle/PageBreak'
+// import { PageBreakParticle } from './particle/PageBreak'
 import { Watermark } from './frame/Watermark'
 import {
   // EditorComponent,
@@ -122,7 +122,7 @@ export class DrawPdf {
   private hyperlinkParticle: HyperlinkParticle
   private dateParticle: DateParticle
   private separatorParticle: SeparatorParticle
-  private pageBreakParticle: PageBreakParticle
+  // private pageBreakParticle: PageBreakParticle
   private superscriptParticle: SuperscriptParticle
   private subscriptParticle: SubscriptParticle
   private checkboxParticle: CheckboxParticle
@@ -224,7 +224,7 @@ export class DrawPdf {
     this.hyperlinkParticle = new HyperlinkParticle(this)
     this.dateParticle = new DateParticle(this)
     this.separatorParticle = new SeparatorParticle(this)
-    this.pageBreakParticle = new PageBreakParticle(this)
+    // this.pageBreakParticle = new PageBreakParticle(this)
     this.superscriptParticle = new SuperscriptParticle()
     this.subscriptParticle = new SubscriptParticle()
     this.checkboxParticle = new CheckboxParticle(this)
@@ -1834,9 +1834,9 @@ export class DrawPdf {
         } else if (element.type === ElementType.SEPARATOR) {
           this.separatorParticle.render(this.getCtx2d(), element, x, y)
         } else if (element.type === ElementType.PAGE_BREAK) {
-          if (this.mode !== EditorMode.CLEAN && !isPrintMode) {
-            this.pageBreakParticle.render(this.getCtx2d(), element, x, y)
-          }
+          // if (this.mode !== EditorMode.CLEAN && !isPrintMode) {
+          //   this.pageBreakParticle.render(this.getCtx2d(), element, x, y)
+          // }
         } else if (
           element.type === ElementType.CHECKBOX ||
           element.controlComponent === ControlComponent.CHECKBOX
