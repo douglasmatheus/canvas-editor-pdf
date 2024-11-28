@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -45,12 +45,7 @@
     "lint": "eslint .",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "type:check": "",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "postinstall": "simple-git-hooks",
-    "release": "node scripts/release.js"
+    "type:check": ""
   },
   "peerDependencies": {
     "@hufe921/canvas-editor": "^0.9.94"
@@ -64,7 +59,6 @@
     "cypress": "13.6.0",
     "cypress-file-upload": "^5.0.8",
     "eslint": "^7.32.0",
-    "simple-git-hooks": "^2.8.1",
     "typescript": "^4.9.5",
     "typescript-eslint": "^8.8.1",
     "vite": "^2.4.2",
