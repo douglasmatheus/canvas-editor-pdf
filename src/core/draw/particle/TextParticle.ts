@@ -25,6 +25,8 @@ export class TextParticle {
   private curX: number
   private curY: number
   private text: string
+  private bold?: boolean
+  private italic?: boolean
   private curStyle: string
   private curColor?: string
   public cacheMeasureText: Map<string, TextMetrics>
@@ -36,6 +38,8 @@ export class TextParticle {
     this.curX = -1
     this.curY = -1
     this.text = ''
+    this.bold = false
+    this.italic = false
     this.curStyle = ''
     this.cacheMeasureText = new Map()
   }
@@ -93,8 +97,10 @@ export class TextParticle {
     element: IElement
   ): ITextMetrics {
     // 优先使用自定义字宽设置
+    const font = this.draw.getFont(element)
+    const value = element.value === `\n` ? '' : element.value
     if (element.width) {
-      const textMetrics = this.draw.getFakeCtx().measureText(element.value)
+      const textMetrics = this.draw.measureText(font, element.value)
       // TextMetrics是类无法解构
       return {
         width: element.width,
@@ -111,8 +117,7 @@ export class TextParticle {
     if (cacheTextMetrics) {
       return cacheTextMetrics
     }
-    const font = this.draw.getFont(element)
-    const textMetrics = this.draw.measureText(font, element.value)
+    const textMetrics = this.draw.measureText(font, value)
     this.cacheMeasureText.set(id, textMetrics)
     return textMetrics
   }
@@ -135,6 +140,8 @@ export class TextParticle {
       this.text = element.value
       this.curStyle = element.style
       this.curColor = element.color
+      this.bold = element.bold
+      this.italic = element.italic
       this.complete()
       return
     }
@@ -153,6 +160,8 @@ export class TextParticle {
     this.text += element.value
     this.curStyle = element.style
     this.curColor = element.color
+    this.bold = element.bold
+    this.italic = element.italic
   }
 
   private _setCurXY(x: number, y: number) {
@@ -167,8 +176,10 @@ export class TextParticle {
       this.curStyle = this.curStyle.replace('Microsoft YaHei', 'Yahei')
     }
     this.ctx2d.font = this.curStyle
-    // console.log(this.curStyle.split('px ')[1])
-    this.draw.getPdf().setFont(this.curStyle.split('px ')[1])
+    const fontWeight = this.bold ? 'bold' : 'normal'
+    const fontItalic = this.italic ? 'italic' : ''
+    // console.log(this.curStyle.split('px ')[1], fontItalic, fontWeight)
+    this.draw.getPdf().setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
     // this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
     this.ctx2d.save()
     // console.log(this.curStyle)

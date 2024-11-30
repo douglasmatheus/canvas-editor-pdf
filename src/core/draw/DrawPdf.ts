@@ -289,9 +289,10 @@ export class DrawPdf {
 
   public async _addDefaultFont() {
     await this.downloadFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei.ttf', 'Yahei', 'normal')
+    await this.downloadFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh-bold.ttf', 'Yahei.ttf', 'Yahei', 'bold')
     await this.downloadFont('https://raw.githubusercontent.com/matomo-org/travis-scripts/refs/heads/master/fonts/Arial.ttf', 'Arial.ttf', 'Arial', 'normal')
     await this.downloadFont('https://raw.githubusercontent.com/douglasmatheus/canvas-editor-pdf/refs/heads/main/public/font/Inkfree.ttf', 'Inkfree.ttf', 'Ink Free', 'normal')
-    await this.downloadFont('https://raw.githubusercontent.com/justrajdeep/fonts/refs/heads/master/Times%20New%20Roman.ttf', 'Times New Roman.ttf', 'Times New Roman', 'normal')
+    // await this.downloadFont('https://raw.githubusercontent.com/justrajdeep/fonts/refs/heads/master/Times%20New%20Roman.ttf', 'Times New Roman.ttf', 'Times New Roman', 'normal')
     await this.downloadFont('https://raw.githubusercontent.com/shipfam/shipfam.com/refs/heads/master/fonts/segoe-ui.ttf', 'segoe-ui.ttf', 'Segoe UI', 'normal')
     return true
   }
