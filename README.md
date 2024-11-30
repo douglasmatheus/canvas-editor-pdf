@@ -33,6 +33,16 @@ When you want to export the pdf:
   instancePdf.getPdf().save(`test.pdf`) // pdf download
 ```
 
+## Fonts
+At the moment few fonts are supported, jspdf defaults: courier (normal, bold, italic), helvetica (normal, bold, italic), symbol (normal), times (roman, bold, italic)
+
+And also the Microsft Yahei (normal, bold), Arial (normal), Ink Free (normal) and Segoe UI (normal) fonts. Other fonts will be added little by little, but if necessary, you can manually add a font by passing the link to the .ttf file:
+```javascript
+  // instance.addFont(url, fileName, id, type)
+  instance.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei.ttf', 'Yahei', 'normal')
+```
+Note: it is important to set the font name exactly as given above, otherwise jspdf will not recognize it.
+
 ## Usage before version 0.1.0
 At the moment this project is for internal use in canvas-editor, and it is necessary to create a function within CommandAdapt for the editor to use it. In the future I intend to decouple it so that it can be used independently. That said, first install it:
 
