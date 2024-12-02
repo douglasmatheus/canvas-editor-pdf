@@ -42,11 +42,11 @@ At the moment few fonts are supported, jspdf defaults:
 
 And also the following fonts:
 - Microsoft Yahei (normal, bold)
-- Arial (normal, bold, itlic)
-- Calibri (normal, bold, itlic)
-- Cambria (normal, bold, itlic)
+- Arial (normal, bold, italic)
+- Calibri (normal, bold, italic)
+- Cambria (normal, bold, italic)
 - Ink Free (normal)
-- Verdana (normal, bold, itlic)
+- Verdana (normal, bold, italic)
 - Segoe UI (normal, bold italic)
 
 Other fonts will be added little by little, but if necessary, you can manually add a font by passing the link to the .ttf file:
