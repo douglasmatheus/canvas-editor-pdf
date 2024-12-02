@@ -172,10 +172,10 @@ export class TextParticle {
   private _render() {
     if (!this.text || !~this.curX || !~this.curX) return
     this.ctx2d.save()
-    if (this.curStyle.includes('Microsoft YaHei')) {
-      this.curStyle = this.curStyle.replace('Microsoft YaHei', 'Yahei')
-    }
-    this.ctx2d.font = this.curStyle
+    // if (this.curStyle.includes('Microsoft YaHei')) {
+    //   this.curStyle = this.curStyle.replace('Microsoft YaHei', 'Yahei')
+    // }
+    this.ctx2d.font = this.curStyle.toLowerCase()
     const fontWeight = this.bold ? 'bold' : 'normal'
     const fontItalic = this.italic ? 'italic' : ''
     // console.log(this.curStyle.split('px ')[1], fontItalic, fontWeight)

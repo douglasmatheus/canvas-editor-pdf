@@ -73,10 +73,10 @@ export class HyperlinkParticle {
     y: number
   ) {
     ctx2d.save()
-    ctx2d.font = element.style
-    if (ctx2d.font.includes('Microsoft YaHei')) {
-      ctx2d.font = ctx2d.font.replace('Microsoft YaHei', 'Yahei')
-    }
+    ctx2d.font = element.style.toLowerCase()
+    // if (ctx2d.font.includes('Microsoft YaHei')) {
+    //   ctx2d.font = ctx2d.font.replace('Microsoft YaHei', 'Yahei')
+    // }
     if (!element.color) {
       element.color = this.options.defaultHyperlinkColor
     }
