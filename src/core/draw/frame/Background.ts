@@ -10,12 +10,10 @@ import { DrawPdf } from '../DrawPdf'
 export class Background {
   private draw: DrawPdf
   private options: DeepRequired<IEditorOption>
-  private imageCache: Map<string, HTMLImageElement>
 
   constructor(draw: DrawPdf) {
     this.draw = draw
     this.options = draw.getOptions()
-    this.imageCache = new Map()
   }
 
   private _renderBackgroundColor(
@@ -32,20 +30,19 @@ export class Background {
 
   private _drawImage(
     ctx2d: Context2d,
-    imageElement: HTMLImageElement,
     width: number,
     height: number
   ) {
     const { background, scale } = this.options
     // contain
     if (background.size === BackgroundSize.CONTAIN) {
-      const imageWidth = imageElement.width * scale
-      const imageHeight = imageElement.height * scale
+      const imageWidth = width * scale
+      const imageHeight = height * scale
       if (
         !background.repeat ||
         background.repeat === BackgroundRepeat.NO_REPEAT
       ) {
-        ctx2d.drawImage(imageElement.src, 0, 0, imageWidth, imageHeight)
+        ctx2d.drawImage(background.image, 0, 0, imageWidth, imageHeight)
       } else {
         let startX = 0
         let startY = 0
@@ -61,7 +58,7 @@ export class Background {
             : 1
         for (let x = 0; x < repeatXCount; x++) {
           for (let y = 0; y < repeatYCount; y++) {
-            ctx2d.drawImage(imageElement.src, startX, startY, imageWidth, imageHeight)
+            ctx2d.drawImage(background.image, startX, startY, imageWidth, imageHeight)
             startY += imageHeight
           }
           startY = 0
@@ -70,7 +67,7 @@ export class Background {
       }
     } else {
       // cover
-      ctx2d.drawImage(imageElement.src, 0, 0, width * scale, height * scale)
+      ctx2d.drawImage(background.image, 0, 0, width * scale, height * scale)
     }
   }
 
@@ -79,24 +76,7 @@ export class Background {
     width: number,
     height: number
   ) {
-    const { background } = this.options
-    const imageElementCache = this.imageCache.get(background.image)
-    if (imageElementCache) {
-      this._drawImage(ctx2d, imageElementCache, width, height)
-    } else {
-      const img = new Image()
-      img.setAttribute('crossOrigin', 'Anonymous')
-      img.src = background.image
-      img.onload = () => {
-        this.imageCache.set(background.image, img)
-        this._drawImage(ctx2d, img, width, height)
-        // 避免层级上浮，触发编辑器二次渲染
-        this.draw.render({
-          isCompute: false,
-          isSubmitHistory: false
-        })
-      }
-    }
+    this._drawImage(ctx2d, width, height)
   }
 
   public render(ctx2d: Context2d, pageNo: number) {
