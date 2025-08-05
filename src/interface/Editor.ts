@@ -28,6 +28,7 @@ import { ILineNumberOption } from './LineNumber'
 import { IPageBorderOption } from './PageBorder'
 import { IElement } from './Element'
 import { LocationPosition } from '../dataset/enum/Common'
+import { IBadgeOption } from './Badge'
 
 export interface IEditorData {
   header?: IElement[]
@@ -37,6 +38,7 @@ export interface IEditorData {
 
 export interface IEditorOption {
   mode?: EditorMode
+  locale?: string
   defaultType?: string
   defaultColor?: string
   defaultFont?: string
@@ -59,6 +61,7 @@ export interface IEditorOption {
   searchNavigateMatchColor?: string
   searchMatchAlpha?: number
   highlightAlpha?: number
+  highlightMarginHeight?: number
   resizerColor?: string
   resizerSize?: number
   marginIndicatorSize?: number
@@ -74,7 +77,9 @@ export interface IEditorOption {
   maskMargin?: IMargin
   letterClass?: string[]
   contextMenuDisableKeys?: string[]
+  shortcutDisableKeys?: string[]
   scrollContainerSelector?: string
+  pageOuterSelectionDisable?: boolean
   wordBreak?: WordBreak
   table?: ITableOption
   header?: IHeader
@@ -95,6 +100,8 @@ export interface IEditorOption {
   separator?: ISeparatorOption
   lineNumber?: ILineNumberOption
   pageBorder?: IPageBorderOption
+  badge?: IBadgeOption
+  modeRule?: IModeRule
 }
 
 export interface IEditorResult {
@@ -129,5 +136,26 @@ export interface ISetValueOption {
 }
 
 export interface IFocusOption {
+  rowNo?: number
+  // range?: IRange
   position?: LocationPosition
+  isMoveCursorToVisible?: boolean
+}
+
+export interface IPrintModeRule {
+  imagePreviewerDisabled?: boolean
+}
+
+export interface IReadonlyModeRule {
+  imagePreviewerDisabled?: boolean
+}
+
+export interface IFormModeRule {
+  controlDeletableDisabled?: boolean
+}
+
+export interface IModeRule {
+  [EditorMode.PRINT]?: IPrintModeRule
+  [EditorMode.READONLY]?: IReadonlyModeRule
+  [EditorMode.FORM]?: IFormModeRule
 }

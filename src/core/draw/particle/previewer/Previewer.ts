@@ -1,5 +1,5 @@
+import { IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 import { EDITOR_PREFIX } from '../../../../dataset/constant/Editor'
-import { IEditorOption } from '../../../../interface/Editor'
 import { IElement, IElementPosition } from '../../../../interface/Element'
 import {
   IPreviewerCreateResult,

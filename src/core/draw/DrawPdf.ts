@@ -81,6 +81,7 @@ import { PageBorder } from './frame/PageBorder'
 import jsPDF, { Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
 import { ITd } from '../../interface/table/Td'
+import { mergeOption } from '../../utils/option'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 // import { IEditorData } from '@hufe921/canvas-editor'
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
@@ -155,7 +156,7 @@ export class DrawPdf {
     this.pageNo = 0
     this.pagePixelRatio = null
     this.mode = options.mode
-    this.options = options
+    this.options = mergeOption(options)
     let headerElementList: IElement[] = []
     let mainElementList: IElement[] = []
     let footerElementList: IElement[] = []

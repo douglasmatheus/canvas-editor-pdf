@@ -1,4 +1,4 @@
-import { IEditorOption } from '../../interface/Editor'
+import { IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 import { debounce } from '../../utils'
 import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 

@@ -1,5 +1,4 @@
 import { EDITOR_COMPONENT } from '../../dataset/constant/Editor'
-import { IEditorOption } from '../../interface/Editor'
 import { findParent } from '../../utils'
 import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { CanvasEvent } from './CanvasEvent'
@@ -11,6 +10,7 @@ import { Control } from '@hufe921/canvas-editor/dist/src/editor/core/draw/contro
 import { DateParticle } from '@hufe921/canvas-editor/dist/src/editor/core/draw/particle/date/DateParticle'
 import { ImageParticle } from '@hufe921/canvas-editor/dist/src/editor/core/draw/particle/ImageParticle'
 import { Cursor } from '@hufe921/canvas-editor/dist/src/editor/core/cursor/Cursor'
+import { IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 
 export class GlobalEvent {
   private draw: Draw

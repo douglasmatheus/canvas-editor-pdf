@@ -3,13 +3,13 @@ import { EDITOR_PREFIX } from '../../dataset/constant/Editor'
 import { MoveDirection } from '../../dataset/enum/Observer'
 import { DeepRequired } from '../../interface/Common'
 import { ICursorOption } from '../../interface/Cursor'
-import { IEditorOption } from '../../interface/Editor'
 import { IElementPosition } from '../../interface/Element'
 import { findScrollContainer } from '../../utils'
 import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { CanvasEvent } from '../event/CanvasEvent'
 import { Position } from '@hufe921/canvas-editor/dist/src/editor/core/position/Position'
 import { CursorAgent } from './CursorAgent'
+import { IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 
 export type IDrawCursorOption = ICursorOption & {
   isShow?: boolean

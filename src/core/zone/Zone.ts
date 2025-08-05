@@ -1,10 +1,10 @@
 import { EDITOR_PREFIX } from '../../dataset/constant/Editor'
 import { EditorZone } from '../../dataset/enum/Editor'
-import { IEditorOption } from '../../interface/Editor'
 import { nextTick } from '../../utils'
 import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 import { ZoneTip } from './ZoneTip'
 import { I18n } from '@hufe921/canvas-editor/dist/src/editor/core/i18n/I18n'
+import { IEditorOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 
 export class Zone {
   private readonly INDICATOR_PADDING = 2
