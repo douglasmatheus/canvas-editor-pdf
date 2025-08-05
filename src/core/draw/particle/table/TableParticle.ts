@@ -19,6 +19,7 @@ interface IDrawTableBorderOption {
   startY: number
   width: number
   height: number
+  borderExternalWidth?: number
   isDrawFullBorder?: boolean
 }
 
@@ -106,7 +107,21 @@ export class TableParticle {
   // }
 
   private _drawOuterBorder(payload: IDrawTableBorderOption) {
-    const { ctx2d, startX, startY, width, height, isDrawFullBorder } = payload
+    const {
+      ctx2d,
+      startX,
+      startY,
+      width,
+      height,
+      isDrawFullBorder,
+      borderExternalWidth
+    } = payload
+    const { scale } = this.options
+    // 外部边框单独设置
+    const lineWidth = ctx2d.lineWidth
+    if (borderExternalWidth) {
+      ctx2d.lineWidth = borderExternalWidth * scale
+    }
     ctx2d.beginPath()
     const x = Math.round(startX)
     const y = Math.round(startY)
@@ -119,6 +134,10 @@ export class TableParticle {
       ctx2d.lineTo(x + width, y)
     }
     ctx2d.stroke()
+    // 还原边框设置
+    if (borderExternalWidth) {
+      ctx2d.lineWidth = lineWidth
+    }
     ctx2d.translate(-0.5, -0.5)
   }
 
@@ -150,29 +169,47 @@ export class TableParticle {
 
   private _drawBorder(
     ctx2d: Context2d,
-    element: IRowElement,
+    element: IElement,
     startX: number,
     startY: number
   ) {
-    const { colgroup, trList, borderType } = element
+    const {
+      colgroup,
+      trList,
+      borderType,
+      borderColor,
+      borderWidth = 1,
+      borderExternalWidth
+    } = element
     if (!colgroup || !trList) return
-    const { scale } = this.options
+    const {
+      scale,
+      table: { defaultBorderColor }
+    } = this.options
     const tableWidth = element.width! * scale
     const tableHeight = element.height! * scale
     // 无边框
     const isEmptyBorderType = borderType === TableBorder.EMPTY
     // 仅外边框
     const isExternalBorderType = borderType === TableBorder.EXTERNAL
+    // 内边框
+    const isInternalBorderType = borderType === TableBorder.INTERNAL
     ctx2d.save()
-    ctx2d.lineWidth = scale
+    // 虚线
+    if (borderType === TableBorder.DASH) {
+      // ctx2d.setLineDash([3, 3])
+    }
+    ctx2d.lineWidth = borderWidth * scale
+    ctx2d.strokeStyle = borderColor || defaultBorderColor
     // 渲染边框
-    if (!isEmptyBorderType) {
+    if (!isEmptyBorderType && !isInternalBorderType) {
       this._drawOuterBorder({
         ctx2d,
         startX,
         startY,
         width: tableWidth,
         height: tableHeight,
+        borderExternalWidth,
         isDrawFullBorder: isExternalBorderType
       })
     }
@@ -222,9 +259,54 @@ export class TableParticle {
         }
         // 表格线
         if (!isEmptyBorderType && !isExternalBorderType) {
-          ctx2d.moveTo(x, y)
-          ctx2d.lineTo(x, y + height)
-          ctx2d.lineTo(x - width, y + height)
+          // 右边框
+          if (
+            !isInternalBorderType ||
+            td.colIndex! + td.colspan < colgroup.length
+          ) {
+            ctx2d.moveTo(x, y)
+            ctx2d.lineTo(x, y + height)
+            // 外部边框宽度设置时 => 最右边框宽度单独设置
+            if (
+              borderExternalWidth &&
+              borderExternalWidth !== borderWidth &&
+              td.colIndex! + td.colspan === colgroup.length
+            ) {
+              const lineWidth = ctx2d.lineWidth
+              ctx2d.lineWidth = borderExternalWidth * scale
+              ctx2d.stroke()
+              // 清空path
+              ctx2d.beginPath()
+              ctx2d.lineWidth = lineWidth
+            }
+          }
+          // 下边框
+          if (
+            !isInternalBorderType ||
+            td.rowIndex! + td.rowspan < trList.length
+          ) {
+            // 外部边框宽度设置时 => 立即绘制竖线
+            const isSetExternalBottomBorder =
+              borderExternalWidth &&
+              borderExternalWidth !== borderWidth &&
+              td.rowIndex! + td.rowspan === trList.length
+            if (isSetExternalBottomBorder) {
+              ctx2d.stroke()
+              // 清空path
+              ctx2d.beginPath()
+            }
+            ctx2d.moveTo(x, y + height)
+            ctx2d.lineTo(x - width, y + height)
+            // 外部边框宽度设置时 => 最下边框宽度单独设置
+            if (isSetExternalBottomBorder) {
+              const lineWidth = ctx2d.lineWidth
+              ctx2d.lineWidth = borderExternalWidth * scale
+              ctx2d.stroke()
+              // 清空path
+              ctx2d.beginPath()
+              ctx2d.lineWidth = lineWidth
+            }
+          }
           ctx2d.stroke()
         }
         ctx2d.translate(-0.5, -0.5)

@@ -62,6 +62,9 @@ export interface ITableAttr {
   colgroup?: IColgroup[]
   trList?: ITr[]
   borderType?: TableBorder
+  borderColor?: string
+  borderWidth?: number
+  borderExternalWidth?: number
 }
 
 export interface ITableElement {
