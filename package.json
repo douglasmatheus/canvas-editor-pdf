@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -67,7 +67,7 @@
     "vue": "^3.2.45"
   },
   "dependencies": {
-    "jspdf": "^2.5.1",
+    "jspdf": "^3.0.1",
     "prismjs": "^1.27.0",
     "vite-plugin-dts": "^4.3.0"
   }

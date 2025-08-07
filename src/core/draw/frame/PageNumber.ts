@@ -17,6 +17,19 @@ export class PageNumber {
     this.options = draw.getOptions()
   }
 
+  static formatNumberPlaceholder(
+    text: string,
+    pageNo: number,
+    replaceReg: RegExp,
+    numberType: NumberType
+  ) {
+    const pageNoText =
+      numberType === NumberType.CHINESE
+        ? convertNumberToChinese(pageNo)
+        : `${pageNo}`
+    return text.replace(replaceReg, pageNoText)
+  }
+
   public render(ctx2d: Context2d, pageNo: number) {
     const {
       scale,

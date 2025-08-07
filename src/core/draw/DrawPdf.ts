@@ -82,6 +82,8 @@ import jsPDF, { Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
+import { IForceUpdateOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Draw'
+import { IUpdateOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 // import { IEditorData } from '@hufe921/canvas-editor'
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
@@ -1010,6 +1012,23 @@ export class DrawPdf {
     return (
       defaultBasicRowMarginHeight * (el.rowMargin ?? defaultRowMargin) * scale
     )
+  }
+
+  public forceUpdate(options?: IForceUpdateOption) {
+    const { isSubmitHistory = false } = options || {}
+    // this.range.clearRange()
+    this.render({
+      isSubmitHistory,
+      isSetCursor: false
+    })
+  }
+
+  public updateOptions(payload: IUpdateOption) {
+    const newOption = mergeOption(payload)
+    Object.entries(newOption).forEach(([key, value]) => {
+      Reflect.set(this.options, key, value)
+    })
+    // this.forceUpdate()
   }
 
   public computeRowList(payload: IComputeRowListPayload) {
@@ -2229,7 +2248,7 @@ export class DrawPdf {
     // }
     // 绘制水印
     if (pageMode !== PageMode.CONTINUITY && this.options.watermark.data) {
-      this.waterMark.render(ctx2d)
+      this.waterMark.render(ctx2d, pageNo)
     }
     // 绘制空白占位符
     if (this.elementList.length <= 1 && !this.elementList[0]?.listId) {

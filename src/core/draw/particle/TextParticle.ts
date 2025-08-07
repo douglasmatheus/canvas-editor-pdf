@@ -158,7 +158,7 @@ export class TextParticle {
       this._setCurXY(x, y)
     }
     this.text += element.value
-    this.curStyle = element.style
+    this.curStyle = element.style.toLocaleLowerCase()
     this.curColor = element.color
     this.bold = element.bold
     this.italic = element.italic
@@ -178,11 +178,11 @@ export class TextParticle {
     this.ctx2d.font = this.curStyle.toLowerCase()
     const fontWeight = this.bold ? 'bold' : 'normal'
     const fontItalic = this.italic ? 'italic' : ''
-    // console.log(this.curStyle.split('px ')[1], fontItalic, fontWeight)
     this.draw.getPdf().setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
+    this.draw.getPdf().setCharSpace(0.1) // https://jsfiddle.net/pg7byu80/5/
+    // this.draw.getPdf().internal.write(0, "Tw")
     // this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
     this.ctx2d.save()
-    // console.log(this.curStyle)
     this.ctx2d.fillStyle = this.curColor || this.options.defaultColor
     this.ctx2d.fillText(this.text, this.curX, this.curY)
     this.ctx2d.restore()
