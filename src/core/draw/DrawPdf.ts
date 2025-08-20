@@ -89,6 +89,10 @@ import { IUpdateOption } from '@hufe921/canvas-editor/dist/src/editor/interface/
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
 // import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
+export type PdfOptions = {
+  loadDefaultFonts?: boolean
+}
+
 export class DrawPdf {
   // private draw: Draw
   private fakeCanvas: HTMLCanvasElement
@@ -143,9 +147,12 @@ export class DrawPdf {
   private pageRowList: IRow[][]
   private printModeData: Required<IEditorData> | null
 
+  public defaultFontsLoadedPromise: Promise<boolean>
+
   constructor(
     options: DeepRequired<IEditorOption>,
-    data: IEditorData
+    data: IEditorData,
+    pdfOptions: PdfOptions = {}
     // draw: Draw
   ) {
     // this.draw = draw
@@ -201,7 +208,13 @@ export class DrawPdf {
     this.pdf.setDocumentProperties({
       author: 'canvas-editor'
     })
-    this._addDefaultFont()
+
+    if (pdfOptions.loadDefaultFonts) {
+      this.defaultFontsLoadedPromise = this._addDefaultFont()
+    } else {
+      this.defaultFontsLoadedPromise = Promise.resolve(false)
+    }
+
     this._createPage(0)
 
     this.i18n = new I18n()
@@ -291,28 +304,141 @@ export class DrawPdf {
   }
 
   public async _addDefaultFont() {
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh.ttf', 'msyh.ttf', 'microsoft yahei', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh-bold.ttf', 'msyh.ttf', 'microsoft yahei', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial.ttf', 'Arial.ttf', 'arial', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold.ttf', 'Arial_Bold.ttf', 'arial', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Italic.ttf', 'Arial_Italic.ttf', 'arial', 'italic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold_Italic.ttf', 'Arial_Bold_Italic.ttf', 'arial', 'bolditalic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-regular.ttf', 'calibri-regular.ttf', 'calibri', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold.ttf', 'calibri-bold.ttf', 'calibri', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-italic.ttf', 'calibri-italic.ttf', 'calibri', 'italic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold-italic.ttf', 'calibri-bold-italic.ttf', 'calibri', 'bolditalic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Cambria.ttf', 'Cambria.ttf', 'cambria', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriab.ttf', 'cambriab.ttf', 'cambria', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriai.ttf', 'cambriai.ttf', 'cambria', 'italic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriaz.ttf', 'cambriaz.ttf', 'cambria', 'bolditalic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana.ttf', 'Verdana.ttf', 'verdana', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold.ttf', 'Verdana_Bold.ttf', 'verdana', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Italic.ttf', 'Verdana_Italic.ttf', 'verdana', 'italic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold_Italic.ttf', 'Verdana_Bold_Italic.ttf', 'verdana', 'bolditalic')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Inkfree.ttf', 'Inkfree.ttf', 'ink free', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui.ttf', 'segoe-ui.ttf', 'segoe ui', 'normal')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui-bold.ttf', 'segoe-ui-bold.ttf', 'segoe ui', 'bold')
-    await this.downloadFont('https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoeuii.ttf', 'segoeuii.ttf', 'segoe ui', 'italic')
+    await Promise.all([
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh.ttf',
+        'msyh.ttf',
+        'microsoft yahei',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh-bold.ttf',
+        'msyh.ttf',
+        'microsoft yahei',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial.ttf',
+        'Arial.ttf',
+        'arial',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold.ttf',
+        'Arial_Bold.ttf',
+        'arial',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Italic.ttf',
+        'Arial_Italic.ttf',
+        'arial',
+        'italic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold_Italic.ttf',
+        'Arial_Bold_Italic.ttf',
+        'arial',
+        'bolditalic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-regular.ttf',
+        'calibri-regular.ttf',
+        'calibri',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold.ttf',
+        'calibri-bold.ttf',
+        'calibri',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-italic.ttf',
+        'calibri-italic.ttf',
+        'calibri',
+        'italic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold-italic.ttf',
+        'calibri-bold-italic.ttf',
+        'calibri',
+        'bolditalic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Cambria.ttf',
+        'Cambria.ttf',
+        'cambria',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriab.ttf',
+        'cambriab.ttf',
+        'cambria',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriai.ttf',
+        'cambriai.ttf',
+        'cambria',
+        'italic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriaz.ttf',
+        'cambriaz.ttf',
+        'cambria',
+        'bolditalic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana.ttf',
+        'Verdana.ttf',
+        'verdana',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold.ttf',
+        'Verdana_Bold.ttf',
+        'verdana',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Italic.ttf',
+        'Verdana_Italic.ttf',
+        'verdana',
+        'italic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold_Italic.ttf',
+        'Verdana_Bold_Italic.ttf',
+        'verdana',
+        'bolditalic'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Inkfree.ttf',
+        'Inkfree.ttf',
+        'ink free',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui.ttf',
+        'segoe-ui.ttf',
+        'segoe ui',
+        'normal'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui-bold.ttf',
+        'segoe-ui-bold.ttf',
+        'segoe ui',
+        'bold'
+      ),
+      this.downloadFont(
+        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoeuii.ttf',
+        'segoeuii.ttf',
+        'segoe ui',
+        'italic'
+      )
+    ])
+
     return true
   }
 
