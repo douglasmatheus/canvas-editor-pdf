@@ -19,6 +19,11 @@ Import the class from pdf:
 
 First you create the library instance:
 ```javascript
+  // new DrawPdf(
+  //   options: IEditorOption,
+  //   data: IEditorData,
+  //   pdfOptions: PdfOptions = {loadDefaultFonts?: boolean}
+  // )
   const instancePdf = new DrawPdf(
     JSON.parse(JSON.stringify(instance.command.getValue().options)), // make a copy of the editor settings and avoid type conflicts
     instance.command.getValue().data
@@ -34,6 +39,11 @@ When you want to export the pdf:
 ```
 
 ## Fonts
+Prior to version 0.2.12, default fonts were loaded automatically. Starting with this version, fonts are not loaded unless the {loadDefaultFonts: true} parameter is passed in the class constructor. If you need to load the fonts later, you can use the following method:
+```javascript
+  instance.loadDefaultFonts()
+```
+
 At the moment few fonts are supported, jspdf defaults:
 - courier (normal, bold, italic)
 - helvetica (normal, bold, italic)

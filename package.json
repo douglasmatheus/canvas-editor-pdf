@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
