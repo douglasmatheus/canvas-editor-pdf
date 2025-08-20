@@ -442,6 +442,10 @@ export class DrawPdf {
     return true
   }
 
+  public loadDefaultFonts() {
+    return this.defaultFontsLoadedPromise = this._addDefaultFont()
+  }
+
   public async addFont(url: string, fileName: string, id: string, type: string) {
     await this.downloadFont(url, fileName, id, type)
     return true
