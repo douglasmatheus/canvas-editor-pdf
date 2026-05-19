@@ -13,6 +13,7 @@ The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor`
 | Command | What it does |
 |---|---|
 | `npm run dev` | Vite dev server with the demo (`index.html` + `src/index.ts`) |
+| `npm run dev:lib` | `vite build --mode lib --watch` → rebuilds `dist/` on every save. Useful when testing via `npm link` from a consumer. |
 | `npm run build` | Lint + `tsc` + `vite build --mode lib` → library bundle in `dist/` |
 | `npm run build:demo` | Lint + `tsc` + `vite build --mode app` → demo build, **also writes to `dist/`** ⚠️ |
 | `npm run lint` | ESLint over the repo |
