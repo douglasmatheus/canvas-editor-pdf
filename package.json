@@ -39,11 +39,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:lib": "vite build --mode lib --watch",
+    "dev": "vite build --mode lib --watch",
     "build": "npm run lint && tsc && vite build --mode lib",
-    "build:demo": "npm run lint && tsc && vite build --mode app",
-    "serve": "vite preview",
     "lint": "eslint .",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",

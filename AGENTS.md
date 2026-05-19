@@ -6,21 +6,16 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Codex, etc
 
 `canvas-editor-pdf` is a PDF exporter for [@hufe921/canvas-editor](https://github.com/Hufe921/canvas-editor). It re-implements the editor's rendering pipeline against [jsPDF](https://github.com/parallax/jsPDF)'s `Context2d` (a canvas-like API that emits PDF instructions) instead of an `HTMLCanvasElement`.
 
-The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor` is a peer dependency — consumers install both.
+The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor` is a peer dependency — consumers install both. There is no demo / playground — this is a library-only project.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Vite dev server with the demo (`index.html` + `src/index.ts`) |
-| `npm run dev:lib` | `vite build --mode lib --watch` → rebuilds `dist/` on every save. Useful when testing via `npm link` from a consumer. |
+| `npm run dev` | `vite build --mode lib --watch` → rebuilds `dist/` on every save. Use this when testing the library via `npm link` from a consumer. |
 | `npm run build` | Lint + `tsc` + `vite build --mode lib` → library bundle in `dist/` |
-| `npm run build:demo` | Lint + `tsc` + `vite build --mode app` → demo build, **also writes to `dist/`** ⚠️ |
 | `npm run lint` | ESLint over the repo |
-| `npm run serve` | `vite preview` of the last build |
-| `npm run cypress:open` / `npm run cypress:run` | E2E tests (Cypress) |
-
-**`npm run build:demo` overrides the library `dist/`** because both modes share the same output dir. If you ran `build` and then `build:demo`, you've replaced the library output with the demo. Re-run `build` before publishing.
+| `npm run cypress:open` / `npm run cypress:run` | E2E tests (Cypress) — **note:** the test files were inherited from canvas-editor and currently target a demo URL / import paths that no longer exist. Treat as broken until rewritten. |
 
 Release flow: `scripts/release.js` validates `dist/` exists, strips `dependencies` from `package.json`, runs `npm publish`, then restores `package.json`.
 
