@@ -37,12 +37,13 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             sourcemap: true,
-            globals: {
-              jspdf: 'jsPDF', // Defina jsPDF como global no UMD
-              '@hufe921/canvas-editor': 'Editor', // Defina jsPDF como global no UMD
+            globals: (id: string) => {
+              if (id === 'jspdf') return 'jsPDF'
+              if (id.startsWith('@hufe921/canvas-editor')) return 'Editor'
+              return id
             },
           },
-          external: ['@hufe921/canvas-editor', 'jspdf'],
+          external: [/^@hufe921\/canvas-editor(\/|$)/, 'jspdf'],
         },
       }
     }

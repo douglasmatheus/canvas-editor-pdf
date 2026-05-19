@@ -82,8 +82,9 @@ import jsPDF, { Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
-import { IForceUpdateOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Draw'
-import { IUpdateOption } from '@hufe921/canvas-editor/dist/src/editor/interface/Editor'
+import { IForceUpdateOption } from '../../interface/Draw'
+import { IUpdateOption } from '../../interface/Editor'
+import type { IEditorData as ICEEditorData } from '@hufe921/canvas-editor'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 // import { IEditorData } from '@hufe921/canvas-editor'
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
@@ -150,8 +151,8 @@ export class DrawPdf {
   public defaultFontsLoadedPromise: Promise<boolean>
 
   constructor(
-    options: DeepRequired<IEditorOption>,
-    data: IEditorData,
+    options: IEditorOption,
+    data: IEditorData | ICEEditorData,
     pdfOptions: PdfOptions = {}
     // draw: Draw
   ) {
@@ -164,8 +165,9 @@ export class DrawPdf {
     this.ctxListInfos = []
     this.pageNo = 0
     this.pagePixelRatio = null
-    this.mode = options.mode
     this.options = mergeOption(options)
+    this.mode = this.options.mode
+    data = data as IEditorData
     let headerElementList: IElement[] = []
     let mainElementList: IElement[] = []
     let footerElementList: IElement[] = []
@@ -253,7 +255,7 @@ export class DrawPdf {
 
     this.imageObserver = new ImageObserver()
 
-    const { letterClass } = options
+    const { letterClass } = this.options
     this.LETTER_REG = new RegExp(`[${letterClass.join('')}]`)
     this.WORD_LIKE_REG = new RegExp(
       `${letterClass.map(letter => `[^${letter}][${letter}]`).join('|')}`
@@ -914,7 +916,8 @@ export class DrawPdf {
     return dataUrlList
   }
 
-  public async setValue(payload: Partial<IEditorData>) {
+  public async setValue(payload: Partial<IEditorData> | Partial<ICEEditorData>) {
+    payload = payload as Partial<IEditorData>
     const { header, main, footer } = deepClone(payload)
     if (!header && !main && !footer) return
     const pageComponentData = [header, main, footer]

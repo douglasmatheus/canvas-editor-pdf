@@ -25,7 +25,7 @@ First you create the library instance:
   //   pdfOptions: PdfOptions = {loadDefaultFonts?: boolean}
   // )
   const instancePdf = new DrawPdf(
-    JSON.parse(JSON.stringify(instance.command.getValue().options)), // make a copy of the editor settings and avoid type conflicts
+    instance.command.getValue().options,
     instance.command.getValue().data
   )
 ```
