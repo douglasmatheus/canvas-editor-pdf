@@ -40,8 +40,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "lib": "npm run lint && tsc && vite build --mode lib",
-    "build": "npm run lint && tsc && vite build --mode app",
+    "build": "npm run lint && tsc && vite build --mode lib",
+    "build:demo": "npm run lint && tsc && vite build --mode app",
     "serve": "vite preview",
     "lint": "eslint .",
     "cypress:open": "cypress open",

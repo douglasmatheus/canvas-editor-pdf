@@ -13,13 +13,13 @@ The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor`
 | Command | What it does |
 |---|---|
 | `npm run dev` | Vite dev server with the demo (`index.html` + `src/index.ts`) |
-| `npm run lib` | Lint + `tsc` + `vite build --mode lib` → library bundle in `dist/` |
-| `npm run build` | Lint + `tsc` + `vite build --mode app` → demo build, **also writes to `dist/`** ⚠️ |
+| `npm run build` | Lint + `tsc` + `vite build --mode lib` → library bundle in `dist/` |
+| `npm run build:demo` | Lint + `tsc` + `vite build --mode app` → demo build, **also writes to `dist/`** ⚠️ |
 | `npm run lint` | ESLint over the repo |
 | `npm run serve` | `vite preview` of the last build |
 | `npm run cypress:open` / `npm run cypress:run` | E2E tests (Cypress) |
 
-**`npm run build` overrides the library `dist/`** because both modes share the same output dir. If you ran `lib` and then `build`, you've replaced the library output with the demo. Re-run `lib` before publishing.
+**`npm run build:demo` overrides the library `dist/`** because both modes share the same output dir. If you ran `build` and then `build:demo`, you've replaced the library output with the demo. Re-run `build` before publishing.
 
 Release flow: `scripts/release.js` validates `dist/` exists, strips `dependencies` from `package.json`, runs `npm publish`, then restores `package.json`.
 
