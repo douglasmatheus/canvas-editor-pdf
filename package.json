@@ -20,6 +20,7 @@
   "module": "./dist/canvas-editor-pdf.es.js",
   "exports": {
     ".": {
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/canvas-editor-pdf.es.js",
       "require": "./dist/canvas-editor-pdf.umd.js"
     }
