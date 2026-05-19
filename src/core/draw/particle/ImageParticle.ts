@@ -1,6 +1,5 @@
 import { Context2d } from 'jspdf'
 import { EDITOR_PREFIX } from '../../../dataset/constant/Editor'
-import { ImageDisplay } from '../../../dataset/enum/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { IElement } from '../../../interface/Element'
 import { convertStringToBase64 } from '../../../utils'
@@ -99,19 +98,11 @@ export class ImageParticle {
     x: number,
     y: number
   ) {
-    // 衬于文字下方图片需要重新首先绘制
-    if (element.imgDisplay === ImageDisplay.FLOAT_BOTTOM) {
-      this.draw.render({
-        isCompute: false,
-        isSetCursor: false,
-        isSubmitHistory: false
-      })
-    } else {
-      const { scale } = this.options
-      const width = element.width! * scale
-      const height = element.height! * scale
-      ctx2d.drawImage(element.value, x, y, width, height)
-    }
+    if (!element.value) return
+    const { scale } = this.options
+    const width = element.width! * scale
+    const height = element.height! * scale
+    ctx2d.drawImage(element.value, x, y, width, height)
   }
 }
 
