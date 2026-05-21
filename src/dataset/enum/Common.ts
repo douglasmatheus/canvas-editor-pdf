@@ -2,5 +2,6 @@ export {
   MaxHeightRatio,
   NumberType,
   ImageDisplay,
-  LocationPosition
+  LocationPosition,
+  FlexDirection
 } from '@hufe921/canvas-editor'

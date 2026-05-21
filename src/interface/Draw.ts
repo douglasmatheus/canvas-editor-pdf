@@ -1,4 +1,3 @@
-// import { IElement } from '@hufe921/canvas-editor'
 import { ImageDisplay } from '../dataset/enum/Common'
 import { EditorMode, EditorZone } from '../dataset/enum/Editor'
 import { IElement, IElementPosition } from './Element'
@@ -20,10 +19,13 @@ export interface IForceUpdateOption {
 }
 
 export interface IDrawImagePayload {
+  id?: string
+  conceptId?: string
   width: number
   height: number
   value: string
   imgDisplay?: ImageDisplay
+  extension?: unknown
 }
 
 export interface IDrawRowPayload {
@@ -35,6 +37,7 @@ export interface IDrawRowPayload {
   innerWidth: number
   zone?: EditorZone
   isDrawLineBreak?: boolean
+  isDrawWhiteSpace?: boolean
 }
 
 export interface IDrawFloatPayload {
@@ -58,13 +61,17 @@ export interface IGetValueOption {
   extraPickAttrs?: Array<keyof IElement>
 }
 
+export type IGetOriginValueOption = Omit<IGetValueOption, 'extraPickAttrs'>
+
 export interface IAppendElementListOption {
   isPrepend?: boolean
+  isSubmitHistory?: boolean
 }
 
 export interface IGetImageOption {
   pixelRatio?: number
   mode?: EditorMode
+  snapDomFunction?: (iframe: HTMLIFrameElement) => Promise<string>
 }
 
 export interface IComputeRowListPayload {

@@ -74,6 +74,10 @@ export class HyperlinkParticle {
   ) {
     ctx2d.save()
     ctx2d.font = element.style.toLowerCase()
+    const curStyle = element.style.toLowerCase()
+    const fontWeight = element.bold ? 'bold' : 'normal'
+    const fontItalic = element.italic ? 'italic' : ''
+    this.draw.getPdf().setFont(curStyle.split('px ')[1], fontItalic, fontWeight)
     // if (ctx2d.font.includes('Microsoft YaHei')) {
     //   ctx2d.font = ctx2d.font.replace('Microsoft YaHei', 'Yahei')
     // }

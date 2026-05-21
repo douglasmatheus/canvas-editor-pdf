@@ -6,6 +6,8 @@ import { defaultCursorOption } from '../dataset/constant/Cursor'
 import { defaultFooterOption } from '../dataset/constant/Footer'
 import { defaultGroupOption } from '../dataset/constant/Group'
 import { defaultHeaderOption } from '../dataset/constant/Header'
+import { defaultLabelOption } from '../dataset/constant/Label'
+import { defaultImgCaptionOption } from '../dataset/constant/imgCaption'
 import { defaultLineBreak } from '../dataset/constant/LineBreak'
 import { defaultPageBreakOption } from '../dataset/constant/PageBreak'
 import { defaultPageNumberOption } from '../dataset/constant/PageNumber'
@@ -17,6 +19,7 @@ import { defaultTitleOption } from '../dataset/constant/Title'
 import { defaultWatermarkOption } from '../dataset/constant/Watermark'
 import { defaultZoneOption } from '../dataset/constant/Zone'
 import { defaultLineNumberOption } from '../dataset/constant/LineNumber'
+import { defaultListOption } from '../dataset/constant/List'
 import { IBackgroundOption } from '../interface/Background'
 import { ICheckboxOption } from '../interface/Checkbox'
 import { DeepRequired } from '../interface/Common'
@@ -26,6 +29,8 @@ import { IEditorOption, IModeRule } from '../interface/Editor'
 import { IFooter } from '../interface/Footer'
 import { IGroup } from '../interface/Group'
 import { IHeader } from '../interface/Header'
+import { ILabelOption } from '../interface/Label'
+import { IImgCaptionOption, IListOption } from '../interface/Element'
 import { ILineBreakOption } from '../interface/LineBreak'
 import { IPageBreak } from '../interface/PageBreak'
 import { IPageNumber } from '../interface/PageNumber'
@@ -46,9 +51,13 @@ import {
   RenderMode,
   WordBreak
 } from '../dataset/enum/Editor'
-import { IBadgeOption } from '../interface/Badge'
 import { defaultBadgeOption } from '../dataset/constant/Badge'
+import { IBadgeOption } from '../interface/Badge'
 import { defaultModeRuleOption } from '../dataset/constant/Editor'
+import { IGraffitiOption } from '../interface/Graffiti'
+import { defaultGraffitiOption } from '../dataset/constant/Graffiti'
+// import { IWhiteSpaceOption } from '../interface/WhiteSpace'
+// import { defaultWhiteSpaceOption } from '../dataset/constant/WhiteSpace'
 
 export function mergeOption(
   options: IEditorOption = {}
@@ -117,6 +126,10 @@ export function mergeOption(
     ...defaultLineBreak,
     ...options.lineBreak
   }
+  // const whiteSpaceOptions: Required<IWhiteSpaceOption> = {
+  //   ...defaultWhiteSpaceOption,
+  //   ...options.whiteSpace
+  // }
   const separatorOptions: Required<ISeparatorOption> = {
     ...defaultSeparatorOption,
     ...options.separator
@@ -132,6 +145,22 @@ export function mergeOption(
   const badgeOptions: Required<IBadgeOption> = {
     ...defaultBadgeOption,
     ...options.badge
+  }
+  const graffitiOptions: Required<IGraffitiOption> = {
+    ...defaultGraffitiOption,
+    ...options.graffiti
+  }
+  const labelOptions: Required<ILabelOption> = {
+    ...defaultLabelOption,
+    ...options.label
+  }
+  const imgCaptionOptions: Required<IImgCaptionOption> = {
+    ...defaultImgCaptionOption,
+    ...options.imgCaption
+  }
+  const listOptions: Required<IListOption> = {
+    ...defaultListOption,
+    ...options.list
   }
   const modeRuleOption: DeepRequired<IModeRule> = {
     print: {
@@ -210,10 +239,15 @@ export function mergeOption(
     zone: zoneOptions,
     background: backgroundOptions,
     lineBreak: lineBreakOptions,
+    // whiteSpace: whiteSpaceOptions,
     separator: separatorOptions,
     lineNumber: lineNumberOptions,
     pageBorder: pageBorderOptions,
     badge: badgeOptions,
-    modeRule: modeRuleOption
+    modeRule: modeRuleOption,
+    graffiti: graffitiOptions,
+    label: labelOptions,
+    imgCaption: imgCaptionOptions,
+    list: listOptions
   }
 }

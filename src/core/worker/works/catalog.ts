@@ -1,5 +1,7 @@
 import { ICatalog, ICatalogItem } from '../../../interface/Catalog'
 import { IElement, IElementPosition } from '../../../interface/Element'
+import { ElementType } from '../../../dataset/enum/Element'
+import { TitleLevel } from '../../../dataset/enum/Title'
 
 interface IGetCatalogPayload {
   elementList: IElement[]
@@ -8,35 +10,6 @@ interface IGetCatalogPayload {
 
 type ICatalogElement = IElement & {
   pageNo: number
-}
-
-enum ElementType {
-  TEXT = 'text',
-  IMAGE = 'image',
-  TABLE = 'table',
-  HYPERLINK = 'hyperlink',
-  SUPERSCRIPT = 'superscript',
-  SUBSCRIPT = 'subscript',
-  SEPARATOR = 'separator',
-  PAGE_BREAK = 'pageBreak',
-  CONTROL = 'control',
-  CHECKBOX = 'checkbox',
-  RADIO = 'radio',
-  LATEX = 'latex',
-  TAB = 'tab',
-  DATE = 'date',
-  BLOCK = 'block',
-  TITLE = 'title',
-  LIST = 'list'
-}
-
-enum TitleLevel {
-  FIRST = 'first',
-  SECOND = 'second',
-  THIRD = 'third',
-  FOURTH = 'fourth',
-  FIFTH = 'fifth',
-  SIXTH = 'sixth'
 }
 
 const titleOrderNumberMapping: Record<TitleLevel, number> = {
@@ -54,7 +27,8 @@ const TEXTLIKE_ELEMENT_TYPE: ElementType[] = [
   ElementType.SUBSCRIPT,
   ElementType.SUPERSCRIPT,
   ElementType.CONTROL,
-  ElementType.DATE
+  ElementType.DATE,
+  ElementType.LABEL
 ]
 
 const ZERO = '\u200B'

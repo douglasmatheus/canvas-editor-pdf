@@ -752,7 +752,7 @@ export class Control {
         //   isIgnoreDisabledRule: true
         // }
         if (type === ControlType.TEXT) {
-          const formatValue = Array.isArray(value) ? value : [{ value }]
+          const formatValue: any = Array.isArray(value) ? value : [{ value }]
           formatElementList(formatValue, {
             isHandleFirstElement: false,
             editorOptions: this.options
@@ -935,7 +935,10 @@ export class Control {
     // 强制更新
     for (const key in pageComponentData) {
       const pageComponentKey = <keyof IEditorData>key
-      const elementList = zipElementList(pageComponentData[pageComponentKey]!)
+      const elementList = zipElementList(pageComponentData[pageComponentKey]!, {
+        isClassifyArea: true,
+        extraPickAttrs: ['id']
+      })
       pageComponentData[pageComponentKey] = elementList
       formatElementList(elementList, {
         editorOptions: this.options,

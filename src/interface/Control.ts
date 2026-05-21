@@ -1,11 +1,17 @@
-import { LocationPosition } from '../dataset/enum/Common'
-import { ControlType, ControlIndentation } from '../dataset/enum/Control'
+import { FlexDirection, LocationPosition } from '../dataset/enum/Common'
+import {
+  ControlType,
+  ControlIndentation,
+  ControlState
+} from '../dataset/enum/Control'
 import { EditorZone } from '../dataset/enum/Editor'
 import { MoveDirection } from '../dataset/enum/Observer'
+import { RowFlex } from '../dataset/enum/Row'
 import { IDrawOption } from './Draw'
 import { IElement } from './Element'
 import { IPositionContext } from './Position'
 import { IRange } from './Range'
+import { IRow, IRowElement } from './Row'
 
 export interface IValueSet {
   value: string
@@ -15,17 +21,24 @@ export interface IValueSet {
 export interface IControlSelect {
   code: string | null
   valueSets: IValueSet[]
+  isMultiSelect?: boolean
+  multiSelectDelimiter?: string
+  selectExclusiveOptions?: {
+    inputAble?: boolean
+  }
 }
 
 export interface IControlCheckbox {
   code: string | null
   min?: number
   max?: number
+  flexDirection: FlexDirection
   valueSets: IValueSet[]
 }
 
 export interface IControlRadio {
   code: string | null
+  flexDirection: FlexDirection
   valueSets: IValueSet[]
 }
 
@@ -48,6 +61,8 @@ export interface IControlHighlight {
 export interface IControlRule {
   deletable?: boolean
   disabled?: boolean
+  pasteDisabled?: boolean
+  hide?: boolean
 }
 
 export interface IControlBasic {
@@ -62,6 +77,9 @@ export interface IControlBasic {
   border?: boolean
   extension?: unknown
   indentation?: ControlIndentation
+  rowFlex?: RowFlex
+  preText?: string
+  postText?: string
 }
 
 export interface IControlStyle {
@@ -89,6 +107,9 @@ export interface IControlOption {
   borderWidth?: number
   borderColor?: string
   activeBackgroundColor?: string
+  disabledBackgroundColor?: string
+  existValueBackgroundColor?: string
+  noValueBackgroundColor?: string
 }
 
 export interface IControlInitOption {
@@ -106,7 +127,7 @@ export interface IControlInitResult {
 export interface IControlInstance {
   setElement(element: IElement): void
   getElement(): IElement
-  getValue(): IElement[]
+  getValue(context?: IControlContext): IElement[]
   setValue(
     data: IElement[],
     context?: IControlContext,
@@ -123,12 +144,14 @@ export interface IControlContext {
 
 export interface IControlRuleOption {
   isIgnoreDisabledRule?: boolean // 忽略禁用校验规则
+  isIgnoreDeletedRule?: boolean // 忽略删除校验规则
   isAddPlaceholder?: boolean // 是否添加占位符
 }
 
 export interface IGetControlValueOption {
   id?: string
   conceptId?: string
+  areaId?: string
 }
 
 export type IGetControlValueResult = (Omit<IControl, 'value'> & {
@@ -141,12 +164,15 @@ export type IGetControlValueResult = (Omit<IControl, 'value'> & {
 export interface ISetControlValueOption {
   id?: string
   conceptId?: string
-  value: string | IElement[]
+  areaId?: string
+  value: string | IElement[] | null
+  isSubmitHistory?: boolean
 }
 
 export interface ISetControlExtensionOption {
   id?: string
   conceptId?: string
+  areaId?: string
   extension: unknown
 }
 
@@ -155,13 +181,21 @@ export type ISetControlHighlightOption = IControlHighlight[]
 export type ISetControlProperties = {
   id?: string
   conceptId?: string
+  areaId?: string
   properties: Partial<Omit<IControl, 'value'>>
+  isSubmitHistory?: boolean
 }
 
 export type IRepaintControlOption = Pick<
   IDrawOption,
   'curIndex' | 'isCompute' | 'isSubmitHistory' | 'isSetCursor'
 >
+
+export interface IControlChangeOption {
+  context?: IControlContext
+  controlElement?: IElement
+  controlValue?: IElement[]
+}
 
 export interface INextControlContext {
   positionContext: IPositionContext
@@ -174,4 +208,31 @@ export interface IInitNextControlOption {
 
 export interface ILocationControlOption {
   position: LocationPosition
+}
+
+export interface ISetControlRowFlexOption {
+  row: IRow
+  rowElement: IRowElement
+  availableWidth: number
+  controlRealWidth: number
+}
+
+export interface IControlChangeResult {
+  state: ControlState
+  control: IControl
+  controlId: string
+}
+
+export interface IControlContentChangeResult {
+  control: IControl
+  controlId: string
+}
+
+export interface IDestroyControlOption {
+  isEmitEvent?: boolean
+}
+
+export interface IRemoveControlOption {
+  id?: string
+  conceptId?: string
 }

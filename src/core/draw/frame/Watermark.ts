@@ -4,8 +4,8 @@ import { DeepRequired } from '../../../interface/Common'
 import { DrawPdf } from '../DrawPdf'
 import { IEditorOption } from '../../../interface/Editor'
 import { FORMAT_PLACEHOLDER } from '../../../dataset/constant/PageNumber'
-import { PageNumber } from './PageNumber'
 import { WatermarkType } from '../../../dataset/enum/Watermark'
+import { PageNumber } from './PageNumber'
 
 export class Watermark {
   private draw: DrawPdf
@@ -81,7 +81,7 @@ export class Watermark {
       temporaryCtx.font = `${size * scale}px ${font}`
       temporaryCtx.fillStyle = color
       temporaryCtx.fillText(
-        data,
+        text,
         (patternWidth - textWidth) / 2,
         (patternHeight - textHeight) / 2 + measureText.actualBoundingBoxAscent
       )
@@ -101,11 +101,10 @@ export class Watermark {
       // 移动到中心位置再旋转
       ctx2d.translate(x, y)
       ctx2d.rotate((-45 * Math.PI) / 180)
-      // console.log(size, y)
       ctx2d.fillText(
-        data,
+        text,
         -measureText.width / 2,
-        measureText.actualBoundingBoxAscent - (size * 2)
+        measureText.actualBoundingBoxAscent - (size * scale) / 2
       )
     }
     this.draw.getPdf().setGState(new GState({
@@ -186,14 +185,7 @@ export class Watermark {
 
       // Para rotacionar pelo centro, ajuste x e y:
       // const x = centerX + (imageWidth / 2)
-      // console.log('x, centerX, docWidth, imageWidth')
-      // console.log(x, centerX, docWidth, imageWidth)
       // const y = centerY + (imageHeight / 2)
-      // console.log('y, centerY, docHeight, imageHeight')
-      // console.log(y, centerY, docHeight, imageHeight)
-      // console.log('(docWidth - (docWidth * 45) / 100)')
-      // console.log((docWidth - (docWidth * 45) / 100))
-      // console.log((docHeight - (docHeight * 35) / 100))
       this.draw.getPdf().addImage(
         data,
         'PNG', // ou outro formato

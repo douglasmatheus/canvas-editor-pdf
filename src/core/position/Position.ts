@@ -139,19 +139,14 @@ export class Position {
         // 计算行偏移量（行居中、居右）
         const curRowWidth = curRow.width + (curRow.offsetX || 0)
         if (curRow.rowFlex === RowFlex.CENTER) {
-          // console.log('curRow')
-          // console.log(curRow)
-          // console.log('innerWidth, curRowWidth')
-          // console.log(innerWidth, curRowWidth)
-          // console.log('x', x)
           x += (innerWidth - curRowWidth) / 2
-          // console.log('x', x)
         } else if (curRow.rowFlex === RowFlex.RIGHT) {
           x += innerWidth - curRowWidth
         }
       }
-      // 当前行X轴偏移量
+      // 当前行X/Y轴偏移量
       x += curRow.offsetX || 0
+      y += curRow.offsetY || 0
       // 当前td所在位置
       const tablePreX = x
       const tablePreY = y
@@ -159,14 +154,19 @@ export class Position {
         const element = curRow.elementList[j]
         const metrics = element.metrics
         const offsetY =
-          (element.imgDisplay !== ImageDisplay.INLINE &&
+          !element.hide &&
+          ((element.imgDisplay !== ImageDisplay.INLINE &&
             element.type === ElementType.IMAGE) ||
-            element.type === ElementType.LATEX
+            element.type === ElementType.LATEX)
             ? curRow.ascent - metrics.height
             : curRow.ascent
-        // 偏移量
+        // 偏移量（内部计算使用）
         if (element.left) {
           x += element.left
+        }
+        // 偏移量（外部传入）
+        if (element.translateX) {
+          x += element.translateX * scale
         }
         const positionItem: IElementPosition = {
           pageNo,
@@ -223,7 +223,7 @@ export class Position {
         index++
         x += metrics.width
         // 计算表格内元素位置
-        if (element.type === ElementType.TABLE) {
+        if (element.type === ElementType.TABLE && !element.hide) {
           const tdPaddingWidth = tdPadding[1] + tdPadding[3]
           const tdPaddingHeight = tdPadding[0] + tdPadding[2]
           for (let t = 0; t < element.trList!.length; t++) {
@@ -238,7 +238,10 @@ export class Position {
                 pageNo,
                 startRowIndex: 0,
                 startIndex: 0,
-                startX: (td.x! + tdPadding[3]) * scale + tablePreX,
+                startX:
+                  (td.x! + tdPadding[3]) * scale +
+                  tablePreX +
+                  (element.translateX || 0) * scale,
                 startY: (td.y! + tdPadding[0]) * scale + tablePreY,
                 innerWidth: (td.width! - tdPaddingWidth) * scale,
                 isTable: true,
@@ -304,7 +307,8 @@ export class Position {
     let startRowIndex = 0
     for (let i = 0; i < pageRowList.length; i++) {
       const rowList = pageRowList[i]
-      const startIndex = rowList[0]?.startIndex
+      if (!rowList?.length) continue
+      const startIndex = rowList[0].startIndex
       this.computePageRowPosition({
         positionList: this.positionList,
         rowList,
@@ -460,6 +464,36 @@ export class Position {
         ) {
           return {
             index: curPositionIndex,
+            isDirectHit: true,
+            isCheckbox: true
+          }
+        }
+        // 标签元素检测
+        if (element.type === ElementType.LABEL) {
+          return {
+            index: curPositionIndex,
+            isDirectHit: true,
+            isLabel: true
+          }
+        }
+        if (
+          element.type === ElementType.TAB &&
+          element.listStyle === ListStyle.CHECKBOX
+        ) {
+          // 向前找checkbox元素
+          let index = curPositionIndex - 1
+          while (index > 0) {
+            const element = elementList[index]
+            if (
+              element.value === ZERO &&
+              element.listStyle === ListStyle.CHECKBOX
+            ) {
+              break
+            }
+            index--
+          }
+          return {
+            index,
             isDirectHit: true,
             isCheckbox: true
           }
@@ -670,6 +704,7 @@ export class Position {
     const { x, y } = payload
     const currentPageNo = payload.pageNo ?? this.draw.getPageNo()
     // const currentZone = this.draw.getZone().getZone()
+    const { scale } = this.options
     for (let f = 0; f < this.floatPositionList.length; f++) {
       const {
         position,
@@ -690,11 +725,15 @@ export class Position {
         // (!floatElementZone || floatElementZone === currentZone)
       ) {
         const imgFloatPosition = element.imgFloatPosition!
+        const imgFloatPositionX = imgFloatPosition.x * scale
+        const imgFloatPositionY = imgFloatPosition.y * scale
+        const elementWidth = element.width! * scale
+        const elementHeight = element.height! * scale
         if (
-          x >= imgFloatPosition.x &&
-          x <= imgFloatPosition.x + element.width! &&
-          y >= imgFloatPosition.y &&
-          y <= imgFloatPosition.y + element.height!
+          x >= imgFloatPositionX &&
+          x <= imgFloatPositionX + elementWidth &&
+          y >= imgFloatPositionY &&
+          y <= imgFloatPositionY + elementHeight
         ) {
           if (isTable) {
             return {
@@ -751,6 +790,7 @@ export class Position {
       isRadio,
       isControl,
       isImage,
+      isLabel,
       isDirectHit,
       isTable,
       trIndex,
@@ -766,6 +806,7 @@ export class Position {
       isRadio: isRadio || false,
       isControl: isControl || false,
       isImage: isImage || false,
+      isLabel: isLabel || false,
       isDirectHit: isDirectHit || false,
       index,
       trIndex,
@@ -778,6 +819,7 @@ export class Position {
   }
 
   public setSurroundPosition(payload: ISetSurroundPositionPayload) {
+    const { scale } = this.options
     const {
       pageNo,
       row,
@@ -799,8 +841,10 @@ export class Position {
         if (floatPosition.pageNo !== pageNo) continue
         const surroundRect = {
           ...floatPosition,
-          width: surroundElement.width!,
-          height: surroundElement.height!
+          x: floatPosition.x * scale,
+          y: floatPosition.y * scale,
+          width: surroundElement.width! * scale,
+          height: surroundElement.height! * scale
         }
         if (isRectIntersect(rowElementRect, surroundRect)) {
           row.isSurround = true
@@ -814,10 +858,6 @@ export class Position {
           // 下个元素起始位置：浮动元素右坐标 - 元素宽度
           x = surroundRect.x + surroundRect.width
           // 检测宽度是否足够，不够则移动到下一行，并还原状态
-          console.log('availableWidth')
-          console.log(availableWidth)
-          console.log(row)
-          console.log(rowElement)
           if (row.width + rowElement.metrics.width > availableWidth) {
             rowElement.left = 0
             row.width -= rowIncreaseWidth

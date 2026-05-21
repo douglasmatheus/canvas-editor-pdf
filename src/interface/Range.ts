@@ -1,5 +1,5 @@
 import { EditorZone } from '../dataset/enum/Editor'
-import { IElement, IElementFillRect } from './Element'
+import { IElement, IElementFillRect, IElementStyle } from './Element'
 
 export interface IRange {
   startIndex: number
@@ -25,6 +25,10 @@ export type RangeContext = {
   endElement: IElement
   startPageNo: number
   endPageNo: number
+  startRowNo: number
+  endRowNo: number
+  startColNo: number
+  endColNo: number
   rangeRects: RangeRect[]
   zone: EditorZone
   isTable: boolean
@@ -41,3 +45,15 @@ export interface IRangeParagraphInfo {
   elementList: IElement[]
   startIndex: number
 }
+
+export type IRangeElementStyle = Pick<
+  IElementStyle,
+  | 'bold'
+  | 'color'
+  | 'highlight'
+  | 'font'
+  | 'size'
+  | 'italic'
+  | 'underline'
+  | 'strikeout'
+>

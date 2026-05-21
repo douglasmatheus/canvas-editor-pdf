@@ -14,7 +14,7 @@ import { RenderMode } from '../../../dataset/enum/Editor'
 
 export interface IMeasureWordResult {
   width: number
-  endElement: IElement
+  endElement: IElement | null
 }
 
 export class TextParticle {
@@ -26,6 +26,7 @@ export class TextParticle {
   private curY: number
   private text: string
   private bold?: boolean
+  // private size: number
   private italic?: boolean
   private curStyle: string
   private curColor?: string
@@ -39,6 +40,7 @@ export class TextParticle {
     this.curY = -1
     this.text = ''
     this.bold = false
+    // this.size = this.options.defaultSize
     this.italic = false
     this.curStyle = ''
     this.cacheMeasureText = new Map()
@@ -64,7 +66,7 @@ export class TextParticle {
   ): IMeasureWordResult {
     const LETTER_REG = this.draw.getLetterReg()
     let width = 0
-    let endElement: IElement = elementList[curIndex]
+    let endElement: IElement | null = null
     let i = curIndex
     while (i < elementList.length) {
       const element = elementList[i]
@@ -89,6 +91,7 @@ export class TextParticle {
     element: IElement
   ): number {
     if (!element || !PUNCTUATION_LIST.includes(element.value)) return 0
+    ctx2d.font = this.draw.getElementFont(element)
     return this.measureText(ctx2d, element).width
   }
 
@@ -122,6 +125,13 @@ export class TextParticle {
     return textMetrics
   }
 
+  public getBasisWordBoundingBoxAscent(
+    ctx2d: Context2d,
+    font: string
+  ): number {
+    return this.measureBasisWord(ctx2d, font).actualBoundingBoxAscent
+  }
+
   public complete() {
     this._render()
     this.text = ''
@@ -141,6 +151,7 @@ export class TextParticle {
       this.curStyle = element.style
       this.curColor = element.color
       this.bold = element.bold
+      // this.size = element.size || this.options.defaultSize
       this.italic = element.italic
       this.complete()
       return
@@ -170,7 +181,7 @@ export class TextParticle {
   }
 
   private _render() {
-    if (!this.text || !~this.curX || !~this.curX) return
+    if (!this.text || !~this.curX || !~this.curY) return
     this.ctx2d.save()
     // if (this.curStyle.includes('Microsoft YaHei')) {
     //   this.curStyle = this.curStyle.replace('Microsoft YaHei', 'Yahei')
@@ -178,6 +189,7 @@ export class TextParticle {
     this.ctx2d.font = this.curStyle.toLowerCase()
     const fontWeight = this.bold ? 'bold' : 'normal'
     const fontItalic = this.italic ? 'italic' : ''
+    // this.draw.getPdf().setFontSize(this.size)
     this.draw.getPdf().setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
     this.draw.getPdf().setCharSpace(0.1) // https://jsfiddle.net/pg7byu80/5/
     // this.draw.getPdf().internal.write(0, "Tw")

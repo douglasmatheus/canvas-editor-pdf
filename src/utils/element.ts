@@ -22,6 +22,7 @@ import {
 import { LaTexParticle } from '../core/draw/particle/latex/LaTexParticle'
 import { NON_BREAKING_SPACE, ZERO } from '../dataset/constant/Common'
 import {
+  AREA_CONTEXT_ATTR,
   BLOCK_ELEMENT_TYPE,
   CONTROL_STYLE_ATTR,
   EDITOR_ELEMENT_CONTEXT_ATTR,
@@ -44,6 +45,8 @@ import {
   titleOrderNumberMapping,
   titleSizeMapping
 } from '../dataset/constant/Title'
+// import { BlockType } from '../dataset/enum/Block'
+import { ImageDisplay, LocationPosition } from '../dataset/enum/Common'
 import { ControlComponent, ControlType } from '../dataset/enum/Control'
 import { ListStyle, ListType, UlStyle } from '../dataset/enum/List'
 import { DeepRequired } from '../interface/Common'
@@ -58,7 +61,6 @@ import { ElementType } from '../dataset/enum/Element'
 import { RowFlex } from '../dataset/enum/Row'
 import { EditorMode } from '../dataset/enum/Editor'
 import { TableBorder, TdBorder } from '../dataset/enum/table/Table'
-import { ImageDisplay } from '../dataset/enum/Common'
 // import { mergeOption } from './option'
 
 export function unzipElementList(elementList: IElement[]): IElement[] {
@@ -91,11 +93,11 @@ export async function formatElementList(
   const startElement = elementList[0]
   // 非首字符零宽节点文本元素则补偿-列表元素内部会补偿此处忽略
   if (
-    isForceCompensation ||
-    (isHandleFirstElement &&
-      startElement?.type !== ElementType.LIST &&
-      ((startElement?.type && startElement.type !== ElementType.TEXT) ||
-        !START_LINE_BREAK_REG.test(startElement?.value)))
+    startElement?.type !== ElementType.LIST &&
+    (isForceCompensation ||
+      (isHandleFirstElement &&
+        ((startElement?.type && startElement.type !== ElementType.TEXT) ||
+          !START_LINE_BREAK_REG.test(startElement?.value))))
   ) {
     elementList.unshift({
       value: ZERO
@@ -152,12 +154,62 @@ export async function formatElementList(
       })
       // 追加节点
       if (valueList.length) {
-        const listId = getUUID()
+        const listId = el.listId || getUUID()
         for (let v = 0; v < valueList.length; v++) {
           const value = valueList[v]
           value.listId = listId
           value.listType = el.listType
           value.listStyle = el.listStyle
+          elementList.splice(i, 0, value)
+          i++
+        }
+        // 尾部如果不是换行符则补充一个换行符
+        if (
+          elementList[i] &&
+          elementList[i] &&
+          (elementList[i].valueList?.length
+            ? !START_LINE_BREAK_REG.test(elementList[i].valueList![0].value)
+            : !START_LINE_BREAK_REG.test(elementList[i].value))
+        ) {
+          elementList.splice(i, 0, {
+            value: ZERO
+          })
+          i++
+        }
+      }
+      i--
+    } else if (el.type === ElementType.AREA) {
+      // 移除父节点
+      elementList.splice(i, 1)
+      // 格式化元素
+      const valueList = el?.valueList || []
+      formatElementList(valueList, {
+        ...options,
+        isHandleFirstElement: true,
+        isForceCompensation: true
+      })
+      if (valueList.length) {
+        const areaId = getUUID()
+        for (let v = 0; v < valueList.length; v++) {
+          const value = valueList[v]
+          value.areaId = el.areaId || areaId
+          value.area = el.area
+          value.areaIndex = v
+          if (value.type === ElementType.TABLE) {
+            const trList = value.trList!
+            for (let r = 0; r < trList.length; r++) {
+              const tr = trList[r]
+              for (let d = 0; d < tr.tdList.length; d++) {
+                const td = tr.tdList[d]
+                const tdValueList = td.value
+                for (let t = 0; t < tdValueList.length; t++) {
+                  const tdValue = tdValueList[t]
+                  tdValue.areaId = el.areaId || areaId
+                  tdValue.area = el.area
+                }
+              }
+            }
+          }
           elementList.splice(i, 0, value)
           i++
         }
@@ -167,7 +219,23 @@ export async function formatElementList(
       const tableId = getUUID()
       el.id = tableId
       if (el.trList) {
-        const { defaultTrMinHeight } = editorOptions.table
+        const {
+          table: { defaultTrMinHeight, defaultColMinWidth },
+          margins
+        } = editorOptions
+        // 当colgroup未传入时，默认使用编辑器宽度平分
+        if (!el.colgroup?.length && el.trList.length) {
+          const colCount = el.trList[0].tdList.reduce(
+            (pre, cur) => pre + cur.colspan,
+            0
+          )
+          const innerWidth = editorOptions.width - margins[1] - margins[3]
+          const colWidth = Math.max(innerWidth / colCount, defaultColMinWidth)
+          el.colgroup = []
+          for (let c = 0; c < colCount; c++) {
+            el.colgroup.push({ width: colWidth })
+          }
+        }
         for (let t = 0; t < el.trList.length; t++) {
           const tr = el.trList[t]
           const trId = getUUID()
@@ -287,7 +355,7 @@ export async function formatElementList(
         type === ControlType.RADIO ||
         (type === ControlType.SELECT && code && (!value || !value.length))
       ) {
-        let valueList: IElement[] = value || []
+        let valueList: IElement[] = value ? deepClone(value) : []
         if (type === ControlType.CHECKBOX) {
           const codeList = code ? code.split(',') : []
           if (Array.isArray(valueSets) && valueSets.length) {
@@ -488,6 +556,50 @@ export async function formatElementList(
   }
 }
 
+export function transformArray(inputArray) {
+  function processValue(value, obj) {
+    // Divide e mantém partes incluindo espaços e \n separadamente
+    return value.match(/[^\n]+|\n/g)
+      .map(part => ({
+        ...obj, // Copia as propriedades do objeto original
+        value: part//.replaceAll(/\n/g, '/n') // Atualiza o valor
+      }))
+  }
+
+  function processObject(obj) {
+    if (obj.type === 'table' && Array.isArray(obj.trList)) {
+      return {
+        ...obj,
+        trList: obj.trList.map(tr => ({
+          ...tr,
+          tdList: tr.tdList.map(td => ({
+            ...td,
+            value: Array.isArray(td.value)
+              ? td.value.flatMap(innerObj => processObject(innerObj))
+              : td.value.includes('\n')
+                ? processValue(td.value, td)
+                : td
+          }))
+        }))
+      }
+    } else if (
+      obj.type === 'list' && Array.isArray(obj.valueList)
+      || obj.type === 'title' && Array.isArray(obj.valueList)
+    ) {
+      return {
+        ...obj,
+        valueList: obj.valueList.flatMap(innerObj => processObject(innerObj))
+      }
+    } else if (typeof obj.value === 'string' && obj.value.match(/\n/)) {
+      return processValue(obj.value, obj)
+    } else {
+      return obj
+    }
+  }
+
+  return inputArray.flatMap(obj => processObject(obj))
+}
+
 export function isSameElementExceptValue(
   source: IElement,
   target: IElement
@@ -540,12 +652,13 @@ export function pickElementAttr(
 
 interface IZipElementListOption {
   extraPickAttrs?: Array<keyof IElement>
+  isClassifyArea?: boolean
 }
 export function zipElementList(
   payload: IElement[],
   options: IZipElementListOption = {}
 ): IElement[] {
-  const { extraPickAttrs } = options
+  const { extraPickAttrs, isClassifyArea = false } = options
   const elementList = deepClone(payload)
   const zipElementListData: IElement[] = []
   let e = 0
@@ -562,7 +675,38 @@ export function zipElementList(
       continue
     }
     // 优先处理虚拟元素，后表格、超链接、日期、控件特殊处理
-    if (element.titleId && element.level) {
+    if (element.areaId) {
+      const areaId = element.areaId
+      const area = element.area
+      // 收集并压缩数据
+      const valueList: IElement[] = []
+      while (e < elementList.length) {
+        const areaE = elementList[e]
+        if (areaId !== areaE.areaId) {
+          e--
+          break
+        }
+        delete areaE.area
+        delete areaE.areaId
+        valueList.push(areaE)
+        e++
+      }
+      const areaElementList = zipElementList(valueList, options)
+      // 不归类区域元素
+      if (isClassifyArea) {
+        const areaElement: IElement = {
+          type: ElementType.AREA,
+          value: '',
+          areaId,
+          area
+        }
+        areaElement.valueList = areaElementList
+        element = areaElement
+      } else {
+        zipElementListData.splice(e, 0, ...areaElementList)
+        continue
+      }
+    } else if (element.titleId && element.level) {
       // 标题处理
       const titleId = element.titleId
       if (titleId) {
@@ -643,7 +787,10 @@ export function zipElementList(
             const zipTd: ITd = {
               colspan: td.colspan,
               rowspan: td.rowspan,
-              value: zipElementList(td.value, options)
+              value: zipElementList(td.value, {
+                ...options,
+                isClassifyArea: false
+              })
             }
             // 压缩单元格属性
             TABLE_TD_ZIP_ATTR.forEach(attr => {
@@ -869,7 +1016,11 @@ export function formatElementContext(
       isBreakWarped ||
       (!copyElement.listId && targetElement.type === ElementType.LIST)
     ) {
-      const cloneAttr = [...TABLE_CONTEXT_ATTR, ...EDITOR_ROW_ATTR]
+      const cloneAttr = [
+        ...TABLE_CONTEXT_ATTR,
+        ...EDITOR_ROW_ATTR,
+        ...AREA_CONTEXT_ATTR
+      ]
       cloneProperty<IElement>(cloneAttr, copyElement!, targetElement)
       targetElement.valueList?.forEach(valueItem => {
         cloneProperty<IElement>(cloneAttr, copyElement!, valueItem)
@@ -1571,4 +1722,45 @@ export function deleteSurroundElementList(
       elementList.splice(s, 1)
     }
   }
+}
+
+export function getNonHideElementIndex(
+  elementList: IElement[],
+  index: number,
+  position: LocationPosition = LocationPosition.BEFORE
+) {
+  if (
+    !elementList[index]?.hide &&
+    !elementList[index]?.control?.hide &&
+    !elementList[index]?.area?.hide
+  ) {
+    return index
+  }
+  let i = index
+  if (position === LocationPosition.BEFORE) {
+    i = index - 1
+    while (i > 0) {
+      if (
+        !elementList[i]?.hide &&
+        !elementList[i]?.control?.hide &&
+        !elementList[i]?.area?.hide
+      ) {
+        return i
+      }
+      i--
+    }
+  } else {
+    i = index + 1
+    while (i < elementList.length) {
+      if (
+        !elementList[i]?.hide &&
+        !elementList[i]?.control?.hide &&
+        !elementList[i]?.area?.hide
+      ) {
+        return i
+      }
+      i++
+    }
+  }
+  return i
 }

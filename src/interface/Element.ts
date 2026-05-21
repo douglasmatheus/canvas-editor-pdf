@@ -5,8 +5,10 @@ import { ListStyle, ListType } from '../dataset/enum/List'
 import { RowFlex } from '../dataset/enum/Row'
 import { TitleLevel } from '../dataset/enum/Title'
 import { TableBorder } from '../dataset/enum/table/Table'
+import { IArea } from './Area'
 import { IBlock } from './Block'
 import { ICheckbox } from './Checkbox'
+import { IPadding } from './Common'
 import { IControl } from './Control'
 import { IRadio } from './Radio'
 import { ITextDecoration } from './Text'
@@ -39,6 +41,10 @@ export interface IElementStyle {
   textDecoration?: ITextDecoration
 }
 
+export interface IElementRule {
+  hide?: boolean
+}
+
 export interface IElementGroup {
   groupIds?: string[]
 }
@@ -65,6 +71,11 @@ export interface ITableAttr {
   borderColor?: string
   borderWidth?: number
   borderExternalWidth?: number
+  translateX?: number
+}
+
+export interface ITableRule {
+  tableToolDisabled?: boolean
 }
 
 export interface ITableElement {
@@ -76,7 +87,7 @@ export interface ITableElement {
   pagingIndex?: number // 拆分的表格索引
 }
 
-export type ITable = ITableAttr & ITableElement
+export type ITable = ITableAttr & ITableRule & ITableElement
 
 export interface IHyperlinkElement {
   valueList?: IElement[]
@@ -90,6 +101,7 @@ export interface ISuperscriptSubscript {
 
 export interface ISeparator {
   dashArray?: number[]
+  lineWidth?: number
 }
 
 export interface IControlElement {
@@ -115,21 +127,74 @@ export interface IDateElement {
   dateId?: string
 }
 
-export interface IImageElement {
+export interface IImageRule {
+  imgToolDisabled?: boolean
+  imgPreviewDisabled?: boolean
+}
+
+export interface IImageCrop {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface IImageCaption {
+  value: string
+  color?: string
+  font?: string
+  size?: number
+  top?: number
+}
+
+export interface IImgCaptionOption {
+  color?: string
+  font?: string
+  size?: number
+  top?: number
+}
+
+export interface IListOption {
+  inheritStyle?: boolean // 是否让列表序号继承文字样式
+}
+
+export interface IImageBasic {
   imgDisplay?: ImageDisplay
   imgFloatPosition?: {
     x: number
     y: number
     pageNo?: number
   }
+  imgCrop?: IImageCrop
+  imgCaption?: IImageCaption
 }
+
+export type IImageElement = IImageBasic & IImageRule
 
 export interface IBlockElement {
   block?: IBlock
 }
 
+export interface IAreaElement {
+  valueList?: IElement[]
+  areaId?: string
+  areaIndex?: number
+  area?: IArea
+}
+
+export interface ILabelElement {
+  labelId?: string
+  label?: {
+    color?: string
+    backgroundColor?: string
+    borderRadius?: number
+    padding?: IPadding
+  }
+}
+
 export type IElement = IElementBasic &
   IElementStyle &
+  IElementRule &
   IElementGroup &
   ITable &
   IHyperlinkElement &
@@ -143,7 +208,9 @@ export type IElement = IElementBasic &
   IImageElement &
   IBlockElement &
   ITitleElement &
-  IListElement
+  IListElement &
+  IAreaElement &
+  ILabelElement
 
 export interface IElementMetrics {
   width: number
@@ -180,6 +247,27 @@ export interface IElementFillRect {
 }
 
 export interface IUpdateElementByIdOption {
-  id: string
+  id?: string
+  conceptId?: string
   properties: Omit<Partial<IElement>, 'id'>
+}
+
+export interface IDeleteElementByIdOption {
+  id?: string
+  conceptId?: string
+}
+
+export interface IGetElementByIdOption {
+  id?: string
+  conceptId?: string
+}
+
+export interface IInsertElementListOption {
+  isReplace?: boolean
+  isSubmitHistory?: boolean
+  ignoreContextKeys?: Array<keyof IElement>
+}
+
+export interface ISpliceElementListOption {
+  isIgnoreDeletedRule?: boolean
 }

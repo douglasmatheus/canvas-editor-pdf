@@ -47,7 +47,7 @@
     "type:check": ""
   },
   "peerDependencies": {
-    "@hufe921/canvas-editor": "^0.9.94"
+    "@hufe921/canvas-editor": "^0.9.133"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^10.0.1",

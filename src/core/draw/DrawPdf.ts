@@ -1,3 +1,4 @@
+import { version } from '../../../package.json'
 import { ZERO } from '../../dataset/constant/Common'
 import { RowFlex } from '../../dataset/enum/Row'
 import {
@@ -7,6 +8,7 @@ import {
   IDrawPagePayload,
   IDrawRowPayload,
   IGetImageOption,
+  IGetOriginValueOption,
   IGetValueOption,
 } from '../../interface/Draw'
 import {
@@ -32,12 +34,14 @@ import { TextParticle } from './particle/TextParticle'
 import { PageNumber } from './frame/PageNumber'
 import { TableParticle } from './particle/table/TableParticle'
 import { HyperlinkParticle } from './particle/HyperlinkParticle'
+import { LabelParticle } from './particle/LabelParticle'
 import { Header } from './frame/Header'
 import { SuperscriptParticle } from './particle/Superscript'
 import { SubscriptParticle } from './particle/Subscript'
 import { SeparatorParticle } from './particle/Separator'
 // import { PageBreakParticle } from './particle/PageBreak'
 import { Watermark } from './frame/Watermark'
+import { WatermarkLayer } from '../../dataset/enum/Watermark'
 import {
   // EditorComponent,
   EditorMode,
@@ -85,6 +89,9 @@ import { mergeOption } from '../../utils/option'
 import { IForceUpdateOption } from '../../interface/Draw'
 import { IUpdateOption } from '../../interface/Editor'
 import type { IEditorData as ICEEditorData } from '@hufe921/canvas-editor'
+import { Area } from './interactive/Area'
+import { Graffiti } from './graffiti/Graffiti'
+import { Badge } from './frame/Badge'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 // import { IEditorData } from '@hufe921/canvas-editor'
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
@@ -113,7 +120,9 @@ export class DrawPdf {
   private i18n: I18n
   private margin: Margin
   private background: Background
+  private badge: Badge
   private group: Group
+  private area: Area
   private underline: Underline
   private strikeout: Strikeout
   private highlight: Highlight
@@ -128,6 +137,7 @@ export class DrawPdf {
   private header: Header
   private footer: Footer
   private hyperlinkParticle: HyperlinkParticle
+  private labelParticle: LabelParticle
   private dateParticle: DateParticle
   private separatorParticle: SeparatorParticle
   // private pageBreakParticle: PageBreakParticle
@@ -141,12 +151,13 @@ export class DrawPdf {
   // private control: Control
   private pageBorder: PageBorder
   private imageObserver: ImageObserver
+  private graffiti: Graffiti
 
   private LETTER_REG: RegExp
   private WORD_LIKE_REG: RegExp
   private rowList: IRow[]
   private pageRowList: IRow[][]
-  private printModeData: Required<IEditorData> | null
+  private printModeData: Required<Omit<IEditorData, 'graffiti'>> | null
 
   public defaultFontsLoadedPromise: Promise<boolean>
 
@@ -225,7 +236,9 @@ export class DrawPdf {
     // this.range = new RangeManager(this)
     this.margin = new Margin(this)
     this.background = new Background(this)
+    this.badge = new Badge(this)
     this.group = new Group(this)
+    this.area = new Area(this)
     this.underline = new Underline(this)
     this.strikeout = new Strikeout(this)
     this.highlight = new Highlight(this)
@@ -240,6 +253,7 @@ export class DrawPdf {
     this.header = new Header(this, data.header)
     this.footer = new Footer(this, data.footer)
     this.hyperlinkParticle = new HyperlinkParticle(this)
+    this.labelParticle = new LabelParticle(this)
     this.dateParticle = new DateParticle(this)
     this.separatorParticle = new SeparatorParticle(this)
     // this.pageBreakParticle = new PageBreakParticle(this)
@@ -252,6 +266,7 @@ export class DrawPdf {
     this.lineBreakParticle = new LineBreakParticle(this)
     // this.control = new Control(this)
     this.pageBorder = new PageBorder(this)
+    this.graffiti = new Graffiti(this, data.graffiti)
 
     this.imageObserver = new ImageObserver()
 
@@ -263,6 +278,39 @@ export class DrawPdf {
     this.rowList = []
     this.pageRowList = []
     this.printModeData = null
+  }
+
+  // 设置打印数据
+  public setPrintData() {
+    this.printModeData = {
+      header: this.header.getElementList(),
+      main: this.elementList,
+      footer: this.footer.getElementList()
+    }
+    // 过滤控件辅助元素
+    const clonePrintModeData = deepClone(this.printModeData)
+    const editorDataKeys: (keyof Omit<IEditorData, 'graffiti'>)[] = [
+      'header',
+      'main',
+      'footer'
+    ]
+    editorDataKeys.forEach(key => {
+      clonePrintModeData[key] = this.filterAssistElement(
+        clonePrintModeData[key]
+      )
+      // clonePrintModeData[key] = this.control.filterAssistElement(
+        // clonePrintModeData[key]
+      // )
+    })
+    this.setEditorData(clonePrintModeData)
+  }
+
+  // 还原打印数据
+  public clearPrintData() {
+    if (this.printModeData) {
+      this.setEditorData(this.printModeData)
+      this.printModeData = null
+    }
   }
 
   // public getDraw(): Draw {
@@ -471,6 +519,32 @@ export class DrawPdf {
     return this.mode
   }
 
+  // public isReadonly() {
+  //   if (this.area.getActiveAreaInfo()?.area?.mode) {
+  //     return this.area.isReadonly()
+  //   }
+  //   switch (this.mode) {
+  //     case EditorMode.DESIGN:
+  //       return false
+  //     case EditorMode.READONLY:
+  //     case EditorMode.PRINT:
+  //     case EditorMode.GRAFFITI:
+  //       return true
+  //     case EditorMode.FORM:
+  //       return !this.control.getIsRangeWithinControl()
+  //     default:
+  //       return false
+  //   }
+  // }
+
+  public getArea(): Area {
+    return this.area
+  }
+
+  public getBadge(): Badge {
+    return this.badge
+  }
+
   public filterAssistElement(elementList: IElement[]): IElement[] {
     return elementList.filter(element => {
       if (element.type === ElementType.TABLE) {
@@ -527,6 +601,18 @@ export class DrawPdf {
     this.clearSideEffect()
     this.mode = payload
     this.options.mode = payload
+  }
+
+  public isDesignMode() {
+    return this.mode === EditorMode.DESIGN
+  }
+
+  public isPrintMode() {
+    return this.mode === EditorMode.PRINT
+  }
+
+  public isGraffitiMode() {
+    return this.mode === EditorMode.GRAFFITI
   }
 
   public getOriginalWidth(): number {
@@ -631,6 +717,10 @@ export class DrawPdf {
 
   public getDefaultBasicRowMarginHeight(): number {
     return this.options.defaultBasicRowMarginHeight * this.options.scale
+  }
+
+  public getHighlightMarginHeight(): number {
+    return this.options.highlightMarginHeight * this.options.scale
   }
 
   public getTdPadding(): IPadding {
@@ -809,16 +899,28 @@ export class DrawPdf {
         }
       }
       // // 元素删除（不可删除控件忽略）
-      // if (!this.control.getActiveControl()) {
+      // if (
+      //   !isIgnoreDeletedRule &&
+      //   !this.isDesignMode() &&
+      //   !this.control.getIsRangeWithinControl()
+      // ) {
       //   const tdDeletable = this.getTd()?.deletable
       //   let deleteIndex = endIndex - 1
       //   while (deleteIndex >= start) {
       //     const deleteElement = elementList[deleteIndex]
       //     if (
-      //       isDesignMode ||
+      //       deleteElement?.hide ||
+      //       deleteElement?.control?.hide ||
+      //       deleteElement?.area?.hide ||
       //       (tdDeletable !== false &&
       //         deleteElement?.control?.deletable !== false &&
-      //         deleteElement?.title?.deletable !== false)
+      //         (!deleteElement.controlId ||
+      //           this.mode !== EditorMode.FORM ||
+      //           !modeRule[this.mode].controlDeletableDisabled) &&
+      //         deleteElement?.title?.deletable !== false &&
+      //         (group.deletable !== false || !deleteElement.groupIds?.length) &&
+      //         (deleteElement?.area?.deletable !== false ||
+      //           deleteElement?.areaIndex !== 0))
       //     ) {
       //       elementList.splice(deleteIndex, 1)
       //     }
@@ -829,8 +931,10 @@ export class DrawPdf {
       // }
     }
     // 循环添加，避免使用解构影响性能
-    for (let i = 0; i < items.length; i++) {
-      elementList.splice(start + i, 0, items[i])
+    if (items?.length) {
+      for (let i = 0; i < items.length; i++) {
+        elementList.splice(start + i, 0, items[i])
+      }
     }
   }
 
@@ -882,12 +986,16 @@ export class DrawPdf {
     return this.i18n
   }
 
+  public getGraffiti(): Graffiti {
+    return this.graffiti
+  }
+
   public getRowCount(): number {
     return this.getRowList().length
   }
 
   public async getDataURL(payload: IGetImageOption = {}): Promise<string[]> {
-    const { pixelRatio, mode } = payload
+    const { pixelRatio, mode, snapDomFunction } = payload
     // 放大像素比
     if (pixelRatio) {
       this.setPagePixelRatio(pixelRatio)
@@ -905,6 +1013,10 @@ export class DrawPdf {
       isSubmitHistory: false
     })
     await this.imageObserver.allSettled()
+    // 叠加iframe图片
+    if (snapDomFunction) {
+      await this.blockParticle.drawIframeToPage(this.pageList, snapDomFunction)
+    }
     const dataUrlList = this.pageList.map(c => c.toDataURL())
     // 还原
     if (pixelRatio) {
@@ -1042,8 +1154,10 @@ export class DrawPdf {
     })
   }
 
-  public getValue(options: IGetValueOption = {}): IEditorResult {
-    const { pageNo, extraPickAttrs } = options
+  public getOriginValue(
+    options: IGetOriginValueOption = {}
+  ): Required<IEditorData> {
+    const { pageNo } = options
     let mainElementList = this.elementList
     if (
       Number.isInteger(pageNo) &&
@@ -1054,18 +1168,31 @@ export class DrawPdf {
         row => row.elementList
       )
     }
-    const data: IEditorData = {
-      header: zipElementList(this.getHeaderElementList(), {
-        extraPickAttrs
-      }),
-      main: zipElementList(mainElementList, {
-        extraPickAttrs
-      }),
-      footer: zipElementList(this.getFooterElementList(), {
-        extraPickAttrs
-      })
+    const data: Required<IEditorData> = {
+      header: this.getHeaderElementList(),
+      main: mainElementList,
+      footer: this.getFooterElementList(),
+      graffiti: this.graffiti.getValue()
     }
-    const version = '0.0.94'
+    return data
+  }
+
+  public getValue(options: IGetValueOption = {}): IEditorResult {
+    const originData = this.getOriginValue(options)
+    const { extraPickAttrs } = options
+    const data: IEditorData = {
+      header: zipElementList(originData.header, {
+        extraPickAttrs
+      }),
+      main: zipElementList(originData.main, {
+        extraPickAttrs,
+        isClassifyArea: true
+      }),
+      footer: zipElementList(originData.footer, {
+        extraPickAttrs
+      }),
+      graffiti: originData.graffiti
+    }
     return {
       version,
       data,
@@ -1073,7 +1200,7 @@ export class DrawPdf {
     }
   }
 
-  public setEditorData(payload: Partial<IEditorData>) {
+  public setEditorData(payload: Partial<Omit<IEditorData, 'graffiti'>>) {
     const { header, main, footer } = payload
     if (header) {
       this.header.setElementList(header)
@@ -1139,11 +1266,26 @@ export class DrawPdf {
     return el.actualSize || el.size || this.options.defaultSize
   }
 
-  public getElementRowMargin(el: IRowElement) {
-    const { defaultBasicRowMarginHeight, defaultRowMargin, scale } =
-      this.options
+  public getElementRowMargin(el: IElement) {
+    const {
+      defaultSize,
+      defaultBasicRowMarginHeight,
+      defaultRowMargin,
+      scale
+    } = this.options
+    // 字体在12-30之间，行间距不变，小于12按比例缩小，大于30按比例放大
+    const fontSize = el.size || defaultSize
+    let ratio = 1
+    if (fontSize < 12) {
+      ratio = fontSize / 12
+    } else if (fontSize > 30) {
+      ratio = 1 + (fontSize - 30) / 30
+    }
     return (
-      defaultBasicRowMarginHeight * (el.rowMargin ?? defaultRowMargin) * scale
+      defaultBasicRowMarginHeight *
+      ratio *
+      (el.rowMargin ?? defaultRowMargin) *
+      scale
     )
   }
 
@@ -1178,14 +1320,14 @@ export class DrawPdf {
     } = payload
     const {
       defaultSize,
-      defaultRowMargin,
       scale,
+      imgCaption,
       table: { tdPadding },
       defaultTabWidth
     } = this.options
     const defaultBasicRowMarginHeight = this.getDefaultBasicRowMarginHeight()
     // 计算列表偏移宽度
-    const listStyleMap = this.listParticle.computeListStyle(elementList)
+    const listStyleMap = this.listParticle.computeListStyle(this.getCtx2d(), elementList)
     const rowList: IRow[] = []
     if (elementList.length) {
       rowList.push({
@@ -1207,13 +1349,10 @@ export class DrawPdf {
     let listIndex = 0
     // 控件最小宽度
     let controlRealWidth = 0
-    // console.log('elementList')
-    // console.log(elementList)
     for (let i = 0; i < elementList.length; i++) {
       const curRow: IRow = rowList[rowList.length - 1]
       const element = elementList[i]
-      const rowMargin =
-        defaultBasicRowMarginHeight * (element.rowMargin ?? defaultRowMargin)
+      const rowMargin = this.getElementRowMargin(element)
       const metrics: IElementMetrics = {
         width: 0,
         height: 0,
@@ -1225,15 +1364,21 @@ export class DrawPdf {
         curRow.offsetX ||
         (element.listId && listStyleMap.get(element.listId)) ||
         0
-      // console.log('innerWidth, offsetX')
-      // console.log(i)
-      // console.log(innerWidth, startX, offsetX)
-      // console.log('element.type')
-      // console.log(element.type)
       const availableWidth = innerWidth - offsetX
       // 增加起始位置坐标偏移量
-      x += curRow.elementList.length === 1 ? offsetX : 0
+      const isStartElement = curRow.elementList.length === 1
+      x += isStartElement ? offsetX : 0
+      y += isStartElement ? curRow.offsetY || 0 : 0
       if (
+        (element.hide || element.control?.hide || element.area?.hide) &&
+        !this.isDesignMode()
+      ) {
+        const preElement = curRow.elementList[curRow.elementList.length - 1]
+        metrics.height =
+          preElement?.metrics.height || this.options.defaultSize * scale
+        metrics.boundingBoxAscent = preElement?.metrics.boundingBoxAscent || 0
+        metrics.boundingBoxDescent = preElement?.metrics.boundingBoxDescent || 0
+      } else if (
         element.type === ElementType.IMAGE ||
         element.type === ElementType.LATEX
       ) {
@@ -1263,8 +1408,14 @@ export class DrawPdf {
             metrics.height = elementHeight
             metrics.boundingBoxDescent = elementHeight
           }
+          // 增加题注高度
+          if (element.imgCaption?.value) {
+            const fontSize = element.imgCaption.size || imgCaption.size
+            const captionTop = element.imgCaption.top ?? imgCaption.top
+            const captionHeight = (fontSize + captionTop) * scale
+            metrics.boundingBoxAscent += captionHeight
+          }
         }
-        metrics.boundingBoxAscent = 0
       } else if (element.type === ElementType.TABLE) {
         const tdPaddingWidth = tdPadding[1] + tdPadding[3]
         const tdPaddingHeight = tdPadding[0] + tdPadding[2]
@@ -1292,10 +1443,19 @@ export class DrawPdf {
           }
         }
         element.pagingIndex = element.pagingIndex ?? 0
+        const trList = element.trList!
+        // 重置tr高度：行高不可低于一个单元格最小高度
+        const tdMinHeight =
+          tdPaddingHeight + defaultSize + (rowMargin * 2) / scale
+        for (let t = 0; t < trList.length; t++) {
+          const tr = trList[t]
+          // 行高默认当前最小高度，后续根据内容自适应
+          tr.height = Math.max(tdMinHeight, tr.minHeight || 0)
+          tr.minHeight = tr.height
+        }
         // 计算表格行列
         this.tableParticle.computeRowColInfo(element)
         // 计算表格内元素信息
-        const trList = element.trList!
         for (let t = 0; t < trList.length; t++) {
           const tr = trList[t]
           for (let d = 0; d < tr.tdList.length; d++) {
@@ -1317,6 +1477,11 @@ export class DrawPdf {
               changeTr.height += extraHeight
               changeTr.tdList.forEach(changeTd => {
                 changeTd.height! += extraHeight
+                if (!changeTd.realHeight) {
+                  changeTd.realHeight = changeTd.height!
+                } else {
+                  changeTd.realHeight! += extraHeight
+                }
               })
             }
             // 当前单元格最小高度及真实高度（包含跨列）
@@ -1358,6 +1523,7 @@ export class DrawPdf {
             changeTr.height -= reduceHeight
             changeTr.tdList.forEach(changeTd => {
               changeTd.height! -= reduceHeight
+              changeTd.realHeight! -= reduceHeight
             })
           }
         }
@@ -1374,6 +1540,10 @@ export class DrawPdf {
         metrics.height = elementHeight
         metrics.boundingBoxDescent = elementHeight
         metrics.boundingBoxAscent = -rowMargin
+        // 后一个元素也是表格则移除行间距
+        if (elementList[i + 1]?.type === ElementType.TABLE) {
+          metrics.boundingBoxAscent -= rowMargin
+        }
         // 表格分页处理(拆分表格)
         if (isPagingMode) {
           const height = this.getHeight()
@@ -1381,21 +1551,24 @@ export class DrawPdf {
           let curPagePreHeight = marginHeight
           for (let r = 0; r < rowList.length; r++) {
             const row = rowList[r]
+            const rowOffsetY = row.offsetY || 0
             if (
-              row.height + curPagePreHeight > height ||
+              row.height + curPagePreHeight + rowOffsetY > height ||
               rowList[r - 1]?.isPageBreak
             ) {
-              curPagePreHeight = marginHeight + row.height
+              curPagePreHeight = marginHeight + row.height + rowOffsetY
             } else {
-              curPagePreHeight += row.height
+              curPagePreHeight += row.height + rowOffsetY
             }
           }
           // 当前剩余高度是否能容下当前表格第一行（可拆分）的高度，排除掉表头类型
+          // 前面元素为换页符时重新计算高度
           const rowMarginHeight = rowMargin * 2 * scale
+          const firstTrHeight = element.trList![0].height! * scale
           if (
-            curPagePreHeight + element.trList![0].height! + rowMarginHeight >
-            height ||
-            (element.pagingIndex !== 0 && element.trList![0].pagingRepeat)
+            curPagePreHeight + firstTrHeight + rowMarginHeight > height ||
+            (element.pagingIndex !== 0 && element.trList![0].pagingRepeat) ||
+            elementList[i - 1]?.type === ElementType.PAGE_BREAK
           ) {
             // 无可拆分行则切换至新页
             curPagePreHeight = marginHeight
@@ -1438,11 +1611,12 @@ export class DrawPdf {
                 (pre, cur) => pre + cur.height,
                 0
               )
+              const cloneTrRealHeight = cloneTrHeight * scale
               const pagingId = element.pagingId || getUUID()
               element.pagingId = pagingId
               element.height -= cloneTrHeight
-              metrics.height -= cloneTrHeight
-              metrics.boundingBoxDescent -= cloneTrHeight
+              metrics.height -= cloneTrRealHeight
+              metrics.boundingBoxDescent -= cloneTrRealHeight
               // 追加拆分表格
               const cloneElement = deepClone(element)
               cloneElement.pagingId = pagingId
@@ -1490,8 +1664,9 @@ export class DrawPdf {
         }
       } else if (element.type === ElementType.SEPARATOR) {
         const {
-          separator: { lineWidth }
+          separator: { lineWidth: defaultLineWidth }
         } = this.options
+        const lineWidth = element.lineWidth || defaultLineWidth
         element.width = availableWidth / scale
         metrics.width = availableWidth
         metrics.height = lineWidth * scale
@@ -1523,7 +1698,8 @@ export class DrawPdf {
         metrics.width = defaultTabWidth * scale
         metrics.height = defaultSize * scale
         metrics.boundingBoxDescent = 0
-        metrics.boundingBoxAscent = metrics.height
+        metrics.boundingBoxAscent =
+          this.textParticle.getBasisWordBoundingBoxAscent(this.getCtx2d(), this.getCtx2d().font)
       } else if (element.type === ElementType.BLOCK) {
         if (!element.width) {
           metrics.width = availableWidth
@@ -1534,6 +1710,19 @@ export class DrawPdf {
         metrics.height = element.height! * scale
         metrics.boundingBoxDescent = metrics.height
         metrics.boundingBoxAscent = 0
+      } else if (element.type === ElementType.LABEL) {
+        const {
+          defaultSize,
+          label: { defaultPadding }
+        } = this.options
+        this.getCtx2d().font = this.getElementFont(element)
+        const fontMetrics = this.textParticle.measureText(this.getCtx2d(), element)
+        metrics.width =
+          (fontMetrics.width + defaultPadding[1] + defaultPadding[3]) * scale
+        metrics.height = (element.size || defaultSize) * scale
+        metrics.boundingBoxDescent = 0
+        metrics.boundingBoxAscent =
+          (defaultPadding[0] + fontMetrics.actualBoundingBoxAscent) * scale
       } else {
         // 设置上下标真实字体尺寸
         const size = element.size || defaultSize
@@ -1546,15 +1735,17 @@ export class DrawPdf {
         metrics.height = (element.actualSize || size) * scale
         this.getCtx2d().font = this.getElementFont(element)
         const fontMetrics = this.textParticle.measureText(this.getCtx2d(), element)
-        // console.log('fontMetrics')
-        // console.log(fontMetrics)
         metrics.width = fontMetrics.width * scale
         if (element.letterSpacing) {
           metrics.width += element.letterSpacing * scale
         }
+        // 零宽字符ascent默认为：基线元素ascent
         metrics.boundingBoxAscent =
           (element.value === ZERO
-            ? element.size || defaultSize
+            ? this.textParticle.getBasisWordBoundingBoxAscent(
+                this.getCtx2d(),
+                element.font!
+              )
             : fontMetrics.actualBoundingBoxAscent) * scale
         metrics.boundingBoxDescent =
           fontMetrics.actualBoundingBoxDescent * scale
@@ -1565,9 +1756,10 @@ export class DrawPdf {
         }
       }
       const ascent =
-        (element.imgDisplay !== ImageDisplay.INLINE &&
+        !element.hide &&
+        ((element.imgDisplay !== ImageDisplay.INLINE &&
           element.type === ElementType.IMAGE) ||
-          element.type === ElementType.LATEX
+          element.type === ElementType.LATEX)
           ? metrics.height + rowMargin
           : metrics.boundingBoxAscent + rowMargin
       const height =
@@ -1575,8 +1767,6 @@ export class DrawPdf {
         metrics.boundingBoxAscent +
         metrics.boundingBoxDescent +
         rowMargin
-      // console.log('height')
-      // console.log(height)
       const rowElement: IRowElement = Object.assign(element, {
         metrics,
         left: 0,
@@ -1619,9 +1809,9 @@ export class DrawPdf {
               elementList,
               i
             )
-            // 单词宽度大于行可用宽度，无需折行
+            // 后面存在元素 && 单词宽度大于行可用宽度，无需折行
             const wordWidth = width * scale
-            if (wordWidth <= availableWidth) {
+            if (endElement && wordWidth <= availableWidth) {
               curRowWidth += wordWidth
               nextElement = endElement
             }
@@ -1644,9 +1834,6 @@ export class DrawPdf {
       }
       listId = element.listId
       // 计算四周环绕导致的元素偏移量
-      // console.log('rowElement')
-      // console.log(rowElement, curRow)
-      // console.log(availableWidth)
       const surroundPosition = this.position.setSurroundPosition({
         pageNo,
         rowElement,
@@ -1673,17 +1860,12 @@ export class DrawPdf {
         preElement?.imgDisplay === ImageDisplay.INLINE ||
         element.imgDisplay === ImageDisplay.INLINE ||
         preElement?.listId !== element.listId ||
-        (i !== 0 && element.value === ZERO)
+        (preElement?.areaId !== element.areaId && !element.area?.hide) ||
+        (i !== 0 && element.value === ZERO && !element.area?.hide)
       // 是否宽度不足导致换行
       const isWidthNotEnough = curRowWidth > availableWidth
-      // console.log('isForceBreak, isWidthNotEnough, curRowWidth, availableWidth')
-      // console.log(isForceBreak, isWidthNotEnough, curRowWidth, availableWidth)
       const isWrap = isForceBreak || isWidthNotEnough
       // 新行数据处理
-      // console.log('isWrap')
-      // console.log(isWrap)
-      // console.log(preElement)
-      // console.log(element)
       if (isWrap) {
         const row: IRow = {
           width: metrics.width,
@@ -1723,11 +1905,21 @@ export class DrawPdf {
           row.offsetX = listStyleMap.get(element.listId!)
           row.listIndex = listIndex
         }
+        // Y轴偏移量
+        row.offsetY =
+          !isFromTable &&
+          element.area?.top &&
+          element.areaId !== elementList[i - 1]?.areaId
+            ? element.area.top * scale
+            : 0
         rowList.push(row)
       } else {
         curRow.width += metrics.width
         // 减小块元素前第一行空行行高
-        if (i === 0 && getIsBlockElement(elementList[1])) {
+        if (
+          i === 0 &&
+          (getIsBlockElement(elementList[1]) || !!elementList[1]?.areaId)
+        ) {
           curRow.height = defaultBasicRowMarginHeight
           curRow.ascent = defaultBasicRowMarginHeight
         } else if (curRow.height < height) {
@@ -1738,13 +1930,27 @@ export class DrawPdf {
       }
       // 行结束时逻辑
       if (isWrap || i === elementList.length - 1) {
+        // 打印模式下隐藏行元素均为隐藏元素 => 行不显示
+        if (
+          this.mode === EditorMode.PRINT &&
+          this.options.modeRule[EditorMode.PRINT].filterHideElementRow
+        ) {
+          const isAllHidden = curRow.elementList
+            .filter(el => el.value !== ZERO)
+            .every(el => el.hide || el.control?.hide || el.area?.hide)
+          if (isAllHidden) {
+            curRow.height = 0
+            curRow.ascent = 0
+          }
+        }
         // 换行原因：宽度不足
         curRow.isWidthNotEnough = isWidthNotEnough && !isForceBreak
         // 两端对齐、分散对齐
         if (
           !curRow.isSurround &&
           (preElement?.rowFlex === RowFlex.JUSTIFY ||
-            (preElement?.rowFlex === RowFlex.ALIGNMENT && isWidthNotEnough))
+            (preElement?.rowFlex === RowFlex.ALIGNMENT &&
+              curRow.isWidthNotEnough))
         ) {
           // 忽略换行符及尾部元素间隔设置
           const rowElementList =
@@ -1760,8 +1966,6 @@ export class DrawPdf {
           curRow.width = availableWidth
         }
       }
-      // console.log('----curRow----')
-      // console.log(curRow)
       // 重新计算坐标、页码、下一行首行元素环绕交叉
       if (isWrap) {
         x = startX
@@ -1798,8 +2002,6 @@ export class DrawPdf {
         x += metrics.width
       }
     }
-    // console.log('elementList')
-    // console.log(elementList)
     return rowList
   }
 
@@ -1816,7 +2018,10 @@ export class DrawPdf {
     if (pageMode === PageMode.CONTINUITY) {
       pageRowList[0] = this.rowList
       // 重置高度
-      pageHeight += this.rowList.reduce((pre, cur) => pre + cur.height, 0)
+      pageHeight += this.rowList.reduce(
+        (pre, cur) => pre + cur.height + (cur.offsetY || 0),
+        0
+      )
       const dpr = this.getPagePixelRatio()
       const pageDom = this.pageList[0]
       const pageDomHeight = Number(pageDom.style.height.replace('px', ''))
@@ -1832,22 +2037,20 @@ export class DrawPdf {
     } else {
       for (let i = 0; i < this.rowList.length; i++) {
         const row = this.rowList[i]
-        // console.log('row.height + pageHeight, height')
-        // console.log(i, row.height + pageHeight, height)
-        // console.log(row)
+        const rowOffsetY = row.offsetY || 0
         if (
-          row.height + pageHeight > height ||
+          row.height + rowOffsetY + pageHeight > height ||
           this.rowList[i - 1]?.isPageBreak
         ) {
           if (Number.isInteger(maxPageNo) && pageNo >= maxPageNo!) {
             this.elementList = this.elementList.slice(0, row.startIndex)
             break
           }
-          pageHeight = marginHeight + row.height
+          pageHeight = marginHeight + row.height + rowOffsetY
           pageRowList.push([row])
           pageNo++
         } else {
-          pageHeight += row.height
+          pageHeight += row.height + rowOffsetY
           pageRowList[pageNo].push(row)
         }
       }
@@ -1862,7 +2065,9 @@ export class DrawPdf {
     const {
       control: { activeBackgroundColor }
     } = this.options
-    const { rowList, positionList } = payload
+    const { rowList, positionList/*, elementList */} = payload
+    const marginHeight = this.getDefaultBasicRowMarginHeight()
+    const highlightMarginHeight = this.getHighlightMarginHeight()
     // const activeControlElement = this.control.getActiveControl()?.getElement()
     for (let i = 0; i < rowList.length; i++) {
       const curRow = rowList[i]
@@ -1896,9 +2101,9 @@ export class DrawPdf {
           this.highlight.recordFillInfo(
             ctx2d,
             x - offsetX,
-            y,
+            y + marginHeight - highlightMarginHeight, // 先减去行margin，再加上高亮margin
             element.metrics.width + offsetX,
-            curRow.height,
+            curRow.height - 2 * marginHeight + 2 * highlightMarginHeight,
             element.highlight || activeBackgroundColor
           )
           //     } else 
@@ -1931,7 +2136,8 @@ export class DrawPdf {
       zone,
       isDrawLineBreak = !lineBreak.disabled
     } = payload
-    const isPrintMode = this.mode === EditorMode.PRINT
+    const isPrintMode = this.isPrintMode()
+    // const isGraffitiMode = this.isGraffitiMode()
     // const { isCrossRowCol } = this.range.getRange()
     // let index = startIndex
     // let offY = 0
@@ -1948,8 +2154,6 @@ export class DrawPdf {
       for (let j = 0; j < curRow.elementList.length; j++) {
         const element = curRow.elementList[j]
         const metrics = element.metrics
-        // console.log('element')
-        // console.log(element)
         // 当前元素位置信息
         const {
           ascent: offsetY,
@@ -1960,7 +2164,13 @@ export class DrawPdf {
         // offY += y
         const preElement = curRow.elementList[j - 1]
         // 元素绘制
-        if (element.type === ElementType.IMAGE) {
+        if (
+          (element.hide || element.control?.hide || element.area?.hide) &&
+          !this.isDesignMode()
+        ) {
+          // 控件隐藏时不绘制
+          this.textParticle.complete()
+        } else if (element.type === ElementType.IMAGE) {
           this.textParticle.complete()
           // 浮动图片单独绘制
           if (
@@ -1983,6 +2193,9 @@ export class DrawPdf {
         } else if (element.type === ElementType.HYPERLINK) {
           this.textParticle.complete()
           this.hyperlinkParticle.render(this.getCtx2d(), element, x, y + offsetY)
+        } else if (element.type === ElementType.LABEL) {
+          this.textParticle.complete()
+          this.labelParticle.render(this.getCtx2d(), element, x, y + offsetY)
         } else if (element.type === ElementType.DATE) {
           const nextElement = curRow.elementList[j + 1]
           // 释放之前的
@@ -2042,7 +2255,7 @@ export class DrawPdf {
           this.textParticle.complete()
         } else if (element.type === ElementType.BLOCK) {
           this.textParticle.complete()
-          this.blockParticle.render(pageNo, element, x, y)
+          this.blockParticle.render(ctx2d, pageNo, element, x, y + offsetY)
         } else {
           // 如果当前元素设置左偏移，则上一元素立即绘制
           if (element.left) {
@@ -2249,7 +2462,7 @@ export class DrawPdf {
       // 绘制批注样式
       this.group.render(this.getCtx2d())
       // // 绘制选区
-      // if (!isPrintMode) {
+      // if (!isPrintMode && !isGraffitiMode) {
       //   if (rangeRecord.width && rangeRecord.height) {
       //     const { x, y, width, height } = rangeRecord
       //     this.range.render(ctx, x, y, width, height)
@@ -2324,6 +2537,8 @@ export class DrawPdf {
       lineNumber,
       pageBorder
     } = this.options
+    const isPrintMode = this.mode === EditorMode.PRINT
+    const isContinuityMode = pageMode === PageMode.CONTINUITY
     const innerWidth = this.getInnerWidth()
     // const ctx = this.ctxList[pageNo]
     const ctx2d = this.getCtx2d()
@@ -2332,9 +2547,26 @@ export class DrawPdf {
     // ctx2d.globalAlpha = !this.zone.isMainActive() ? inactiveAlpha : 1
     this._clearPage(pageNo)
     // 绘制背景
-    this.background.render(ctx2d, pageNo)
+    if (
+      !isPrintMode ||
+      !this.options.modeRule[EditorMode.PRINT]?.backgroundDisabled
+    ) {
+      this.background.render(ctx2d, pageNo)
+    }
+    // 绘制区域
+    if (!isPrintMode) {
+      this.area.render(ctx2d, pageNo)
+    }
+    // 绘制水印（底层）
+    if (
+      !isContinuityMode &&
+      this.options.watermark.data &&
+      this.options.watermark.layer === WatermarkLayer.BOTTOM
+    ) {
+      this.waterMark.render(ctx2d, pageNo)
+    }
     // 绘制页边距
-    if (this.mode !== EditorMode.PRINT) {
+    if (!isPrintMode) {
       this.margin.render(ctx2d, pageNo)
     }
     // 渲染衬于文字下方元素
@@ -2379,10 +2611,6 @@ export class DrawPdf {
     // if (this.search.getSearchKeyword()) {
     //   this.search.render(ctx, pageNo)
     // }
-    // 绘制水印
-    if (pageMode !== PageMode.CONTINUITY && this.options.watermark.data) {
-      this.waterMark.render(ctx2d, pageNo)
-    }
     // 绘制空白占位符
     if (this.elementList.length <= 1 && !this.elementList[0]?.listId) {
       this.placeholder.render(ctx2d)
@@ -2394,6 +2622,20 @@ export class DrawPdf {
     // 绘制页面边框
     if (!pageBorder.disabled) {
       this.pageBorder.render(ctx2d)
+    }
+    // 绘制签章
+    this.badge.render(ctx2d, this.elementList[0], pageNo)
+    // 绘制涂鸦
+    if (this.isGraffitiMode()) {
+      this.graffiti.render(ctx2d, pageNo)
+    }
+    // 绘制水印（顶层）
+    if (
+      !isContinuityMode &&
+      this.options.watermark.data &&
+      this.options.watermark.layer === WatermarkLayer.TOP
+    ) {
+      this.waterMark.render(ctx2d, pageNo)
     }
   }
 
@@ -2452,11 +2694,14 @@ export class DrawPdf {
       })!
       // 页面信息
       this.pageRowList = this._computePageList()//this.draw.getPageRowList()
-      // console.log('this.pageList')
-      // console.log(this.pageRowList)
-      // console.log(this.draw.getPageRowList())
       // 位置信息
       this.position.computePositionList()
+      // 区域信息
+      this.area.compute()
+      // 涂鸦信息
+      if (this.isGraffitiMode()) {
+        this.graffiti.compute()
+      }
       // // 控件关键词高亮
       // this.control.computeHighlightList()
     }

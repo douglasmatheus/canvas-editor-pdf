@@ -99,6 +99,7 @@ export class ListParticle {
   // }
 
   public computeListStyle(
+    ctx2d: Context2d,
     elementList: IElement[]
   ): Map<string, number> {
     const listStyleMap = new Map<string, number>()
@@ -115,7 +116,7 @@ export class ListParticle {
         if (curElement.listId && curElement.listId !== curListId) {
           // 列表结束
           if (curElementList.length) {
-            const width = this.getListStyleWidth(curElementList)
+            const width = this.getListStyleWidth(ctx2d, curElementList)
             listStyleMap.set(curListId!, width)
           }
           curListId = curElement.listId
@@ -125,13 +126,36 @@ export class ListParticle {
       start++
     }
     if (curElementList.length) {
-      const width = this.getListStyleWidth(curElementList)
+      const width = this.getListStyleWidth(ctx2d, curElementList)
       listStyleMap.set(curListId!, width)
     }
     return listStyleMap
   }
 
-  public getListStyleWidth(
+  private findStyledElement(elementList: IElement[]): IElement {
+    let styleElement = elementList[0]
+    for (let i = 1; i < elementList.length; i++) {
+      const element = elementList[i]
+      if (element.font || element.size || element.bold || element.italic) {
+        styleElement = element
+        break
+      }
+    }
+    return styleElement
+  }
+
+  private getListFontStyle(elementList: IElement[], scale: number): string {
+    if (this.options.list.inheritStyle) {
+      const styleElement = this.findStyledElement(elementList)
+      return this.draw.getElementFont(styleElement, scale)
+    } else {
+      const { defaultFont, defaultSize } = this.options
+      return `${defaultSize * scale}px ${defaultFont}`
+    }
+  }
+
+   public getListStyleWidth(
+    ctx2d: Context2d,
     listElementList: IElement[]
   ): number {
     const { scale, checkbox } = this.options
@@ -154,10 +178,14 @@ export class ListParticle {
       return pre
     }, 0)
     if (!count) return 0
+    ctx2d.save()
+    ctx2d.font = this.getListFontStyle(listElementList, scale)
     // 以递增样式最大宽度为准
-    const text = `${this.MEASURE_BASE_TEXT.repeat(String(count).length)}${KeyMap.PERIOD
-      }`
+    const text = `${this.MEASURE_BASE_TEXT.repeat(String(count).length - 1 || 1)}${
+      KeyMap.PERIOD
+    }`
     const textMetrics = this.draw.getFakeCtx().measureText(text)
+    ctx2d.restore()
     return Math.ceil((textMetrics.width + this.LIST_GAP) * scale)
   }
 
@@ -171,7 +199,7 @@ export class ListParticle {
     if (startElement.value !== ZERO || startElement.listWrap) return
     // tab width
     let tabWidth = 0
-    const { defaultTabWidth, scale, defaultFont, defaultSize } = this.options
+    const { defaultTabWidth, scale } = this.options
     for (let i = 1; i < elementList.length; i++) {
       const element = elementList[i]
       if (element?.type !== ElementType.TAB) break
@@ -220,7 +248,7 @@ export class ListParticle {
       }
       if (!text) return
       ctx2d.save()
-      ctx2d.font = `${defaultSize * scale}px ${defaultFont}`
+      ctx2d.font = this.getListFontStyle(elementList, scale)
       ctx2d.fillText(text, x, y)
       ctx2d.restore()
     }

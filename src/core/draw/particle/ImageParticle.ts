@@ -1,13 +1,15 @@
 import { Context2d } from 'jspdf'
 import { EDITOR_PREFIX } from '../../../dataset/constant/Editor'
 import { IEditorOption } from '../../../interface/Editor'
+import { ElementType } from '../../../dataset/enum/Element'
 import { IElement } from '../../../interface/Element'
 import { convertStringToBase64 } from '../../../utils'
 import { DrawPdf } from '../DrawPdf'
+import { DeepRequired } from '../../../interface/Common'
 
 export class ImageParticle {
   protected draw: DrawPdf
-  protected options: Required<IEditorOption>
+  protected options: DeepRequired<IEditorOption>
   protected imageCache: Map<string, HTMLImageElement>
   // private container: HTMLDivElement
   private floatImageContainer: HTMLDivElement | null
@@ -20,6 +22,50 @@ export class ImageParticle {
     this.imageCache = new Map()
     this.floatImageContainer = null
     this.floatImage = null
+  }
+
+  public getOriginalMainImageList(): IElement[] {
+    const imageList: IElement[] = []
+    const getImageList = (elementList: IElement[]) => {
+      for (const element of elementList) {
+        if (element.type === ElementType.TABLE) {
+          const trList = element.trList!
+          for (let r = 0; r < trList.length; r++) {
+            const tr = trList[r]
+            for (let d = 0; d < tr.tdList.length; d++) {
+              const td = tr.tdList[d]
+              getImageList(td.value)
+            }
+          }
+        } else if (element.type === ElementType.IMAGE) {
+          imageList.push(element)
+        }
+      }
+    }
+    // 获取正文图片列表
+    getImageList(this.draw.getOriginalMainElementList())
+    return imageList
+  }
+
+  private _countImagesBeforeTarget(
+    elementList: IElement[],
+    targetElement: IElement
+  ): number {
+    let count = 0
+    for (const element of elementList) {
+      if (element === targetElement) break
+      if (element.type === ElementType.TABLE) {
+        const trList = element.trList!
+        for (const tr of trList) {
+          for (const td of tr.tdList) {
+            count += this._countImagesBeforeTarget(td.value, targetElement)
+          }
+        }
+      } else if (element.type === ElementType.IMAGE) {
+        count++
+      }
+    }
+    return count
   }
 
   public createFloatImage(element: IElement) {
@@ -46,8 +92,8 @@ export class ImageParticle {
     const pageGap = this.draw.getPageGap()
     const preY = this.draw.getPageNo() * (height + pageGap)
     const imgFloatPosition = element.imgFloatPosition!
-    floatImageContainer.style.left = `${imgFloatPosition.x}px`
-    floatImageContainer.style.top = `${preY + imgFloatPosition.y}px`
+    floatImageContainer.style.left = `${imgFloatPosition.x * scale}px`
+    floatImageContainer.style.top = `${preY + imgFloatPosition.y * scale}px`
     floatImage.src = element.value
   }
 
@@ -92,6 +138,55 @@ export class ImageParticle {
     return fallbackImage
   }
 
+  private _renderCaption(
+    ctx2d: Context2d,
+    element: IElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ) {
+    if (!element.imgCaption?.value) return
+    const { scale, imgCaption } = this.options
+    let captionText = element.imgCaption.value
+    // 替换特殊字符
+    if (captionText.includes('{imageNo}')) {
+      const elementList = this.draw.getOriginalMainElementList()
+      const imageNo = this._countImagesBeforeTarget(elementList, element) + 1
+      captionText = captionText.replace(/\{imageNo\}/g, String(imageNo))
+    }
+    const fontSize = (element.imgCaption.size || imgCaption.size) * scale
+    const fontFamily = element.imgCaption.font || imgCaption.font
+    const color = element.imgCaption.color || imgCaption.color
+    ctx2d.save()
+    ctx2d.font = `${fontSize}px ${fontFamily}`
+    ctx2d.fillStyle = color
+    ctx2d.textAlign = 'center'
+    // 超出图片宽度后省略
+    let displayText = captionText
+    const textMetrics = this.draw.getFakeCtx().measureText(captionText)
+    if (textMetrics.width > width) {
+      let left = 0
+      let right = captionText.length
+      while (left < right) {
+        const mid = Math.ceil((left + right) / 2)
+        const truncated = captionText.substring(0, mid)
+        if (this.draw.getFakeCtx().measureText(truncated + '...').width <= width) {
+          left = mid
+        } else {
+          right = mid - 1
+        }
+      }
+      displayText = captionText.substring(0, left) + '...'
+    }
+    const captionTop = (element.imgCaption.top ?? imgCaption.top) * scale
+    const captionY =
+      y + height + captionTop + textMetrics.actualBoundingBoxAscent
+    const captionX = x + width / 2
+    ctx2d.fillText(displayText, captionX, captionY)
+    ctx2d.restore()
+  }
+
   public render(
     ctx2d: Context2d,
     element: IElement,
@@ -103,6 +198,7 @@ export class ImageParticle {
     const width = element.width! * scale
     const height = element.height! * scale
     ctx2d.drawImage(element.value, x, y, width, height)
+    this._renderCaption(ctx2d, element, x, y, width, height)
   }
 }
 
