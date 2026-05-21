@@ -8,7 +8,9 @@ export const EDITOR_CLIPBOARD = `${EDITOR_PREFIX}-clipboard`
 export const defaultModeRuleOption: Readonly<DeepRequired<IModeRule>> = {
   print: {
     imagePreviewerDisabled: false,
-    backgroundDisabled: false
+    backgroundDisabled: false,
+    filterEmptyControl: false,
+    filterHideElementRow: false
   },
   readonly: {
     imagePreviewerDisabled: false

@@ -1,9 +1,9 @@
 import { EDITOR_PREFIX } from '../../../../dataset/constant/Editor'
 import { BlockType } from '../../../../dataset/enum/Block'
 import { ElementType } from '../../../../dataset/enum/Element'
-import { IIframeInfo } from '../../../../interface/Block'
-import { DeepRequired } from '../../../../interface/Common'
-import { IEditorOption } from '../../../../interface/Editor'
+// import { IIframeInfo } from '../../../../interface/Block'
+// import { DeepRequired } from '../../../../interface/Common'
+// import { IEditorOption } from '../../../../interface/Editor'
 import { IRowElement } from '../../../../interface/Row'
 import { loadImage } from '../../../../utils'
 import { BaseBlock } from './modules/BaseBlock'
@@ -53,6 +53,7 @@ export class BlockParticle {
       cacheBlock.render()
       this.blockMap.set(id, cacheBlock)
     }
+    ctx
     // 打印模式截图，其他模式更新位置
     // if (this.draw.isPrintMode()) {
     //   cacheBlock.snapshot(ctx, x, y)

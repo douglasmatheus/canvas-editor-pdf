@@ -3,10 +3,14 @@ import typescript from '@rollup/plugin-typescript'
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import * as path from 'path'
 import dts from 'vite-plugin-dts'
+import pkg from './package.json'
 
 const name = 'canvas-editor-pdf'
 
 export default defineConfig({
+  define: {
+    __VERSION__: JSON.stringify(pkg.version)
+  },
   plugins: [
     cssInjectedByJsPlugin({
       styleId: `${name}-style`,

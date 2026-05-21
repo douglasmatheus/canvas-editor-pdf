@@ -41,7 +41,7 @@ export class Badge {
     value: string
   ) {
     if (this.imageCache.has(value)) {
-      const img = this.imageCache.get(value)!
+      // const img = this.imageCache.get(value)!
       ctx.drawImage(element.value, x, y, width, height)
     } else {
       const img = new Image()

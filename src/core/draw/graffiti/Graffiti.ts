@@ -1,7 +1,7 @@
 import { Context2d } from 'jspdf'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
-import { IGraffitiData, IGraffitiStroke } from '../../../interface/Graffiti'
+import { IGraffitiData/*, IGraffitiStroke*/ } from '../../../interface/Graffiti'
 import { DrawPdf } from '../DrawPdf'
 
 export class Graffiti {
@@ -9,8 +9,8 @@ export class Graffiti {
   private options: DeepRequired<IEditorOption>
   private data: IGraffitiData[]
   // private pageContainer: HTMLDivElement
-  private isDrawing = false
-  private startStroke: IGraffitiStroke | null = null
+  // private isDrawing = false
+  // private startStroke: IGraffitiStroke | null = null
 
   constructor(draw: DrawPdf, data?: IGraffitiData[]) {
     this.draw = draw
@@ -27,61 +27,61 @@ export class Graffiti {
     // this.pageContainer.addEventListener('mousemove', this.drawing.bind(this))
   }
 
-  private start(evt: MouseEvent) {
-    if (!this.draw.isGraffitiMode()) return
-    this.isDrawing = true
-    // 缓存起始数据
-    const { scale } = this.options
-    this.startStroke = {
-      lineColor: this.options.graffiti.defaultLineColor,
-      lineWidth: this.options.graffiti.defaultLineWidth,
-      points: [evt.offsetX / scale, evt.offsetY / scale]
-    }
-  }
+  // private start(evt: MouseEvent) {
+  //   if (!this.draw.isGraffitiMode()) return
+  //   this.isDrawing = true
+  //   // 缓存起始数据
+  //   const { scale } = this.options
+  //   this.startStroke = {
+  //     lineColor: this.options.graffiti.defaultLineColor,
+  //     lineWidth: this.options.graffiti.defaultLineWidth,
+  //     points: [evt.offsetX / scale, evt.offsetY / scale]
+  //   }
+  // }
 
-  private stop() {
-    this.isDrawing = false
-  }
+  // private stop() {
+  //   this.isDrawing = false
+  // }
 
-  private drawing(evt: MouseEvent) {
-    if (!this.isDrawing || !this.draw.isGraffitiMode()) return
-    // 移动超过至少2个像素后开始绘制
-    const { offsetX, offsetY } = evt
-    const DISTANCE = 2
-    if (
-      this.startStroke &&
-      Math.abs(this.startStroke.points[0] - offsetX) < DISTANCE &&
-      Math.abs(this.startStroke.points[1] - offsetY) < DISTANCE
-    ) {
-      return
-    }
-    // 修改数据
-    const pageNo = this.draw.getPageNo()
-    let currentValue = this.data.find(item => item.pageNo === pageNo)
-    if (this.startStroke) {
-      if (!currentValue) {
-        currentValue = {
-          pageNo,
-          strokes: []
-        }
-        this.data.push(currentValue)
-      }
-      currentValue.strokes.push(this.startStroke)
-      // 清空起始数据
-      this.startStroke = null
-    }
-    if (!currentValue?.strokes?.length) return
-    const { scale } = this.options
-    const lastPoints =
-      currentValue.strokes[currentValue.strokes.length - 1].points
-    lastPoints.push(offsetX / scale, offsetY / scale)
-    // 重新渲染
-    this.draw.render({
-      isCompute: false,
-      isSetCursor: false,
-      isSubmitHistory: false
-    })
-  }
+  // private drawing(evt: MouseEvent) {
+  //   if (!this.isDrawing || !this.draw.isGraffitiMode()) return
+  //   // 移动超过至少2个像素后开始绘制
+  //   const { offsetX, offsetY } = evt
+  //   const DISTANCE = 2
+  //   if (
+  //     this.startStroke &&
+  //     Math.abs(this.startStroke.points[0] - offsetX) < DISTANCE &&
+  //     Math.abs(this.startStroke.points[1] - offsetY) < DISTANCE
+  //   ) {
+  //     return
+  //   }
+  //   // 修改数据
+  //   const pageNo = this.draw.getPageNo()
+  //   let currentValue = this.data.find(item => item.pageNo === pageNo)
+  //   if (this.startStroke) {
+  //     if (!currentValue) {
+  //       currentValue = {
+  //         pageNo,
+  //         strokes: []
+  //       }
+  //       this.data.push(currentValue)
+  //     }
+  //     currentValue.strokes.push(this.startStroke)
+  //     // 清空起始数据
+  //     this.startStroke = null
+  //   }
+  //   if (!currentValue?.strokes?.length) return
+  //   const { scale } = this.options
+  //   const lastPoints =
+  //     currentValue.strokes[currentValue.strokes.length - 1].points
+  //   lastPoints.push(offsetX / scale, offsetY / scale)
+  //   // 重新渲染
+  //   this.draw.render({
+  //     isCompute: false,
+  //     isSetCursor: false,
+  //     isSubmitHistory: false
+  //   })
+  // }
 
   public getValue(): IGraffitiData[] {
     return this.data

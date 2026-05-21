@@ -1,4 +1,3 @@
-import { version } from '../../../package.json'
 import { ZERO } from '../../dataset/constant/Common'
 import { RowFlex } from '../../dataset/enum/Row'
 import {
@@ -1194,7 +1193,7 @@ export class DrawPdf {
       graffiti: originData.graffiti
     }
     return {
-      version,
+      version: __VERSION__,
       data,
       options: deepClone(this.options)
     }

@@ -927,19 +927,20 @@ export class Control {
       main: this.draw.getOriginalMainElementList(),
       footer: this.draw.getFooterElementList()
     }
-    for (const key in pageComponentData) {
-      const elementList = pageComponentData[<keyof IEditorData>key]!
+    const elementKeys: Array<'header' | 'main' | 'footer'> = ['header', 'main', 'footer']
+    for (const key of elementKeys) {
+      const elementList = pageComponentData[key]
+      if (!elementList) continue
       setProperties(elementList)
     }
     if (!isExistUpdate) return
     // 强制更新
-    for (const key in pageComponentData) {
-      const pageComponentKey = <keyof IEditorData>key
-      const elementList = zipElementList(pageComponentData[pageComponentKey]!, {
+    for (const key of elementKeys) {
+      const elementList = zipElementList(pageComponentData[key]!, {
         isClassifyArea: true,
         extraPickAttrs: ['id']
       })
-      pageComponentData[pageComponentKey] = elementList
+      pageComponentData[key] = elementList
       formatElementList(elementList, {
         editorOptions: this.options,
         isForceCompensation: true
