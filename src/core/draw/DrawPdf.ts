@@ -2651,9 +2651,9 @@ export class DrawPdf {
   }
 
   public render(payload?: IDrawOption) {
-    // Zera o conteúdo das páginas do jsPDF para evitar que renders sucessivos
-    // empilhem operadores no content stream (causa de inflar o tamanho do PDF
-    // a cada export ao reaproveitar a mesma instância).
+    // Resets the content of jsPDF pages to prevent successive renders
+    // from stacking operators in the content stream (causing PDF size to increase)
+    // with each export when reusing the same instance.
     this._resetPdf()
     const { header, footer } = this.options
     const {
@@ -2749,11 +2749,11 @@ export class DrawPdf {
     }
   }
 
-  // Recria a instância do jsPDF a cada render para evitar acúmulo de estado
-  // interno entre exports (ex.: o bug do putImage no jsPDF que muta o array
-  // global de filters via splice, fazendo o 2º save em diante sair sem
-  // FlateEncode e ~3x maior). Fontes carregadas via downloadFont são
-  // reaplicadas a partir do fontCache na nova instância.
+  // Recreates the jsPDF instance with each render to prevent internal state accumulation
+  // between exports (e.g., the putImage bug in jsPDF that mutates the global filter array
+  // via splice, causing the 2nd save onwards to exit without
+  // FlatEncode and ~3x larger). Fonts loaded via downloadFont are
+  // reapplied from fontCache in the new instance.
   private _resetPdf() {
     this.pdf = new jsPDF({
       orientation: 'p',
