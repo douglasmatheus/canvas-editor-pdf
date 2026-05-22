@@ -114,7 +114,8 @@ export class DrawPdf {
   private options: DeepRequired<IEditorOption>
   private position: Position
   private elementList: IElement[]
-  private pdf: jsPDF
+  private pdf!: jsPDF
+  private fontCache: Array<{ fileName: string, base64: string, id: string, type: string }> = []
 
   private i18n: I18n
   private margin: Margin
@@ -210,24 +211,13 @@ export class DrawPdf {
     this.elementList = data.main
 
     this._formatContainer()
-    this.pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'px',
-      format: [this.getWidth(), this.getHeight()],
-      hotfixes: ['px_scaling'],
-      compress: true
-    })
-    this.pdf.setDocumentProperties({
-      author: 'canvas-editor'
-    })
+    this._resetPdf()
 
     if (pdfOptions.loadDefaultFonts) {
       this.defaultFontsLoadedPromise = this._addDefaultFont()
     } else {
       this.defaultFontsLoadedPromise = Promise.resolve(false)
     }
-
-    this._createPage(0)
 
     this.i18n = new I18n()
     this.position = new Position(this)
@@ -340,9 +330,10 @@ export class DrawPdf {
         const $this = this
         const reader = new FileReader()
         reader.onload = function () {
-          const base64: any = this.result
-          $this.pdf.addFileToVFS(fileName, base64.split('base64,')[1])
-          $this.pdf.addFont(fileName, id, type)
+          const dataUrl = this.result as string
+          const base64 = dataUrl.split('base64,')[1]
+          $this.fontCache.push({ fileName, base64, id, type })
+          $this._applyFont($this.pdf, { fileName, base64, id, type })
           onSuccess(this.result)
         }
         reader.readAsDataURL(blob)
@@ -350,6 +341,14 @@ export class DrawPdf {
         onError(e)
       }
     })
+  }
+
+  private _applyFont(
+    pdf: jsPDF,
+    font: { fileName: string, base64: string, id: string, type: string }
+  ) {
+    pdf.addFileToVFS(font.fileName, font.base64)
+    pdf.addFont(font.fileName, font.id, font.type)
   }
 
   public async _addDefaultFont() {
@@ -2652,6 +2651,10 @@ export class DrawPdf {
   }
 
   public render(payload?: IDrawOption) {
+    // Zera o conteúdo das páginas do jsPDF para evitar que renders sucessivos
+    // empilhem operadores no content stream (causa de inflar o tamanho do PDF
+    // a cada export ao reaproveitar a mesma instância).
+    this._resetPdf()
     const { header, footer } = this.options
     const {
       isCompute = true
@@ -2744,6 +2747,27 @@ export class DrawPdf {
         this.getPdf().deletePage(i)
       }
     }
+  }
+
+  // Recria a instância do jsPDF a cada render para evitar acúmulo de estado
+  // interno entre exports (ex.: o bug do putImage no jsPDF que muta o array
+  // global de filters via splice, fazendo o 2º save em diante sair sem
+  // FlateEncode e ~3x maior). Fontes carregadas via downloadFont são
+  // reaplicadas a partir do fontCache na nova instância.
+  private _resetPdf() {
+    this.pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'px',
+      format: [this.getWidth(), this.getHeight()],
+      hotfixes: ['px_scaling'],
+      compress: true
+    })
+    this.pdf.setDocumentProperties({
+      author: 'canvas-editor'
+    })
+    this.fontCache.forEach(f => this._applyFont(this.pdf, f))
+    this.pageList = []
+    this.ctxListInfos = []
   }
 
   public destroy() {
