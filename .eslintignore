@@ -1,0 +1,7 @@
+# Consumer-facing reference snippets and manual smoke scripts — not part of the
+# library build. They intentionally use other module systems (CommonJS
+# next.config.js, framework imports) and shouldn't be linted against the lib's
+# TS config.
+examples/
+scripts/smoke/
+dist/

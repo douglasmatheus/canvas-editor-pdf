@@ -12,10 +12,56 @@ The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor`
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | `vite build --mode lib --watch` → rebuilds `dist/` on every save. Use this when testing the library via `npm link` from a consumer. |
-| `npm run build` | Lint + `tsc` + `vite build --mode lib` → library bundle in `dist/` |
+| `npm run dev` | `vite build --mode lib-browser --watch` → rebuilds the browser bundle in `dist/` on every save. Use this when testing the library via `npm link` from a consumer. |
+| `npm run build` | Full build: lint → browser bundle → Node ESM bundle → Node CJS bundle → `tsc` (types in `dist/types/`). |
+| `npm run build:browser` | `vite build --mode lib-browser` → `dist/canvas-editor-pdf.{es,umd}.js` |
+| `npm run build:node:esm` | `vite build --mode lib-node` → `dist/node/index.es.js` |
+| `npm run build:node:cjs` | `vite build --mode lib-node-cjs` → `dist/node/index.cjs.js` |
+| `npm run build:types` | `tsc -p tsconfig.json` → `.d.ts` files in `dist/types/` |
 | `npm run lint` | ESLint over the repo |
 | `npm run cypress:open` / `npm run cypress:run` | E2E tests (Cypress) — **note:** the test files were inherited from canvas-editor and currently target a demo URL / import paths that no longer exist. Treat as broken until rewritten. |
+| `node scripts/smoke/node/run.mjs` | Manual Node smoke test (renders the shared fixture to `scripts/smoke/out/out-node.pdf`). Requires a prior `npm run build`. |
+| `npx serve scripts/smoke/browser` | Serve the browser smoke test page (open in browser, click "Generate PDF"). |
+
+## Testing
+
+Right now the only tests are the **manual smoke scripts** under
+[scripts/smoke/](scripts/smoke/) (Cypress is inherited from upstream and
+broken — treat as non-functional). Roadmap for automated coverage, cheapest
+first; each level is independent:
+
+1. **Unit tests for the platform shim** (Vitest — the project already uses
+   Vite). Test each `IPlatform` method in isolation, run twice (browser shim
+   under JSDOM/`@vitest/browser`, Node shim natively): `createMeasurementCanvas()`
+   returns a working `measureText`; `loadFontAsBase64()` returns non-empty
+   base64; `svgToPngDataUrl()` returns a `data:image/png;base64,…`. → `tests/platform/`
+2. **PDF output assertions** (medium). Render the same fixture in browser and
+   Node, then use `pdf-parse`/`pdfjs-dist` to compare *extracted text per page*
+   (deterministic) rather than raw bytes — also check page count and presence
+   of image XObjects. → `tests/integration/`
+3. **Visual diff with tolerance** (advanced). Rasterize each PDF page to PNG
+   (`pdfjs-dist` or `@napi-rs/canvas`) and compare against a baseline with
+   `pixelmatch` at a threshold (~5%). Save diffs for human inspection. → `tests/visual/`
+4. **Property-based fuzzing** (bonus). `fast-check` to generate random
+   `IEditorData` and assert `render()` never throws.
+
+Suggested priority: shim units next (high value, cheap), then output
+assertions, then visual/fuzzing on demand once subtle rendering bugs appear.
+
+## Reducing published font size
+
+`public/font/` ships full TTFs; `msyh.ttf` / `msyh-bold.ttf` (CJK) alone are
+~35 MB of the ~42 MB package. [scripts/subset-fonts.md](scripts/subset-fonts.md)
+documents how to subset them with `pyftsubset` before a release. It's optional
+and **not** wired into `npm run build`.
+
+## Consumer-facing examples
+
+[examples/](examples/) holds copy-pasteable code snippets for the most common
+consumer scenarios (Next.js Pages Router, Next.js App Router, Express,
+standalone Node script, browser frontend). When the public API changes —
+constructor signature, `fontSource` option, peer deps — update those files so
+README links don't drift out of sync.
 
 Release flow: `scripts/release.js` validates `dist/` exists, strips `dependencies` from `package.json`, runs `npm publish`, then restores `package.json`.
 
@@ -57,6 +103,23 @@ instance.getPdf().save('x.pdf')  // download
 
 The order is what guarantees correct layering. **A particle's `render()` should NOT call back into `this.draw.render()`** — that causes infinite recursion (this was bug fixed in 2026-05 for `FLOAT_BOTTOM` images).
 
+### Platform shim (browser vs Node)
+
+[src/platform/](src/platform/) abstracts the few environment-specific APIs the renderer needs (DOM canvas for `measureText`, `fetch`/`fs` for fonts, `Image`/`@resvg/resvg-js` for SVG→PNG):
+
+- [types.ts](src/platform/types.ts) — the `IPlatform` interface.
+- [browser.ts](src/platform/browser.ts) — DOM canvas + `fetch` + `Image`.
+- [node.ts](src/platform/node.ts) — `@napi-rs/canvas` + `node:fs/promises` + `@resvg/resvg-js`.
+- [current.ts](src/platform/current.ts) — defaults to re-exporting `browser`. The Node build (`vite --mode lib-node`/`lib-node-cjs`) swaps it for `node` via a regex `resolve.alias` (`^.+/platform/current(\.ts)?$` → `src/platform/node.ts`).
+
+`DrawPdf`, `Watermark`, and `ImageParticle` import only from `./platform/current`. Don't import `./platform/browser` or `./platform/node` directly — that would lock the call site to one runtime.
+
+[src/node.ts](src/node.ts) is a second entry point used only by the Node build (`canvas-editor-pdf/node`). It re-exports the same symbols as `src/index.ts`.
+
+`src/platform/node.ts#getBundledFontPath` resolves `dist/font/<file>` via `new URL('../font/' + fileName, import.meta.url)` + `fileURLToPath()`. Vite 5+ preserves `import.meta.url` in lib mode for ESM and emits a runtime polyfill for CJS, so the same source line works in both bundles.
+
+> Historical note: pre-v0.4.0 (when this repo was still on Vite 2), `import.meta` was statically stubbed away in lib mode. The original workaround used a `generateBundle` hook to re-inject a `__moduleUrl__` constant after Vite's rewrite. The Vite 5 upgrade removed the need for that plugin — see git history if you're chasing a regression.
+
 ### Most of `src/core/` is dead-weight scaffolding
 
 The folders `actuator/`, `cursor/`, `event/`, `history/`, `i18n/`, `listener/`, `observer/`, `override/`, `plugin/`, `range/`, `register/`, `shortcut/`, `worker/`, `zone/` mirror the canvas-editor layout but are mostly **not used** by `DrawPdf`. They exist so the diff against upstream stays readable when porting fixes. Don't expect them to do anything — wire-up lives in `DrawPdf` constructor.
@@ -66,6 +129,8 @@ The folders `actuator/`, `cursor/`, `event/`, `history/`, `i18n/`, `listener/`, 
 ### Types and enums are duplicated from canvas-editor
 
 [src/interface/](src/interface/) and [src/dataset/enum/](src/dataset/enum/) are **copies** of canvas-editor's types/enums, not re-exports. This is intentional (lets the library evolve independently) but causes friction at the consumer boundary: `IElement` here ≠ `IElement` from `@hufe921/canvas-editor`. Consumers typically `JSON.parse(JSON.stringify(editor.command.getValue().data))` to cross the boundary — that's a known wart, not a bug.
+
+Pre-0.4.0, three enum files ([Common.ts](src/dataset/enum/Common.ts), [Editor.ts](src/dataset/enum/Editor.ts), [Element.ts](src/dataset/enum/Element.ts)) were **re-exports** rather than copies. That broke the Node ESM build because canvas-editor publishes as CJS and Node's ESM-CJS interop can't analyze named exports. As of 0.4.0 those files are local copies too — keep them in sync with upstream enum values if you ever pull updates.
 
 ## Gotchas for editing
 

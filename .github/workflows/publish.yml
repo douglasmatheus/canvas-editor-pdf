@@ -1,0 +1,64 @@
+name: Publish to npm
+
+# Triggered when you create a GitHub Release. Bump the version in
+# package.json, push, then go to Releases → Draft a new release → Tag like
+# "v0.4.0" → Publish. That fires this workflow.
+#
+# Why GitHub Release as the trigger (not push to main):
+#   - Provenance attestation requires the publish to originate from a known CI
+#     run. Doing it on `release: published` produces a clean audit trail in
+#     the Sigstore transparency log.
+#   - Lets you keep merging unreleased work to main without triggering publishes.
+on:
+  release:
+    types: [published]
+  # Allow a manual run for testing without creating a release. Toggle the
+  # `dry_run` input to true to skip the actual `npm publish`.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'If true, run the full pipeline but skip npm publish'
+        required: false
+        default: 'false'
+
+# Permissions required for `npm publish --provenance`:
+#   - id-token: write → lets the runner mint a short-lived OIDC token that
+#                       Sigstore uses to sign the provenance attestation.
+#                       Without this, --provenance errors out.
+#   - contents: read  → checkout the source.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # Registry URL must be the npm public registry for provenance to work.
+          # Sigstore won't sign for private registries.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish (provenance)
+        if: ${{ github.event_name == 'release' || inputs.dry_run != 'true' }}
+        run: npm publish --provenance --access public
+        env:
+          # NPM_TOKEN is a GitHub Actions secret you add manually — see the
+          # comment in this workflow's README / project CHANGELOG for the
+          # one-time setup. It must be an "Automation" type npm token with
+          # publish rights on canvas-editor-pdf.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skipped publish (dry run)
+        if: ${{ inputs.dry_run == 'true' }}
+        run: echo "dry_run=true → skipped npm publish; built dist/ is ready locally"

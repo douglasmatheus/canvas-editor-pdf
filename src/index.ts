@@ -8,3 +8,4 @@ export {
 }
 
 export type { IEditorData, IEditorOption }
+export type { FontSource, PdfOptions } from './core/draw/DrawPdf'

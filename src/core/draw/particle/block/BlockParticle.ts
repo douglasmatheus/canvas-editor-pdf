@@ -13,7 +13,10 @@ import { Context2d } from 'jspdf'
 export class BlockParticle {
   private draw: DrawPdf
   // private container: HTMLDivElement
-  private blockContainer: HTMLDivElement
+  // BLOCK elements (iframe, video, etc.) don't render to PDF — they need a
+  // live DOM to host an <iframe>/<video>. In non-browser environments the
+  // container stays null and the rendering code paths skip it.
+  private blockContainer: HTMLDivElement | null
   private blockMap: Map<string, BaseBlock>
 
   constructor(draw: DrawPdf) {
@@ -24,7 +27,8 @@ export class BlockParticle {
     // this.container.append(this.blockContainer)
   }
 
-  private _createBlockContainer(): HTMLDivElement {
+  private _createBlockContainer(): HTMLDivElement | null {
+    if (typeof document === 'undefined') return null
     const blockContainer = document.createElement('div')
     blockContainer.classList.add(`${EDITOR_PREFIX}-block-container`)
     return blockContainer
@@ -35,7 +39,11 @@ export class BlockParticle {
   }
 
   public getBlockContainer(): HTMLDivElement {
-    return this.blockContainer
+    // Cast: in non-browser environments the container is null, but the only
+    // caller (BaseBlock) is itself editor-mode code that never runs during
+    // PDF render. Keeping the return type non-null avoids a cascade of `null`
+    // guards through BaseBlock's DOM-heavy constructor.
+    return this.blockContainer as HTMLDivElement
   }
 
   public render(

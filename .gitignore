@@ -5,3 +5,15 @@ dist-ssr
 *.local
 cache
 .temp
+
+# Working design doc for the v0.4.0 Node port — kept locally for reference,
+# not committed (it's a point-in-time plan that would rot; durable content
+# lives in AGENTS.md, CHANGELOG.md, README.md, scripts/subset-fonts.md).
+PLAN.md
+
+# Smoke test output
+scripts/smoke/out/
+
+# Claude Code local (per-developer) settings — the non-.local settings.json
+# can be committed for shared team config if ever needed.
+.claude/settings.local.json

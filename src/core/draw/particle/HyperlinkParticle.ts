@@ -10,8 +10,11 @@ export class HyperlinkParticle {
   private draw: DrawPdf
   private options: Required<IEditorOption>
   // private container: HTMLDivElement
-  private hyperlinkPopupContainer: HTMLDivElement
-  private hyperlinkDom: HTMLAnchorElement
+  // The popup pair is only used by the editor's interactive hyperlink hover —
+  // never touched on the PDF render path. In Node (no DOM) we leave these
+  // null, and the popup methods below short-circuit. See _createHyperlinkPopupDom.
+  private hyperlinkPopupContainer: HTMLDivElement | null
+  private hyperlinkDom: HTMLAnchorElement | null
 
   constructor(draw: DrawPdf) {
     this.draw = draw
@@ -24,6 +27,12 @@ export class HyperlinkParticle {
   }
 
   private _createHyperlinkPopupDom() {
+    // Skip DOM construction entirely in non-browser environments (e.g. the
+    // Node build). The render() method below only uses jsPDF's Context2d, not
+    // these DOM nodes, so leaving them null is safe for PDF generation.
+    if (typeof document === 'undefined') {
+      return { hyperlinkPopupContainer: null, hyperlinkDom: null }
+    }
     const hyperlinkPopupContainer = document.createElement('div')
     hyperlinkPopupContainer.classList.add(`${EDITOR_PREFIX}-hyperlink-popup`)
     const hyperlinkDom = document.createElement('a')
@@ -35,6 +44,8 @@ export class HyperlinkParticle {
   }
 
   public drawHyperlinkPopup(element: IElement, position: IElementPosition) {
+    // No-op in non-browser environments (popup DOM is null in the Node build).
+    if (!this.hyperlinkPopupContainer || !this.hyperlinkDom) return
     const {
       coordinate: {
         leftTop: [left, top]
@@ -56,6 +67,7 @@ export class HyperlinkParticle {
   }
 
   public clearHyperlinkPopup() {
+    if (!this.hyperlinkPopupContainer) return
     this.hyperlinkPopupContainer.style.display = 'none'
   }
 

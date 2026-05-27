@@ -1124,7 +1124,9 @@ export class LaTexUtils {
     o += `"/>`
     o += `</svg>`
     return {
-      svg: `data:image/svg+xml;base64,${window.btoa(o)}`,
+      // btoa (global since Node 16) works in both browser and Node;
+      // window.btoa would crash this LaTeX path in the Node bundle.
+      svg: `data:image/svg+xml;base64,${btoa(o)}`,
       width: Math.ceil(w),
       height: Math.ceil(h)
     }

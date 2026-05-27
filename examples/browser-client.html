@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>canvas-editor-pdf — browser client example</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; max-width: 720px; }
+    label { display: block; margin: 12px 0 4px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 8px; font-family: monospace; font-size: 13px; }
+    textarea { min-height: 200px; }
+    button { padding: 10px 18px; font-size: 16px; cursor: pointer; margin-top: 16px; }
+    button:disabled { opacity: 0.5; cursor: progress; }
+    #log { white-space: pre-wrap; background: #f4f4f4; padding: 12px;
+           border-radius: 4px; margin-top: 16px; min-height: 60px;
+           font-family: monospace; font-size: 13px; }
+    .ok { color: #1a7f37; }
+    .err { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>canvas-editor-pdf · browser client</h1>
+  <p>
+    Vanilla page that POSTs editor data to a backend endpoint and downloads
+    the resulting PDF. Same idea works in React/Vue/Svelte — just wrap the
+    <code>fetch</code> call in your framework's event handler.
+  </p>
+  <p>
+    Pair this with one of the backend examples:
+    <code>express-server.mjs</code>, <code>next-pages-router-api.ts</code>,
+    or <code>next-app-router-api.ts</code>.
+  </p>
+
+  <label for="url">Backend URL</label>
+  <input id="url" value="http://localhost:3000/generate-pdf">
+
+  <label for="payload">Request body (JSON with <code>editorOptions</code> + <code>editorData</code>)</label>
+  <textarea id="payload">{
+  "editorOptions": { "defaultFont": "arial" },
+  "editorData": {
+    "main": [
+      { "value": "Hello PDF!", "size": 18, "bold": true },
+      { "value": "\n" },
+      { "value": "Generated from a browser fetch + backend canvas-editor-pdf.", "size": 12 }
+    ]
+  }
+}</textarea>
+
+  <button id="gen">Generate &amp; download PDF</button>
+  <div id="log"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id)
+    const log = $('log')
+    const button = $('gen')
+
+    function append(msg, cls = '') {
+      const line = document.createElement('div')
+      if (cls) line.className = cls
+      line.textContent = msg
+      log.appendChild(line)
+    }
+
+    button.addEventListener('click', async () => {
+      log.textContent = ''
+      button.disabled = true
+      try {
+        const url = $('url').value.trim()
+        const body = $('payload').value
+        // Quick validation — fail fast if the textarea isn't valid JSON.
+        JSON.parse(body)
+
+        append(`→ POST ${url}`)
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        })
+
+        if (!response.ok) {
+          const errText = await response.text()
+          throw new Error(`HTTP ${response.status}: ${errText}`)
+        }
+
+        const blob = await response.blob()
+        append(`✓ received ${(blob.size / 1024).toFixed(1)} KB, downloading…`, 'ok')
+
+        // Trigger a save dialog. URL.createObjectURL+<a download> is the
+        // standard "download a blob from JS" pattern with no extra deps.
+        const dlUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = dlUrl
+        a.download = 'canvas-editor.pdf'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(dlUrl)
+      } catch (err) {
+        append('✗ ' + (err && err.message ? err.message : String(err)), 'err')
+      } finally {
+        button.disabled = false
+      }
+    })
+  </script>
+</body>
+</html>

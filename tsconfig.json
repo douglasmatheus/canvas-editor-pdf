@@ -14,10 +14,11 @@
     "declaration": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "skipLibCheck": true,
     "noImplicitReturns": true,
     "emitDeclarationOnly": true,
     "noImplicitAny": false,
-    "outDir": "./dist",
+    "outDir": "./dist/types",
     "rootDir": "./src" // Define a raiz como a pasta src
   },
   "include": [

@@ -1,131 +1,188 @@
 # canvas-editor-pdf
 
-Pdf exporter to [canvas-editor](https://github.com/Hufe921/canvas-editor).
-This project currently replicates the same code as canvas-editor to be used with the jsPdf library. Making the appropriate specific modifications for jsPdf. I will be updating this repository with all the modifications to canvas-editor so that it does not become obsolete over time.
+PDF exporter for [canvas-editor](https://github.com/Hufe921/canvas-editor).
+Re-implements the editor's render pipeline against
+[jsPDF](https://github.com/parallax/jsPDF)'s `Context2d` (a canvas-like API that
+emits PDF instructions) instead of rendering to a real `HTMLCanvasElement`.
 
-## Usage
-As of version 0.1.0, the library is completely decoupled from the editor. You only need to pass the data from the editor - at instantiation or later through the setValue() function. If you use a version prior to 0.1.0, see how to use it below.
+Tracks `@hufe921/canvas-editor` and is updated to stay in sync with upstream
+changes.
 
-```
-npm i canvas-editor-pdf --save
-```
+## What's new in 0.4.0
 
-It is recommended to instantiate the library before exporting the PDF, as the UI may crash. This is because jspdf loads fonts synchronously.
+- **Runs in Node.js** in addition to the browser. Same package, two entries:
+  - `import { DrawPdf } from 'canvas-editor-pdf'` — browser (unchanged)
+  - `import { DrawPdf } from 'canvas-editor-pdf/node'` — Node (new)
+- Pluggable font source: `'cdn'`, `'bundled'`, or a custom directory.
+- See the [CHANGELOG](./CHANGELOG.md) for the full list.
 
-Import the class from pdf:
-```javascript
-  import { DrawPdf } from 'canvas-editor-pdf'
-```
+---
 
-First you create the library instance:
-```javascript
-  // new DrawPdf(
-  //   options: IEditorOption,
-  //   data: IEditorData,
-  //   pdfOptions: PdfOptions = {loadDefaultFonts?: boolean}
-  // )
-  const instancePdf = new DrawPdf(
-    instance.command.getValue().options,
-    instance.command.getValue().data
-  )
+## Install
+
+### Browser
+
+```bash
+npm install canvas-editor-pdf
 ```
 
-When you want to export the pdf:
-```javascript
-  // If you want to update the data, you need to use await so that internally you can convert latex from svg to png - jspdf does not support svg
-  await instancePdf.setValue(instance.command.getValue().data)
-  instancePdf.render() // you need to call render to process and create the data within jspdf
-  instancePdf.getPdf().save(`test.pdf`) // pdf download
+### Node
+
+```bash
+npm install canvas-editor-pdf @napi-rs/canvas @resvg/resvg-js
 ```
+
+`@napi-rs/canvas` and `@resvg/resvg-js` are declared as **optional peer
+dependencies**. Browser consumers don't need them; Node consumers must install
+them explicitly. Requires Node 18+.
+
+---
+
+## Quickstart — browser
+
+```js
+import { DrawPdf } from 'canvas-editor-pdf'
+
+// 1. Build an instance from canvas-editor's command.getValue() result.
+const editor = /* your canvas-editor instance */
+const { options, data } = editor.command.getValue()
+
+const pdf = new DrawPdf(options, data, { loadDefaultFonts: true })
+
+// 2. Wait for fonts (jsPDF loads them synchronously and can freeze the UI
+//    if instantiated on a click handler — kick this off ahead of time).
+await pdf.defaultFontsLoadedPromise
+
+// 3. Render and trigger download.
+pdf.render()
+pdf.getPdf().save('document.pdf')
+```
+
+> **Tip:** instantiate `DrawPdf` early (e.g. when the editor mounts), not on
+> the click that exports. jsPDF loads fonts synchronously and can lock the UI
+> for a few hundred ms.
+
+---
+
+## Quickstart — Node
+
+```js
+import { writeFile } from 'node:fs/promises'
+import { DrawPdf } from 'canvas-editor-pdf/node'
+
+const pdf = new DrawPdf(editorOptions, editorData, {
+  loadDefaultFonts: true
+  // fontSource defaults to 'bundled' in Node — reads dist/font/ from the
+  // installed package, no network access.
+})
+await pdf.defaultFontsLoadedPromise
+pdf.render()
+
+const buffer = Buffer.from(pdf.getPdf().output('arraybuffer'))
+await writeFile('document.pdf', buffer)
+```
+
+### Where do `editorOptions` and `editorData` come from?
+
+Straight from canvas-editor — `DrawPdf` (and `setValue`) accept
+`@hufe921/canvas-editor`'s `IEditorOption` / `IEditorData` types directly, so
+you can pass `editor.command.getValue()` without any conversion:
+
+```js
+const { options, data } = editor.command.getValue()
+const pdf = new DrawPdf(options, data, { loadDefaultFonts: true })
+```
+
+(When you send the data to a backend over HTTP you'll serialize it to JSON
+as part of the request body — that's normal transport, not a type workaround.)
+
+### Full server examples
+
+The [examples/](./examples/) folder has copy-pasteable code for:
+
+- [`next-pages-router-api.ts`](./examples/next-pages-router-api.ts) — Next.js `pages/api/...` route
+- [`next-app-router-api.ts`](./examples/next-app-router-api.ts) — Next.js `app/.../route.ts` (13.4+)
+- [`nextjs-config-snippet.js`](./examples/nextjs-config-snippet.js) — the required `next.config.js` tweak
+- [`express-server.mjs`](./examples/express-server.mjs) — Express server
+- [`standalone-script.mjs`](./examples/standalone-script.mjs) — CLI / batch script
+- [`browser-client.html`](./examples/browser-client.html) — frontend that POSTs to the backend and downloads
+
+The [`examples/README.md`](./examples/README.md) covers common pitfalls
+(bundler externals, CORS gotchas, `moduleResolution` for the subpath export).
+
+---
 
 ## Fonts
-Prior to version 0.2.12, default fonts were loaded automatically. Starting with this version, fonts are not loaded unless the {loadDefaultFonts: true} parameter is passed in the class constructor. If you need to load the fonts later, you can use the following method:
-```javascript
-  instance.loadDefaultFonts()
+
+`loadDefaultFonts` is **opt-in** (default `false`). When you pass `true`, the
+library loads a curated set of fonts into jsPDF — and, in Node, also registers
+them with `@napi-rs/canvas` so text measurement matches what jsPDF will draw.
+
+```js
+new DrawPdf(options, data, { loadDefaultFonts: true })
+// or, after construction:
+await instance.loadDefaultFonts()
 ```
 
-At the moment few fonts are supported, jspdf defaults:
-- courier (normal, bold, italic)
-- helvetica (normal, bold, italic)
-- symbol (normal)
-- times (roman, bold, italic)
+### Bundled font set
 
-And also the following fonts:
-- Microsoft Yahei (normal, bold)
-- Arial (normal, bold, italic)
-- Calibri (normal, bold, italic)
-- Cambria (normal, bold, italic)
-- Ink Free (normal)
-- Verdana (normal, bold, italic)
-- Segoe UI (normal, bold italic)
+- **Arial** (regular, bold, italic, bold-italic)
+- **Calibri** (regular, bold, italic, bold-italic)
+- **Cambria** (regular, bold, italic, bold-italic)
+- **Verdana** (regular, bold, italic, bold-italic)
+- **Segoe UI** (regular, bold, italic)
+- **Microsoft YaHei** (regular, bold) — for CJK
+- **Inkfree** (regular)
 
-Other fonts will be added little by little, but if necessary, you can manually add a font by passing the link to the .ttf file:
-```javascript
-  // instance.addFont(url, fileName, id, type)
-  instance.addFont('https://raw.githubusercontent.com/Hufe921/canvas-editor/refs/heads/feature/pdf/public/font/msyh.ttf', 'Yahei.ttf', 'Yahei', 'normal')
+Plus the jsPDF built-ins (`courier`, `helvetica`, `times`, `symbol`).
+
+### `fontSource` — where to load the TTFs from
+
+The `fontSource` option controls which physical files back the default font
+set. Defaults differ by environment:
+
+| Value | Behavior | Default in |
+|---|---|---|
+| `'cdn'` | Fetch TTFs over https from `cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/`. Available in both browser and Node. | Browser |
+| `'bundled'` | Read TTFs from the package's own `dist/font/` directory (already installed in `node_modules`). Zero network. Node-only. | Node |
+| `{ dir: '/abs/path' }` | Read TTFs from a directory you control. Must be an absolute path. | — |
+
+```js
+// Node, reading from a custom font directory you ship with your app:
+new DrawPdf(opts, data, {
+  loadDefaultFonts: true,
+  fontSource: { dir: '/srv/app/fonts' }
+})
+
+// Node, keeping the CDN fetch behavior (e.g. for parity with browser):
+new DrawPdf(opts, data, {
+  loadDefaultFonts: true,
+  fontSource: 'cdn'
+})
 ```
 
-## Usage before version 0.1.0
-At the moment this project is for internal use in canvas-editor, and it is necessary to create a function within CommandAdapt for the editor to use it. In the future I intend to decouple it so that it can be used independently. That said, first install it:
+### Adding extra fonts at runtime
 
-Now inside the editor in src > editor > core > command > CommandAdapt.ts place this function at the end:
-
-```javascript
-public async pdf(fileName: string) {
-    const dataHeader = JSON.parse(JSON.stringify(this.draw.getValue().data.header))
-    // You need to update the latex elements from svg to png, since jspdf does not support the svg format
-    const updateSrcLatexElements = (elementList: any[]) => {
-      elementList.forEach((element) => {
-        if (element.laTexSVG) {
-          const { scale } = this.options
-          const width = element.width! * scale
-          const height = element.height! * scale
-          svgString2Image(element.laTexSVG, width, height, 'png', (pngData: any) => {
-            // pngData is base64 png string
-            element.laTexSVG = pngData
-          })
-        }
-      })
-    }
-    this.draw.getOriginalMainElementList().forEach((elem) => {
-      if (elem.laTexSVG) {
-        updateSrcLatexElements([elem])
-      }
-    })
-    const dataMain = JSON.parse(JSON.stringify(this.draw.getValue().data.main))
-    const dataFooter = JSON.parse(JSON.stringify(this.draw.getValue().data.footer))
-    // A timeout is necessary to give time to update the latex elements (in some situations with a lot of data and many laex elements it may be necessary to increase the timeout)
-    setTimeout(() => {
-      this.draw.render({isLazy: false})
-      const drawPdf = new DrawPdf(
-        JSON.parse(JSON.stringify(this.draw.getOptions())),
-        {
-          header: dataHeader,
-          main: dataMain,
-          footer: dataFooter
-        },
-        this.draw
-      )
-      drawPdf.render()
-      drawPdf.getPdf().save(${fileName}.pdf)
-    }, 1)
-}
+```js
+// instance.addFont(url, fileName, id, type)
+await instance.addFont(
+  'https://your-cdn.example.com/Roboto.ttf',
+  'Roboto.ttf',
+  'roboto',
+  'normal'
+)
 ```
 
-Inside the editor in src > editor > core > command > Command.ts register the new property:
+In Node, the `url` argument may be either an http(s) URL or an absolute
+filesystem path.
 
-```javascript
-public pdf: CommandAdapt['pdf']
-```
+---
 
-And inside the constructor define the property with the CommandAdapt function:
+## Running on a server
 
-```javascript
-this.pdf = adapt.pdf.bind(adapt)
-```
-
-To use the new editor function call it like this:
-
-```javascript
-editor.command.pdf('test')
-```
+When you render server-side, `DrawPdf` turns whatever `IEditorData` it's
+given into a PDF — including large or malformed documents. The library doesn't
+impose input limits or timeouts, so if you accept editor data from end users,
+add your own guardrails (max payload size, a render timeout, and ideally a
+worker/child process for untrusted multi-tenant input). Keep `@napi-rs/canvas`
+and `@resvg/resvg-js` up to date since they're native modules.

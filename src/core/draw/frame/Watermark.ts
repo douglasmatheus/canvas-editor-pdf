@@ -6,6 +6,7 @@ import { IEditorOption } from '../../../interface/Editor'
 import { FORMAT_PLACEHOLDER } from '../../../dataset/constant/PageNumber'
 import { WatermarkType } from '../../../dataset/enum/Watermark'
 import { PageNumber } from './PageNumber'
+import { platform } from '../../../platform/current'
 
 export class Watermark {
   private draw: DrawPdf
@@ -55,7 +56,9 @@ export class Watermark {
     const measureText = this.draw.getFakeCtx().measureText(data)
     if (repeat) {
       const dpr = this.draw.getPagePixelRatio()
-      const temporaryCanvas = document.createElement('canvas')
+      // Initial 1x1 — width/height are reset below to the computed pattern size.
+      // We can't pass them here because they depend on textMetrics measured above.
+      const temporaryCanvas = platform.createCanvas(1, 1)
       const temporaryCtx = temporaryCanvas.getContext('2d')!
       // 勾股定理计算旋转后的宽高对角线尺寸 a^2 + b^2 = c^2
       const textWidth = measureText.width
@@ -71,8 +74,13 @@ export class Watermark {
       // 宽高设置
       temporaryCanvas.width = patternWidth
       temporaryCanvas.height = patternHeight
-      temporaryCanvas.style.width = `${patternWidth * dpr}px`
-      temporaryCanvas.style.height = `${patternHeight * dpr}px`
+      // CSS style is cosmetic-only (sets the displayed canvas size in the DOM).
+      // The PDF pipeline only consumes the canvas pixel buffer above, and
+      // @napi-rs/canvas has no `.style` — guard so the Node build doesn't crash.
+      if (temporaryCanvas.style) {
+        temporaryCanvas.style.width = `${patternWidth * dpr}px`
+        temporaryCanvas.style.height = `${patternHeight * dpr}px`
+      }
       // 旋转45度
       temporaryCtx.translate(patternWidth / 2, patternHeight / 2)
       temporaryCtx.rotate((-45 * Math.PI) / 180)
@@ -141,7 +149,9 @@ export class Watermark {
     ctx2d.globalAlpha = opacity
     if (repeat) {
       const dpr = this.draw.getPagePixelRatio()
-      const temporaryCanvas = document.createElement('canvas')
+      // Initial 1x1 — width/height are reset below to the computed pattern size.
+      // We can't pass them here because they depend on textMetrics measured above.
+      const temporaryCanvas = platform.createCanvas(1, 1)
       const temporaryCtx = temporaryCanvas.getContext('2d')!
       // 勾股定理计算旋转后的宽高对角线尺寸 a^2 + b^2 = c^2
       const diagonalLength = Math.sqrt(
@@ -153,8 +163,13 @@ export class Watermark {
       // 宽高设置
       temporaryCanvas.width = patternWidth
       temporaryCanvas.height = patternHeight
-      temporaryCanvas.style.width = `${patternWidth * dpr}px`
-      temporaryCanvas.style.height = `${patternHeight * dpr}px`
+      // CSS style is cosmetic-only (sets the displayed canvas size in the DOM).
+      // The PDF pipeline only consumes the canvas pixel buffer above, and
+      // @napi-rs/canvas has no `.style` — guard so the Node build doesn't crash.
+      if (temporaryCanvas.style) {
+        temporaryCanvas.style.width = `${patternWidth * dpr}px`
+        temporaryCanvas.style.height = `${patternHeight * dpr}px`
+      }
       // 旋转45度
       temporaryCtx.translate(patternWidth / 2, patternHeight / 2)
       temporaryCtx.rotate((-45 * Math.PI) / 180)

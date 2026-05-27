@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>canvas-editor-pdf — browser smoke</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; max-width: 720px; }
+    button { padding: 10px 18px; font-size: 16px; cursor: pointer; }
+    #log { white-space: pre-wrap; background: #f4f4f4; padding: 12px;
+           border-radius: 4px; margin-top: 16px; min-height: 80px; font-family: monospace; }
+    .ok { color: #1a7f37; }
+    .err { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>canvas-editor-pdf · browser smoke</h1>
+  <p>
+    Renders the shared fixture against the freshly built browser bundle and
+    downloads <code>out-browser.pdf</code>. Open this page via a local static
+    server (e.g. <code>npx serve scripts/smoke/browser</code> from the project
+    root) — opening as <code>file://</code> won't work because of ESM imports.
+  </p>
+  <button id="run">Generate PDF</button>
+  <div id="log"></div>
+
+  <script type="module">
+    // Import from the built dist/ entry (same artifact consumers see).
+    import { DrawPdf } from '../../../dist/canvas-editor-pdf.es.js'
+    import { sampleEditorData, editorOptions } from '../fixtures/sample.js'
+
+    const log = document.getElementById('log')
+    const append = (msg, cls = '') => {
+      const line = document.createElement('div')
+      if (cls) line.className = cls
+      line.textContent = msg
+      log.appendChild(line)
+    }
+
+    document.getElementById('run').addEventListener('click', async () => {
+      log.textContent = ''
+      try {
+        append('[smoke:browser] instantiating DrawPdf with loadDefaultFonts:true (cdn)…')
+        const instance = new DrawPdf(editorOptions, sampleEditorData, {
+          loadDefaultFonts: true
+          // fontSource defaults to 'cdn' in browser
+        })
+
+        append('[smoke:browser] awaiting defaultFontsLoadedPromise…')
+        await instance.defaultFontsLoadedPromise
+
+        append('[smoke:browser] rendering…')
+        instance.render()
+
+        append('[smoke:browser] downloading out-browser.pdf…', 'ok')
+        instance.getPdf().save('out-browser.pdf')
+      } catch (err) {
+        console.error(err)
+        append('✗ ' + (err && err.message ? err.message : String(err)), 'err')
+      }
+    })
+  </script>
+</body>
+</html>

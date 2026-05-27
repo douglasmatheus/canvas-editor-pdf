@@ -6,6 +6,7 @@ import { IElement } from '../../../interface/Element'
 import { convertStringToBase64 } from '../../../utils'
 import { DrawPdf } from '../DrawPdf'
 import { DeepRequired } from '../../../interface/Common'
+import { platform } from '../../../platform/current'
 
 export class ImageParticle {
   protected draw: DrawPdf
@@ -202,36 +203,29 @@ export class ImageParticle {
   }
 }
 
-export function svgString2Image(svgString: string, width: number, height: number, format: string, callback: { (pngData: any): void; (arg0: string): void }) {
-  return new Promise((resolve) => {
-    // set default for format parameter
-    format = format ? format : 'png'
-    // SVG data URL from SVG string
-    const svgData = svgString//'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgString)))
-    // create canvas in memory(not in DOM)
-    const canvas = document.createElement('canvas')
-    // get canvas context for drawing on canvas
-    const context = canvas.getContext('2d')
-    // set canvas size
-    canvas.width = width
-    canvas.height = height
-    // create image in memory(not in DOM)
-    const image = new Image()
-    // later when image loads run this
-    image.onload = function () { // async (happens later)
-      if (context) {
-        // clear canvas
-        context.clearRect(0, 0, width, height)
-        // draw image with SVG data to canvas
-        context.drawImage(image, 0, 0, width, height)
-        // snapshot canvas as png
-        const pngData = canvas.toDataURL('image/' + format)
-        // pass png data URL to callback
-        resolve(pngData)
-        callback(pngData)
-      }
-    } // end async
-    // start loading SVG data into in memory image
-    image.src = svgData
+/**
+ * Convert an SVG string to a PNG data URL.
+ *
+ * Kept exported for back-compat with pre-0.1.0 consumers that called this
+ * manually before the lib started handling LaTeX conversion internally
+ * (see formatElementList in src/utils/element.ts). Internal callers in
+ * the LaTeX pipeline route through here as well, so adapting this single
+ * function is what makes LaTeX work in Node — `platform.svgToPngDataUrl`
+ * resolves to a DOM canvas + Image in the browser shim, and to
+ * @resvg/resvg-js in the Node shim.
+ *
+ * The `format` parameter is accepted for back-compat but only 'png' is
+ * actually produced — both shims emit PNG regardless.
+ */
+export function svgString2Image(
+  svgString: string,
+  width: number,
+  height: number,
+  _format: string,
+  callback: { (pngData: any): void; (arg0: string): void }
+) {
+  return platform.svgToPngDataUrl(svgString, width, height).then(pngData => {
+    callback(pngData)
+    return pngData
   })
 }

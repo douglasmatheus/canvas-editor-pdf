@@ -11,16 +11,21 @@ import { DrawPdf } from '../../DrawPdf'
 export class DateParticle {
   // private draw: DrawPdf
   // private range: RangeManager
-  private datePicker: DatePicker
+  // DatePicker is the editor-mode popup UI built out of dozens of DOM nodes.
+  // Skipped entirely in non-browser environments — the PDF render path never
+  // calls renderDatePicker/clearDatePicker.
+  private datePicker: DatePicker | null
   // private options: DeepRequired<IEditorOption>
 
   constructor(draw: DrawPdf) {
     // this.draw = draw
     // this.options = draw.getOptions()
     // this.range = draw.getRange()
-    this.datePicker = new DatePicker(draw, {
-      // onSubmit: this._setValue.bind(this)
-    })
+    this.datePicker = typeof document !== 'undefined'
+      ? new DatePicker(draw, {
+        // onSubmit: this._setValue.bind(this)
+      })
+      : null
   }
 
   // private _setValue(date: string) {
@@ -91,7 +96,7 @@ export class DateParticle {
   // }
 
   public clearDatePicker() {
-    this.datePicker.dispose()
+    this.datePicker?.dispose()
   }
 
   public renderDatePicker(element: IElement, position: IElementPosition) {

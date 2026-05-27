@@ -314,7 +314,10 @@ export function convertStringToBase64(input: string) {
   const encoder = new TextEncoder()
   const data = encoder.encode(input)
   const charArray = Array.from(data, byte => String.fromCharCode(byte))
-  const base64 = window.btoa(charArray.join(''))
+  // Use the global btoa — available in browsers and Node 16+ — instead of
+  // window.btoa, so the function doesn't blow up if accidentally called
+  // from the Node build.
+  const base64 = btoa(charArray.join(''))
   return base64
 }
 

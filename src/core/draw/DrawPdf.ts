@@ -81,7 +81,11 @@ import { PUNCTUATION_REG } from '../../dataset/constant/Regular'
 import { LineBreakParticle } from './particle/LineBreakParticle'
 import { LineNumber } from './frame/LineNumber'
 import { PageBorder } from './frame/PageBorder'
-import jsPDF, { Context2d } from 'jspdf'
+// Named import (not default) so this works in both browser bundlers and Node
+// ESM. jsPDF v4's CJS publishes module.exports as the namespace object, so the
+// default import yields the whole namespace in Node — only the named `jsPDF`
+// is the actual constructor in both worlds.
+import { jsPDF, Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
@@ -91,13 +95,27 @@ import type { IEditorData as ICEEditorData } from '@hufe921/canvas-editor'
 import { Area } from './interactive/Area'
 import { Graffiti } from './graffiti/Graffiti'
 import { Badge } from './frame/Badge'
+import { platform } from '../../platform/current'
 // import { Draw } from '@hufe921/canvas-editor/dist/src/editor/core/draw/Draw'
 // import { IEditorData } from '@hufe921/canvas-editor'
 // import { ITd } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Td'
 // import { IRow, IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 
+/**
+ * Where to fetch the default fonts from when `loadDefaultFonts: true`.
+ *
+ *   - `'cdn'` (browser default): fetch TTFs from cdn.jsdelivr.net. Requires
+ *     network access; works in both browser and Node.
+ *   - `'bundled'` (node default): read TTFs from the package's dist/font/
+ *     directory. Resolved relative to the running module — no network needed.
+ *   - `{ dir }`: read TTFs from an absolute filesystem path that the consumer
+ *     supplies. Useful for custom font installs in Node deployments.
+ */
+export type FontSource = 'cdn' | 'bundled' | { dir: string }
+
 export type PdfOptions = {
   loadDefaultFonts?: boolean
+  fontSource?: FontSource
 }
 
 export class DrawPdf {
@@ -116,6 +134,7 @@ export class DrawPdf {
   private elementList: IElement[]
   private pdf!: jsPDF
   private fontCache: Array<{ fileName: string, base64: string, id: string, type: string }> = []
+  private fontSource: FontSource = 'cdn'
 
   private i18n: I18n
   private margin: Margin
@@ -168,7 +187,7 @@ export class DrawPdf {
     // draw: Draw
   ) {
     // this.draw = draw
-    this.fakeCanvas = document.createElement('canvas')
+    this.fakeCanvas = platform.createMeasurementCanvas()
     this.fakeCtx = this.fakeCanvas.getContext('2d')!
     // this.container = draw.getContainer()
     this.pageList = []
@@ -212,6 +231,8 @@ export class DrawPdf {
 
     this._formatContainer()
     this._resetPdf()
+
+    this.fontSource = pdfOptions.fontSource ?? platform.defaultFontSource
 
     if (pdfOptions.loadDefaultFonts) {
       this.defaultFontsLoadedPromise = this._addDefaultFont()
@@ -322,25 +343,21 @@ export class DrawPdf {
     return textMetrics
   }
 
-  public async downloadFont(url: string, fileName: string, id: string, type: string) {
-    const response = await fetch(url)
-    const blob = await response.blob()
-    return new Promise((onSuccess, onError) => {
-      try {
-        const $this = this
-        const reader = new FileReader()
-        reader.onload = function () {
-          const dataUrl = this.result as string
-          const base64 = dataUrl.split('base64,')[1]
-          $this.fontCache.push({ fileName, base64, id, type })
-          $this._applyFont($this.pdf, { fileName, base64, id, type })
-          onSuccess(this.result)
-        }
-        reader.readAsDataURL(blob)
-      } catch (e) {
-        onError(e)
-      }
-    })
+  /**
+   * Load a single TTF font and register it with the PDF. In the browser, `source`
+   * must be an http(s) URL. In Node, `source` may be either an https URL in the
+   * font allowlist or an absolute filesystem path — see src/platform/node.ts for
+   * the SSRF/path-traversal checks applied.
+   */
+  public async downloadFont(source: string, fileName: string, id: string, type: string) {
+    const base64 = await platform.loadFontAsBase64(source)
+    const font = { fileName, base64, id, type }
+    this.fontCache.push(font)
+    this._applyFont(this.pdf, font)
+    // Hook for the Node platform to register the same bytes with @napi-rs/canvas
+    // so fakeCtx.measureText sees the right glyph metrics. No-op in browser.
+    platform.registerFontForMeasurement(font, base64)
+    return base64
   }
 
   private _applyFont(
@@ -351,141 +368,71 @@ export class DrawPdf {
     pdf.addFont(font.fileName, font.id, font.type)
   }
 
+  // Declarative list of the fonts shipped in dist/font/ and also hosted at
+  // cdn.jsdelivr.net under the same names. To add a font: drop the TTF in
+  // public/font/, add a row here, no other code changes needed.
+  private static readonly DEFAULT_FONTS: ReadonlyArray<{
+    fileName: string
+    id: string
+    type: 'normal' | 'bold' | 'italic' | 'bolditalic'
+  }> = [
+    { fileName: 'msyh.ttf',                id: 'microsoft yahei', type: 'normal' },
+    // Bold msyh shares the 'msyh.ttf' VFS name with the normal weight — that's
+    // the existing behavior pre-0.4.0 (see git history). jsPDF keys fonts by
+    // (id, type), so this works, but it means addFileToVFS overwrites once.
+    { fileName: 'msyh-bold.ttf',           id: 'microsoft yahei', type: 'bold' },
+    { fileName: 'Arial.ttf',               id: 'arial',           type: 'normal' },
+    { fileName: 'Arial_Bold.ttf',          id: 'arial',           type: 'bold' },
+    { fileName: 'Arial_Italic.ttf',        id: 'arial',           type: 'italic' },
+    { fileName: 'Arial_Bold_Italic.ttf',   id: 'arial',           type: 'bolditalic' },
+    { fileName: 'calibri-regular.ttf',     id: 'calibri',         type: 'normal' },
+    { fileName: 'calibri-bold.ttf',        id: 'calibri',         type: 'bold' },
+    { fileName: 'calibri-italic.ttf',      id: 'calibri',         type: 'italic' },
+    { fileName: 'calibri-bold-italic.ttf', id: 'calibri',         type: 'bolditalic' },
+    { fileName: 'Cambria.ttf',             id: 'cambria',         type: 'normal' },
+    { fileName: 'cambriab.ttf',            id: 'cambria',         type: 'bold' },
+    { fileName: 'cambriai.ttf',            id: 'cambria',         type: 'italic' },
+    { fileName: 'cambriaz.ttf',            id: 'cambria',         type: 'bolditalic' },
+    { fileName: 'Verdana.ttf',             id: 'verdana',         type: 'normal' },
+    { fileName: 'Verdana_Bold.ttf',        id: 'verdana',         type: 'bold' },
+    { fileName: 'Verdana_Italic.ttf',      id: 'verdana',         type: 'italic' },
+    { fileName: 'Verdana_Bold_Italic.ttf', id: 'verdana',         type: 'bolditalic' },
+    { fileName: 'Inkfree.ttf',             id: 'ink free',        type: 'normal' },
+    { fileName: 'segoe-ui.ttf',            id: 'segoe ui',        type: 'normal' },
+    { fileName: 'segoe-ui-bold.ttf',       id: 'segoe ui',        type: 'bold' },
+    { fileName: 'segoeuii.ttf',            id: 'segoe ui',        type: 'italic' }
+  ]
+
+  // Same version-pinned CDN base used pre-0.4.0. Pinning to 0.2.7 means the
+  // fonts hosted there never change under us — bumping the package version
+  // doesn't move the font URLs.
+  private static readonly CDN_FONT_BASE =
+    'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font'
+
+  private _resolveDefaultFontSource(fileName: string): string {
+    if (this.fontSource === 'cdn') {
+      return `${DrawPdf.CDN_FONT_BASE}/${fileName}`
+    }
+    if (this.fontSource === 'bundled') {
+      return platform.getBundledFontPath(fileName)
+    }
+    // { dir }: consumer-supplied. Could be an absolute filesystem path (Node)
+    // or a base URL (browser). loadFontAsBase64 in the relevant shim handles
+    // both forms — Node validates path traversal, browser does the fetch.
+    return `${this.fontSource.dir.replace(/\/+$/, '')}/${fileName}`
+  }
+
   public async _addDefaultFont() {
-    await Promise.all([
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh.ttf',
-        'msyh.ttf',
-        'microsoft yahei',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/msyh-bold.ttf',
-        'msyh.ttf',
-        'microsoft yahei',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial.ttf',
-        'Arial.ttf',
-        'arial',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold.ttf',
-        'Arial_Bold.ttf',
-        'arial',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Italic.ttf',
-        'Arial_Italic.ttf',
-        'arial',
-        'italic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Arial_Bold_Italic.ttf',
-        'Arial_Bold_Italic.ttf',
-        'arial',
-        'bolditalic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-regular.ttf',
-        'calibri-regular.ttf',
-        'calibri',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold.ttf',
-        'calibri-bold.ttf',
-        'calibri',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-italic.ttf',
-        'calibri-italic.ttf',
-        'calibri',
-        'italic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/calibri-bold-italic.ttf',
-        'calibri-bold-italic.ttf',
-        'calibri',
-        'bolditalic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Cambria.ttf',
-        'Cambria.ttf',
-        'cambria',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriab.ttf',
-        'cambriab.ttf',
-        'cambria',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriai.ttf',
-        'cambriai.ttf',
-        'cambria',
-        'italic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/cambriaz.ttf',
-        'cambriaz.ttf',
-        'cambria',
-        'bolditalic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana.ttf',
-        'Verdana.ttf',
-        'verdana',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold.ttf',
-        'Verdana_Bold.ttf',
-        'verdana',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Italic.ttf',
-        'Verdana_Italic.ttf',
-        'verdana',
-        'italic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Verdana_Bold_Italic.ttf',
-        'Verdana_Bold_Italic.ttf',
-        'verdana',
-        'bolditalic'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/Inkfree.ttf',
-        'Inkfree.ttf',
-        'ink free',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui.ttf',
-        'segoe-ui.ttf',
-        'segoe ui',
-        'normal'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoe-ui-bold.ttf',
-        'segoe-ui-bold.ttf',
-        'segoe ui',
-        'bold'
-      ),
-      this.downloadFont(
-        'https://cdn.jsdelivr.net/npm/canvas-editor-pdf@0.2.7/dist/font/segoeuii.ttf',
-        'segoeuii.ttf',
-        'segoe ui',
-        'italic'
+    await Promise.all(
+      DrawPdf.DEFAULT_FONTS.map(font =>
+        this.downloadFont(
+          this._resolveDefaultFontSource(font.fileName),
+          font.fileName,
+          font.id,
+          font.type
+        )
       )
-    ])
+    )
 
     return true
   }
@@ -1076,12 +1023,19 @@ export class DrawPdf {
   }
 
   public getPagePixelRatio(): number {
-    return this.pagePixelRatio || window.devicePixelRatio
+    // Fall back to 1 in non-browser environments (no `window`). For PDF
+    // output the DPR mostly affects pattern canvas sizing in Watermark —
+    // 1 produces the cleanest result since the PDF is vector anyway.
+    return (
+      this.pagePixelRatio ||
+      (typeof window !== 'undefined' ? window.devicePixelRatio : 1)
+    )
   }
 
   public setPagePixelRatio(payload: number | null) {
+    const browserDpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1
     if (
-      (!this.pagePixelRatio && payload === window.devicePixelRatio) ||
+      (!this.pagePixelRatio && payload === browserDpr) ||
       payload === this.pagePixelRatio
     ) {
       return
