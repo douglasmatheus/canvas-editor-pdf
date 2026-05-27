@@ -34,7 +34,7 @@
   "homepage": "https://github.com/douglasmatheus/canvas-editor-pdf",
   "repository": {
     "type": "git",
-    "url": "https://github.com/douglasmatheus/canvas-editor-pdf.git"
+    "url": "git+https://github.com/douglasmatheus/canvas-editor-pdf.git"
   },
   "keywords": [
     "canvas-editor",
