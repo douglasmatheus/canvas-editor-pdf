@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -58,7 +58,7 @@
   },
   "peerDependencies": {
     "@hufe921/canvas-editor": "^0.9.133",
-    "@napi-rs/canvas": "^0.1.0",
+    "@napi-rs/canvas": "^0.1.0 || ^1.0.0",
     "@resvg/resvg-js": "^2.0.0"
   },
   "peerDependenciesMeta": {
@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@hufe921/canvas-editor": "^0.9.134",
-    "@napi-rs/canvas": "^0.1.0",
+    "@napi-rs/canvas": "^1.0.0",
     "@resvg/resvg-js": "^2.0.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/node": "16.18.96",

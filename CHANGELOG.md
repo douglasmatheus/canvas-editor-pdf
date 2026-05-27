@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 (2026-05-27)
+
+### Fixed
+- Widened the `@napi-rs/canvas` peer dependency range from `^0.1.0` to
+  `^0.1.0 || ^1.0.0`. 0.4.0 only accepted the 0.1.x line, so installing
+  alongside `@napi-rs/canvas@1.x` (the current major) failed with an
+  `ERESOLVE` peer conflict. Verified the render pipeline works unchanged on
+  `@napi-rs/canvas@1.0.0`.
+
 ## 0.4.0 (2026-05-27)
 
 ### Added
