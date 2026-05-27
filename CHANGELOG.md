@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.2 (2026-05-27)
+
+### Fixed
+- Added a `typesVersions` map for the `./node` subpath so consumers on
+  TypeScript < 5.0 (classic `moduleResolution: "node"`, which doesn't read the
+  `exports` `types` condition) can still resolve types for
+  `import { DrawPdf } from 'canvas-editor-pdf/node'`. Without it, those projects
+  hit `TS2307: Cannot find module 'canvas-editor-pdf/node'`. Modern resolution
+  (`bundler`/`node16`/`nodenext`) keeps using the `exports` map.
+
 ## 0.4.1 (2026-05-27)
 
 ### Fixed

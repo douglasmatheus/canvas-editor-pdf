@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -30,6 +30,13 @@
       "require": "./dist/node/index.cjs.js"
     },
     "./font/*": "./dist/font/*"
+  },
+  "typesVersions": {
+    "*": {
+      "node": [
+        "./dist/types/node.d.ts"
+      ]
+    }
   },
   "homepage": "https://github.com/douglasmatheus/canvas-editor-pdf",
   "repository": {
