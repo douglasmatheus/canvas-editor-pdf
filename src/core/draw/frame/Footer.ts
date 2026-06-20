@@ -87,12 +87,12 @@ export class Footer {
     })
   }
 
-  public getFooterBottom(): number {
+  public getFooterBottom(pageNo?: number): number {
+    if (this.isDisabled(pageNo)) return 0
     const {
-      footer: { bottom, disabled },
+      footer: { bottom },
       scale
     } = this.options
-    if (disabled) return 0
     return Math.floor(bottom * scale)
   }
 
@@ -104,7 +104,8 @@ export class Footer {
     return Math.floor(height * maxHeightRadioMapping[maxHeightRadio])
   }
 
-  public getHeight(): number {
+  public getHeight(pageNo?: number): number {
+    if (this.isDisabled(pageNo)) return 0
     const maxHeight = this.getMaxHeight()
     const rowHeight = this.getRowHeight()
     return rowHeight > maxHeight ? maxHeight : rowHeight
@@ -114,16 +115,28 @@ export class Footer {
     return this.rowList.reduce((pre, cur) => pre + cur.height, 0)
   }
 
-  public getExtraHeight(): number {
+  public getExtraHeight(pageNo?: number): number {
     // 页脚下边距 + 实际高 - 页面上边距
     const margins = this.draw.getMargins()
-    const footerHeight = this.getHeight()
-    const footerBottom = this.getFooterBottom()
+    const footerHeight = this.getHeight(pageNo)
+    const footerBottom = this.getFooterBottom(pageNo)
     const extraHeight = footerBottom + footerHeight - margins[2]
     return extraHeight <= 0 ? 0 : extraHeight
   }
 
+  public isDisabled(pageNo?: number): boolean {
+    if (this.options.footer.disabled) return true
+    if (
+      pageNo !== undefined &&
+      this.options.footer.disabledPages.includes(pageNo)
+    ) {
+      return true
+    }
+    return false
+  }
+
   public render(ctx2d: Context2d, pageNo: number) {
+    if (this.options.footer.disabledPages.includes(pageNo)) return
     ctx2d.globalAlpha = 1
     const innerWidth = this.draw.getInnerWidth()
     const maxHeight = this.getMaxHeight()

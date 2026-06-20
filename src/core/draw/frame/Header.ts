@@ -90,12 +90,12 @@ export class Header {
     })
   }
 
-  public getHeaderTop(): number {
+  public getHeaderTop(pageNo?: number): number {
+    if (this.isDisabled(pageNo)) return 0
     const {
-      header: { top, disabled },
+      header: { top },
       scale
     } = this.options
-    if (disabled) return 0
     return Math.floor(top * scale)
   }
 
@@ -107,7 +107,8 @@ export class Header {
     return Math.floor(height * maxHeightRadioMapping[maxHeightRadio])
   }
 
-  public getHeight(): number {
+  public getHeight(pageNo?: number): number {
+    if (this.isDisabled(pageNo)) return 0
     const maxHeight = this.getMaxHeight()
     const rowHeight = this.getRowHeight()
     return rowHeight > maxHeight ? maxHeight : rowHeight
@@ -117,16 +118,28 @@ export class Header {
     return this.rowList.reduce((pre, cur) => pre + cur.height, 0)
   }
 
-  public getExtraHeight(): number {
+  public getExtraHeight(pageNo?: number): number {
     // 页眉上边距 + 实际高 - 页面上边距
     const margins = this.draw.getMargins()
-    const headerHeight = this.getHeight()
-    const headerTop = this.getHeaderTop()
+    const headerHeight = this.getHeight(pageNo)
+    const headerTop = this.getHeaderTop(pageNo)
     const extraHeight = headerTop + headerHeight - margins[0]
     return extraHeight <= 0 ? 0 : extraHeight
   }
 
+  public isDisabled(pageNo?: number): boolean {
+    if (this.options.header.disabled) return true
+    if (
+      pageNo !== undefined &&
+      this.options.header.disabledPages.includes(pageNo)
+    ) {
+      return true
+    }
+    return false
+  }
+
   public render(ctx2d: Context2d, pageNo: number) {
+    if (this.options.header.disabledPages.includes(pageNo)) return
     ctx2d.globalAlpha = 1
     const innerWidth = this.draw.getInnerWidth()
     const maxHeight = this.getMaxHeight()

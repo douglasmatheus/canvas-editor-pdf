@@ -25,6 +25,7 @@ export interface ICurrentPosition {
   tdId?: string
   trId?: string
   tableId?: string
+  tablePath?: ITablePositionContext[]
   zone?: EditorZone
   hitLineStartIndex?: number
 }
@@ -58,6 +59,16 @@ export interface IPositionContext {
   tdId?: string
   trId?: string
   tableId?: string
+  tablePath?: ITablePositionContext[]
+}
+
+export interface ITablePositionContext {
+  index: number
+  trIndex: number
+  tdIndex: number
+  tdId?: string
+  trId?: string
+  tableId?: string
 }
 
 export interface IComputeRowPositionPayload {
@@ -80,6 +91,7 @@ export interface IComputePageRowPositionPayload {
   trIndex?: number
   tdValueIndex?: number
   zone?: EditorZone
+  tablePosition?: IElementPosition
 }
 
 export interface IComputePageRowPositionResult {

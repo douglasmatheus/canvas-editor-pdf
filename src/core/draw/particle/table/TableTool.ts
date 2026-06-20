@@ -81,14 +81,23 @@ export class TableTool {
   }
 
   public render() {
-    const { isTable, index, trIndex, tdIndex } =
-      this.position.getPositionContext()
+    const positionContext = this.position.getPositionContext()
+    const { isTable } = positionContext
     if (!isTable) return
     // 销毁之前工具
     this.dispose()
     const elementList = this.draw.getOriginalElementList()
     const positionList = this.position.getOriginalPositionList()
-    const element = elementList[index!]
+    const element = this.position.getTableElementByContext(
+      elementList,
+      positionContext
+    )
+    const position = this.position.getTableElementPositionByContext(
+      elementList,
+      positionList,
+      positionContext
+    )
+    if (!element || !position) return
     // 表格工具配置禁用又非设计模式时不渲染
     // if (element.tableToolDisabled && !this.draw.isDesignMode()) return
     // 渲染所需数据
@@ -96,7 +105,6 @@ export class TableTool {
       scale,
       table: { overflow }
     } = this.options
-    const position = positionList[index!]
     const { colgroup, trList } = element
     const {
       coordinate: { leftTop }
@@ -106,7 +114,8 @@ export class TableTool {
     const prePageHeight = this.draw.getPageNo() * (height + pageGap)
     const tableX = leftTop[0]
     const tableY = leftTop[1] + prePageHeight
-    const td = element.trList![trIndex!].tdList[tdIndex!]
+    const td = this.draw.getTd()
+    if (!td) return
     const rowIndex = td.rowIndex
     const colIndex = td.colIndex
     const tableHeight = element.height! * scale
