@@ -5,6 +5,7 @@ import {
   RenderMode,
   WordBreak
 } from '../dataset/enum/Editor'
+import { IColumnOption } from './Column'
 import { IBackgroundOption } from './Background'
 import { ICheckboxOption } from './Checkbox'
 import { IRadioOption } from './Radio'
@@ -34,6 +35,7 @@ import { IRange } from './Range'
 import { IGraffitiData, IGraffitiOption } from './Graffiti'
 // import { IWhiteSpaceOption } from './WhiteSpace'
 // import { IMagnifierOption } from './Magnifier'
+// import { IAccessibilityOption } from './Accessibility'
 
 export interface IEditorData {
   header?: IElement[]
@@ -114,6 +116,8 @@ export interface IEditorOption {
   imgCaption?: IImgCaptionOption
   list?: IListOption
   // magnifier?: IMagnifierOption
+  // accessibility?: IAccessibilityOption
+  column?: IColumnOption
 }
 
 export interface IEditorResult {
@@ -159,6 +163,7 @@ export interface IPrintModeRule {
   backgroundDisabled?: boolean
   filterEmptyControl?: boolean
   filterHideElementRow?: boolean
+  areaHideDisabled?: boolean
 }
 
 export interface IReadonlyModeRule {

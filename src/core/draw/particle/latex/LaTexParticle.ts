@@ -22,6 +22,7 @@ export class LaTexParticle extends ImageParticle {
     const { scale } = this.options
     const width = element.width! * scale
     const height = element.height! * scale
+    ctx2d.clearRect(x, y, width, height)
     ctx2d.drawImage(element.laTexSVG!, x, y, width, height)
   }
 }

@@ -87,6 +87,8 @@ import { PageBorder } from './frame/PageBorder'
 // is the actual constructor in both worlds.
 import { jsPDF, Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
+import { IColumnLayout, IColumnOption } from '../../interface/Column'
+import { ColumnManager } from './column/ColumnManager'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
 import { IForceUpdateOption } from '../../interface/Draw'
@@ -178,6 +180,7 @@ export class DrawPdf {
   private pageRowList: IRow[][]
   private printModeData: Required<Omit<IEditorData, 'graffiti'>> | null
   private controlMinWidthPlaceholderElementListSet: WeakSet<IElement[]>
+  private columnManager: ColumnManager
 
   public defaultFontsLoadedPromise: Promise<boolean>
 
@@ -278,6 +281,7 @@ export class DrawPdf {
     // this.control = new Control(this)
     this.pageBorder = new PageBorder(this)
     this.graffiti = new Graffiti(this, data.graffiti)
+    this.columnManager = new ColumnManager(this)
 
     this.imageObserver = new ImageObserver()
 
@@ -613,6 +617,15 @@ export class DrawPdf {
     return width - margins[1] - margins[3]
   }
 
+  public getColumnLayout(): IColumnLayout | null {
+    return this.columnManager.getLayout()
+  }
+
+  public setColumnConfig(config: IColumnOption | null): void {
+    if (this.options.pageMode === PageMode.CONTINUITY) return
+    this.columnManager.setConfig(this.getInnerWidth(), config)
+  }
+
   public getOriginalInnerWidth(): number {
     const width = this.getOriginalWidth()
     const margins = this.getOriginalMargins()
@@ -749,6 +762,10 @@ export class DrawPdf {
 
   public getPosition(): Position {
     return this.position
+  }
+
+  public getColumnManager(): ColumnManager {
+    return this.columnManager
   }
 
   public getLineBreakParticle(): LineBreakParticle {
@@ -1257,6 +1274,7 @@ export class DrawPdf {
     Object.entries(newOption).forEach(([key, value]) => {
       Reflect.set(this.options, key, value)
     })
+    this.setColumnConfig(this.options.column)
     // this.forceUpdate()
   }
 
@@ -1291,6 +1309,9 @@ export class DrawPdf {
     // 计算列表偏移宽度
     const listStyleMap = this.listParticle.computeListStyle(this.getCtx2d(), elementList)
     const rowList: IRow[] = []
+    const layout =
+      isPagingMode && !isFromTable ? this.columnManager.getLayout() : null
+    const isColumnEnabled = !!layout && layout.count > 1
     if (elementList.length) {
       rowList.push({
         width: 0,
@@ -1299,7 +1320,8 @@ export class DrawPdf {
         elementList: [],
         startIndex: 0,
         rowIndex: 0,
-        rowFlex: elementList?.[0]?.rowFlex || elementList?.[1]?.rowFlex
+        rowFlex: elementList?.[0]?.rowFlex || elementList?.[1]?.rowFlex,
+        ...(isColumnEnabled ? { columnIndex: 0 } : {})
       })
     }
     // 起始位置及页码计算
@@ -1317,6 +1339,8 @@ export class DrawPdf {
     let listIndex = 0
     // 控件最小宽度
     let controlRealWidth = 0
+    // 分栏游标
+    let currentColumn = 0
     for (let i = 0; i < elementList.length; i++) {
       const curRow: IRow = rowList[rowList.length - 1]
       const element = elementList[i]
@@ -1332,7 +1356,8 @@ export class DrawPdf {
         curRow.offsetX ||
         (element.listId && listStyleMap.get(element.listId)) ||
         0
-      const availableWidth = innerWidth - offsetX
+      const rowMaxWidth = isColumnEnabled && layout ? layout.width : innerWidth
+      const availableWidth = rowMaxWidth - offsetX
       // 增加起始位置坐标偏移量
       const isStartElement = curRow.elementList.length === 1
       x += isStartElement ? offsetX : 0
@@ -1878,7 +1903,8 @@ export class DrawPdf {
           ascent,
           rowIndex: curRow.rowIndex + 1,
           rowFlex: elementList[i]?.rowFlex || elementList[i + 1]?.rowFlex,
-          isPageBreak: element.type === ElementType.PAGE_BREAK
+          isPageBreak: element.type === ElementType.PAGE_BREAK,
+          ...(isColumnEnabled ? { columnIndex: currentColumn } : {})
         }
         // 控件缩进
         if (
@@ -1971,22 +1997,58 @@ export class DrawPdf {
       }
       // 重新计算坐标、页码、下一行首行元素环绕交叉
       if (isWrap) {
-        x = startX
+        const columnOffset = !layout ? 0 : layout.offsets[currentColumn] || 0
+        x = startX + columnOffset
         y += curRow.height
         if (isPagingMode && !isFromTable && pageHeight) {
           const curMainOuterHeight = this.getMainOuterHeight(pageNo)
-          if (
-            y - pageStartY + curMainOuterHeight + height > pageHeight ||
-            element.type === ElementType.PAGE_BREAK
-          ) {
-            // 删除多余四周环绕型元素
-            deleteSurroundElementList(surroundElementList, pageNo)
-            pageNo += 1
-            pageStartY =
-              this.getMargins()[0] + this.getHeader().getExtraHeight(pageNo)
-            y = pageStartY
+          const isOverflow =
+            y - pageStartY + curMainOuterHeight + height > pageHeight
+          const isPageBreakElement = element.type === ElementType.PAGE_BREAK
+          if (isOverflow || isPageBreakElement) {
+            if (
+              !isPageBreakElement &&
+              isColumnEnabled &&
+              layout &&
+              currentColumn < layout.count - 1
+            ) {
+              currentColumn += 1
+              y = pageStartY
+              x = startX + (layout.offsets[currentColumn] || 0)
+            } else {
+              // 删除多余四周环绕型元素
+              deleteSurroundElementList(surroundElementList, pageNo)
+              pageNo += 1
+              currentColumn = 0
+              pageStartY =
+                this.getMargins()[0] + this.getHeader().getExtraHeight(pageNo)
+              y = pageStartY
+              x = startX + (layout ? layout.offsets[0] || 0 : 0)
+            }
           }
         }
+        // 同步新行的栏索引（栏游标可能在翻栏/翻页逻辑中变化）
+        const nextRow = rowList[rowList.length - 1]
+        if (nextRow && isColumnEnabled && nextRow.columnIndex !== undefined) {
+          nextRow.columnIndex = currentColumn
+        }
+        // 计算下一行第一个元素是否存在环绕交叉
+        rowElement.left = 0
+        const surroundPosition = this.position.setSurroundPosition({
+          pageNo,
+          rowElement,
+          row: nextRow,
+          rowElementRect: {
+            x,
+            y,
+            height,
+            width: metrics.width
+          },
+          availableWidth,
+          surroundElementList
+        })
+        x = surroundPosition.x
+        x += metrics.width
       }
     }
     return rowList
@@ -2024,10 +2086,20 @@ export class DrawPdf {
     } else {
       // 每页页眉/页脚禁用状态可能不同，按页计算外部占位高度
       let pageHeight = this.getMainOuterHeight(0)
+      let prevColumnIndex: number | undefined = undefined
       for (let i = 0; i < this.rowList.length; i++) {
         const row = this.rowList[i]
         const rowOffsetY = row.offsetY || 0
-        if (
+        // 分栏内栏切换：重置当前页累计高度，留在本页
+        const columnChanged =
+          prevColumnIndex !== undefined &&
+          row.columnIndex !== undefined &&
+          row.columnIndex > 0 &&
+          row.columnIndex !== prevColumnIndex
+        if (columnChanged) {
+          pageHeight = this.getMainOuterHeight(pageNo) + row.height + rowOffsetY
+          pageRowList[pageNo].push(row)
+        } else if (
           row.height + rowOffsetY + pageHeight > height ||
           this.rowList[i - 1]?.isPageBreak
         ) {
@@ -2035,13 +2107,14 @@ export class DrawPdf {
             this.elementList = this.elementList.slice(0, row.startIndex)
             break
           }
+          pageNo++
           pageHeight = this.getMainOuterHeight(pageNo) + row.height + rowOffsetY
           pageRowList.push([row])
-          pageNo++
         } else {
           pageHeight += row.height + rowOffsetY
           pageRowList[pageNo].push(row)
         }
+        prevColumnIndex = row.columnIndex
       }
     }
     return pageRowList
@@ -2558,6 +2631,8 @@ export class DrawPdf {
     if (!isPrintMode) {
       this.margin.render(ctx2d, pageNo)
     }
+    // 绘制分栏分隔线
+    this.columnManager.drawSeparator(ctx2d, pageNo)
     // 渲染衬于文字下方元素
     this._drawFloat(ctx2d, {
       pageNo,
