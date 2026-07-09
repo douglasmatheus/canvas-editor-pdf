@@ -76,7 +76,7 @@ export const editorOptions = {
     repeat: true,
     color: '#888',
     size: 32,
-    opacity: 0.15,
-    gap: [120, 80]
+    opacity: 0.3,
+    gap: [10, 10]
   }
 }
