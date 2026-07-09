@@ -8,12 +8,18 @@ emits PDF instructions) instead of rendering to a real `HTMLCanvasElement`.
 Tracks `@hufe921/canvas-editor` and is updated to stay in sync with upstream
 changes.
 
-## What's new in 0.4.0
+**▶ Try it:** [live playground](https://douglasmatheus.github.io/canvas-editor-pdf/)
+— paste a canvas-editor `options` object and `data` and preview the PDF in the
+browser.
 
-- **Runs in Node.js** in addition to the browser. Same package, two entries:
-  - `import { DrawPdf } from 'canvas-editor-pdf'` — browser (unchanged)
-  - `import { DrawPdf } from 'canvas-editor-pdf/node'` — Node (new)
-- Pluggable font source: `'cdn'`, `'bundled'`, or a custom directory.
+## What's new in 0.5.0
+
+- **Multi-column layout** via the `column` option.
+- **Per-page header/footer** control (`disabledPages`, `editable`).
+- **Nested tables** and **areas inside table cells** now lay out and paginate.
+- Fixes: text watermark centering + `repeat` tiling, and CJK page-number font.
+- Runs in both the browser and Node.js (`canvas-editor-pdf/node`), with a
+  pluggable font source (`'cdn'` / `'bundled'` / custom directory).
 - See the [CHANGELOG](./CHANGELOG.md) for the full list.
 
 ---
