@@ -1,0 +1,115 @@
+// Playground entry. Imports the library straight from ../src so the deployed
+// demo always reflects the current repo (no dependency on a published release).
+// The browser platform shim (src/platform/current → browser.ts) is used
+// automatically; default fonts load from the CDN at runtime.
+import { DrawPdf } from '../src/index'
+// @ts-expect-error — plain JS fixture, no types
+import { sampleEditorData, editorOptions } from '../scripts/smoke/fixtures/sample.js'
+
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
+
+const optionsEl = $<HTMLTextAreaElement>('options')
+const dataEl = $<HTMLTextAreaElement>('data')
+const generateBtn = $<HTMLButtonElement>('generate')
+const downloadBtn = $<HTMLButtonElement>('download')
+const resetBtn = $<HTMLButtonElement>('reset')
+const statusEl = $<HTMLElement>('status')
+const previewHost = $<HTMLElement>('previewHost')
+const versionEl = $<HTMLElement>('version')
+
+versionEl.textContent = `v${__VERSION__}`
+
+// The shared sample fixture drives the default content. Its LaTeX element is
+// dropped from the default: this lib renders an already-converted SVG, but
+// turning a LaTeX string into SVG is KaTeX's job (upstream canvas-editor), so a
+// raw latex element has no `laTexSVG` and would fail on first click.
+const defaultData = {
+  ...sampleEditorData,
+  main: (sampleEditorData.main as Array<{ type?: string }>).filter(
+    el => el.type !== 'latex'
+  )
+}
+
+function setStatus(msg: string, kind: '' | 'ok' | 'err' = '') {
+  statusEl.textContent = msg
+  statusEl.className = kind
+}
+
+function loadSample() {
+  optionsEl.value = JSON.stringify(editorOptions, null, 2)
+  dataEl.value = JSON.stringify(defaultData, null, 2)
+  setStatus('')
+}
+
+let currentBlobUrl: string | null = null
+let lastPdfBlob: Blob | null = null
+
+function revokeBlob() {
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl)
+    currentBlobUrl = null
+  }
+}
+
+function parseJson(label: string, raw: string): unknown {
+  try {
+    return JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`${label} is not valid JSON: ${(err as Error).message}`)
+  }
+}
+
+async function generate() {
+  generateBtn.disabled = true
+  downloadBtn.disabled = true
+  setStatus('Parsing input…')
+  try {
+    const options = parseJson('Options', optionsEl.value || '{}')
+    const data = parseJson('Data', dataEl.value || '{}')
+
+    setStatus('Loading fonts…')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const instance = new DrawPdf(options as any, data as any, {
+      loadDefaultFonts: true // fontSource defaults to 'cdn' in the browser
+    })
+    await instance.defaultFontsLoadedPromise
+
+    setStatus('Rendering…')
+    instance.render()
+
+    revokeBlob()
+    lastPdfBlob = instance.getPdf().output('blob') as Blob
+    currentBlobUrl = URL.createObjectURL(lastPdfBlob)
+
+    previewHost.className = ''
+    previewHost.innerHTML = ''
+    const iframe = document.createElement('iframe')
+    iframe.title = 'PDF preview'
+    iframe.src = currentBlobUrl
+    previewHost.appendChild(iframe)
+
+    downloadBtn.disabled = false
+    setStatus('Rendered.', 'ok')
+  } catch (err) {
+    console.error(err)
+    setStatus('✗ ' + ((err as Error)?.message || String(err)), 'err')
+  } finally {
+    generateBtn.disabled = false
+  }
+}
+
+function download() {
+  if (!lastPdfBlob) return
+  const url = URL.createObjectURL(lastPdfBlob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'canvas-editor.pdf'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+generateBtn.addEventListener('click', generate)
+downloadBtn.addEventListener('click', download)
+resetBtn.addEventListener('click', loadSample)
+
+loadSample()

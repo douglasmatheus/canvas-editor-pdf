@@ -1,0 +1,65 @@
+name: Deploy demo to GitHub Pages
+
+# Builds the playground (demo/) and publishes it to GitHub Pages.
+# Runs on every push to main, and can be triggered manually.
+#
+# One-time setup (GitHub UI): Settings → Pages → Build and deployment →
+# Source: "GitHub Actions". No secrets required — Pages deploys via the
+# built-in GITHUB_TOKEN + OIDC.
+on:
+  push:
+    branches: [main]
+    # Skip runs that don't touch the demo or the library it bundles.
+    paths:
+      - 'demo/**'
+      - 'src/**'
+      - 'scripts/smoke/fixtures/**'
+      - 'package.json'
+      - '.github/workflows/deploy-demo.yml'
+  workflow_dispatch:
+
+# Permissions the pages-deploy action needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let an in-progress run finish rather than cancelling.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --legacy-peer-deps: the repo intentionally carries both the old
+      # eslint@7 / @typescript-eslint@5 pair and typescript-eslint@8 (which
+      # wants eslint@8+); this flag mirrors how the tree is installed locally.
+      - name: Install
+        run: npm ci --legacy-peer-deps
+
+      - name: Build demo
+        run: npm run demo:build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

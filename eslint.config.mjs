@@ -9,7 +9,7 @@ export default tseslint.config(
     // of the library build. They intentionally use other module systems
     // (CommonJS next.config.js, framework imports) and shouldn't be linted
     // against the lib's TS config.
-    ignores: ['examples/**', 'scripts/smoke/**', 'dist/**'],
+    ignores: ['examples/**', 'scripts/smoke/**', 'dist/**', 'demo-dist/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

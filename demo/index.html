@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>canvas-editor-pdf · playground</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --border: #dfe3e8;
+      --text: #1b1f24;
+      --muted: #5b6570;
+      --accent: #2563eb;
+      --accent-fg: #ffffff;
+      --err: #c0362c;
+      --ok: #1a7f37;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
+        --muted: #8b949e; --accent: #4f8cff; --err: #ff7b72; --ok: #3fb950;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+    }
+    header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header h1 { margin: 0; font-size: 18px; }
+    header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    header a { color: var(--accent); }
+    .layout {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      padding: 16px 24px; align-items: start;
+    }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .panel > .head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px;
+      font-weight: 600;
+    }
+    .field { padding: 12px 14px; }
+    .field label {
+      display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    textarea {
+      width: 100%; height: 240px; resize: vertical; font-family: var(--mono);
+      font-size: 12.5px; padding: 10px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--bg); color: var(--text); tab-size: 2;
+    }
+    .toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 12px 24px;
+    }
+    button {
+      font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 6px;
+      border: 1px solid transparent; cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: var(--accent-fg); }
+    button.secondary {
+      background: transparent; color: var(--text); border-color: var(--border);
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    #status { font-size: 13px; color: var(--muted); min-height: 1.2em; }
+    #status.err { color: var(--err); }
+    #status.ok { color: var(--ok); }
+    .preview { padding: 0 24px 24px; }
+    .preview .panel { min-height: 480px; }
+    iframe {
+      width: 100%; height: 70vh; min-height: 480px; border: 0; background: #fff;
+    }
+    .empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 14px; padding: 40px;
+    }
+    code { font-family: var(--mono); font-size: .92em; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>canvas-editor-pdf · playground</h1>
+    <p>
+      Paste a canvas-editor <code>options</code> object and its
+      <code>data</code> (from <code>editor.command.getValue().data</code>),
+      then generate a PDF preview.
+      <a href="https://github.com/douglasmatheus/canvas-editor-pdf" target="_blank" rel="noopener">GitHub</a>
+      · <span id="version"></span>
+    </p>
+  </header>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="head">Options</div>
+      <div class="field">
+        <label for="options">IEditorOption (JSON)</label>
+        <textarea id="options" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="head">Data</div>
+      <div class="field">
+        <label for="data">IEditorData — { header?, main, footer? } (JSON)</label>
+        <textarea id="data" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button id="generate" class="primary">Generate PDF</button>
+    <button id="download" class="secondary" disabled>Download</button>
+    <button id="reset" class="secondary">Reset to sample</button>
+    <span id="status"></span>
+  </div>
+
+  <div class="preview">
+    <div class="panel">
+      <div id="previewHost" class="empty">No PDF yet — click “Generate PDF”.</div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

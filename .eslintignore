@@ -5,3 +5,5 @@
 examples/
 scripts/smoke/
 dist/
+# Demo build output (minified bundle). The demo/ source IS linted.
+demo-dist/

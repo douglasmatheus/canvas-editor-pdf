@@ -6,7 +6,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Codex, etc
 
 `canvas-editor-pdf` is a PDF exporter for [@hufe921/canvas-editor](https://github.com/Hufe921/canvas-editor). It re-implements the editor's rendering pipeline against [jsPDF](https://github.com/parallax/jsPDF)'s `Context2d` (a canvas-like API that emits PDF instructions) instead of an `HTMLCanvasElement`.
 
-The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor` is a peer dependency — consumers install both. There is no demo / playground — this is a library-only project.
+The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor` is a peer dependency — consumers install both. This is a library-only project; the one exception is the [demo/](demo/) playground (see below), a static page deployed to GitHub Pages — it's a consumer of the library, not part of the published package.
 
 ## Commands
 
@@ -22,6 +22,8 @@ The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor`
 | `npm test` | Vitest suite (`tests/`) — runs against `src/` under Node, no build needed. |
 | `npm run test:watch` | Vitest in watch mode. |
 | `npm run type:check` | `tsc --noEmit` type check (no output emitted). |
+| `npm run demo:dev` | Vite dev server for the [demo/](demo/) playground (imports the lib from `src/`). |
+| `npm run demo:build` | Build the playground static site into `demo-dist/` (deployed to Pages). |
 | `node scripts/smoke/node/run.mjs` | Manual Node smoke test (renders the shared fixture to `scripts/smoke/out/out-node.pdf`). Requires a prior `npm run build`. |
 | `npx serve scripts/smoke/browser` | Serve the browser smoke test page (open in browser, click "Generate PDF"). |
 
@@ -79,6 +81,32 @@ consumer scenarios (Next.js Pages Router, Next.js App Router, Express,
 standalone Node script, browser frontend). When the public API changes —
 constructor signature, `fontSource` option, peer deps — update those files so
 README links don't drift out of sync.
+
+## Demo playground (GitHub Pages)
+
+[demo/](demo/) is a standalone Vite **app** (not lib mode) that lets a visitor
+paste a canvas-editor `options` object and `data` and preview the generated PDF
+in the browser. It imports `DrawPdf` straight from `src/`, so the deployed site
+always reflects the current repo — no published release needed. Default fonts
+load from the CDN (the browser default `fontSource`). It defaults its inputs to
+the shared [scripts/smoke/fixtures/sample.js](scripts/smoke/fixtures/sample.js)
+fixture (LaTeX element dropped — that needs KaTeX-side SVG pre-conversion,
+which is out of scope for this lib).
+
+- `npm run demo:dev` / `npm run demo:build` (→ `demo-dist/`, git-ignored).
+- [demo/vite.config.ts](demo/vite.config.ts) is separate from the root config:
+  it bundles jspdf + the browser platform shim (the root config externalizes
+  them for the library build) and sets `base: './'` so it works under any Pages
+  path.
+- Deployed by [.github/workflows/deploy-demo.yml](.github/workflows/deploy-demo.yml)
+  on push to `main`. One-time repo setup: Settings → Pages → Source = "GitHub
+  Actions".
+
+**Always update [CHANGELOG.md](CHANGELOG.md) when you make a consumer-facing
+change** (new/changed/removed option, API, render behavior, or bug fix). Add the
+entry under a `## Unreleased` heading as you go — don't defer it to release time,
+it gets forgotten. At release, rename `Unreleased` to the new version + date. Keep
+entries consumer-focused; dev-only changes (tests, tooling) don't need an entry.
 
 Release flow: `scripts/release.js` validates `dist/` exists, strips `dependencies` from `package.json`, runs `npm publish`, then restores `package.json`.
 

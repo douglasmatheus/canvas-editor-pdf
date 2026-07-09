@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Multi-column layout** via a new `column` option (`count`, `gap`,
+  `separator`, `separatorColor`, `separatorWidth`). Content flows
+  column-by-column and only spills to the next page once the last column
+  fills; optional separator lines are drawn between columns. Ignored in
+  `CONTINUITY` page mode.
+- **Per-page header/footer control**: `disabledPages` (page numbers on which
+  the header/footer is hidden) and `editable` on the header/footer options,
+  plus `inactiveAlpha`. Pages with disabled chrome reclaim the vertical space.
+- **Nested tables** — tables inside table cells now lay out, render and
+  paginate correctly (cell/element/position resolved through a table path).
+- **Areas inside table cells** — an area's background/border/placeholder is now
+  honored when the area lives within a `td`, positioned to the cell content box.
+- Control `minWidth` is now honored across line wraps (placeholder elements are
+  inserted to fill the remaining width and restored before each relayout).
+- `areaHideDisabled` print-mode rule.
+
+### Fixed
+- LaTeX elements clear their target rect before drawing, avoiding overdraw when
+  a page is re-rendered.
+
 ## 0.4.2 (2026-05-27)
 
 ### Fixed
