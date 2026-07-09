@@ -5,20 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>canvas-editor-pdf · playground</title>
   <style>
+    /* Light is the default; dark applies when the OS prefers it (auto) or when
+       the theme toggle stamps data-theme="dark" on <html>. data-theme always
+       wins over the OS preference. */
     :root {
-      --bg: #f6f7f9;
-      --panel: #ffffff;
-      --border: #dfe3e8;
-      --text: #1b1f24;
-      --muted: #5b6570;
-      --accent: #2563eb;
-      --accent-fg: #ffffff;
-      --err: #c0362c;
-      --ok: #1a7f37;
+      --bg: #f6f7f9; --panel: #ffffff; --border: #dfe3e8; --text: #1b1f24;
+      --muted: #5b6570; --accent: #2563eb; --accent-fg: #ffffff;
+      --err: #c0362c; --ok: #1a7f37;
       --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
+    :root[data-theme="dark"] {
+      --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
+      --muted: #8b949e; --accent: #4f8cff; --err: #ff7b72; --ok: #3fb950;
+    }
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
         --muted: #8b949e; --accent: #4f8cff; --err: #ff7b72; --ok: #3fb950;
       }
@@ -30,11 +31,18 @@
     }
     header {
       padding: 20px 24px; border-bottom: 1px solid var(--border);
-      background: var(--panel);
+      background: var(--panel); display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 16px; flex-wrap: wrap;
     }
     header h1 { margin: 0; font-size: 18px; }
     header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
     header a { color: var(--accent); }
+    #theme {
+      flex: none; display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 12px; font: inherit; font-size: 13px;
+      cursor: pointer; white-space: nowrap;
+    }
     .layout {
       display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
       padding: 16px 24px; align-items: start;
@@ -47,8 +55,12 @@
     .panel > .head {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px;
-      font-weight: 600;
+      font-weight: 600; cursor: pointer; user-select: none;
     }
+    .panel.collapsed > .head { border-bottom: 0; }
+    .panel > .head .chevron { transition: transform .15s ease; color: var(--muted); }
+    .panel.collapsed > .head .chevron { transform: rotate(-90deg); }
+    .panel.collapsed > .body { display: none; }
     .field { padding: 12px 14px; }
     .field label {
       display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;
@@ -63,20 +75,20 @@
       display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
       padding: 12px 24px;
     }
-    button {
+    button.action {
       font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 6px;
       border: 1px solid transparent; cursor: pointer;
     }
     button.primary { background: var(--accent); color: var(--accent-fg); }
     button.secondary {
-      background: transparent; color: var(--text); border-color: var(--border);
+      background: transparent; color: var(--text); border: 1px solid var(--border);
     }
     button:disabled { opacity: .5; cursor: not-allowed; }
     #status { font-size: 13px; color: var(--muted); min-height: 1.2em; }
     #status.err { color: var(--err); }
     #status.ok { color: var(--ok); }
     .preview { padding: 0 24px 24px; }
-    .preview .panel { min-height: 480px; }
+    .preview .panel { min-height: 120px; }
     iframe {
       width: 100%; height: 70vh; min-height: 480px; border: 0; background: #fff;
     }
@@ -89,43 +101,55 @@
 </head>
 <body>
   <header>
-    <h1>canvas-editor-pdf · playground</h1>
-    <p>
-      Paste a canvas-editor <code>options</code> object and its
-      <code>data</code> (from <code>editor.command.getValue().data</code>),
-      then generate a PDF preview.
-      <a href="https://github.com/douglasmatheus/canvas-editor-pdf" target="_blank" rel="noopener">GitHub</a>
-      · <span id="version"></span>
-    </p>
+    <div>
+      <h1>canvas-editor-pdf · playground</h1>
+      <p>
+        Paste a canvas-editor <code>options</code> object and its
+        <code>data</code> (from <code>editor.command.getValue().data</code>),
+        then generate a PDF preview.
+        <a href="https://github.com/douglasmatheus/canvas-editor-pdf" target="_blank" rel="noopener">GitHub</a>
+        · <span id="version"></span>
+      </p>
+    </div>
+    <button id="theme" type="button" title="Switch theme (Auto / Light / Dark)">
+      <span id="themeIcon">🌓</span><span id="themeLabel">Auto</span>
+    </button>
   </header>
 
   <div class="layout">
-    <div class="panel">
-      <div class="head">Options</div>
-      <div class="field">
-        <label for="options">IEditorOption (JSON)</label>
-        <textarea id="options" spellcheck="false"></textarea>
+    <div class="panel" data-panel="options">
+      <div class="head"><span>Options</span><span class="chevron">▾</span></div>
+      <div class="body">
+        <div class="field">
+          <label for="options">IEditorOption (JSON)</label>
+          <textarea id="options" spellcheck="false"></textarea>
+        </div>
       </div>
     </div>
-    <div class="panel">
-      <div class="head">Data</div>
-      <div class="field">
-        <label for="data">IEditorData — { header?, main, footer? } (JSON)</label>
-        <textarea id="data" spellcheck="false"></textarea>
+    <div class="panel" data-panel="data">
+      <div class="head"><span>Data</span><span class="chevron">▾</span></div>
+      <div class="body">
+        <div class="field">
+          <label for="data">IEditorData — { header?, main, footer? } (JSON)</label>
+          <textarea id="data" spellcheck="false"></textarea>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="toolbar">
-    <button id="generate" class="primary">Generate PDF</button>
-    <button id="download" class="secondary" disabled>Download</button>
-    <button id="reset" class="secondary">Reset to sample</button>
+    <button id="generate" class="action primary">Generate PDF</button>
+    <button id="download" class="action secondary" disabled>Download</button>
+    <button id="reset" class="action secondary">Reset to sample</button>
     <span id="status"></span>
   </div>
 
   <div class="preview">
-    <div class="panel">
-      <div id="previewHost" class="empty">No PDF yet — click “Generate PDF”.</div>
+    <div class="panel" data-panel="preview">
+      <div class="head"><span>Preview</span><span class="chevron">▾</span></div>
+      <div class="body">
+        <div id="previewHost" class="empty">No PDF yet — click “Generate PDF”.</div>
+      </div>
     </div>
   </div>
 

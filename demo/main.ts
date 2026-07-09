@@ -8,6 +8,46 @@ import { sampleEditorData, editorOptions } from '../scripts/smoke/fixtures/sampl
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
+// ---- Theme toggle (Auto → Light → Dark). Auto follows the OS via CSS; the
+// explicit modes stamp data-theme on <html>, which wins over the media query.
+type ThemeMode = 'auto' | 'light' | 'dark'
+const THEME_KEY = 'demo-theme'
+const THEME_ICON: Record<ThemeMode, string> = { auto: '🌓', light: '☀️', dark: '🌙' }
+const THEME_NEXT: Record<ThemeMode, ThemeMode> = {
+  auto: 'light',
+  light: 'dark',
+  dark: 'auto'
+}
+
+function applyTheme(mode: ThemeMode) {
+  const root = document.documentElement
+  if (mode === 'auto') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', mode)
+  $<HTMLElement>('themeIcon').textContent = THEME_ICON[mode]
+  $<HTMLElement>('themeLabel').textContent =
+    mode[0].toUpperCase() + mode.slice(1)
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_KEY) as ThemeMode | null
+  let mode: ThemeMode = stored ?? 'auto'
+  applyTheme(mode)
+  $<HTMLButtonElement>('theme').addEventListener('click', () => {
+    mode = THEME_NEXT[mode]
+    localStorage.setItem(THEME_KEY, mode)
+    applyTheme(mode)
+  })
+}
+
+// ---- Collapsible panels: clicking a panel head toggles its body.
+function initCollapsiblePanels() {
+  document.querySelectorAll<HTMLElement>('.panel > .head').forEach(head => {
+    head.addEventListener('click', () => {
+      head.parentElement?.classList.toggle('collapsed')
+    })
+  })
+}
+
 const optionsEl = $<HTMLTextAreaElement>('options')
 const dataEl = $<HTMLTextAreaElement>('data')
 const generateBtn = $<HTMLButtonElement>('generate')
@@ -112,4 +152,6 @@ generateBtn.addEventListener('click', generate)
 downloadBtn.addEventListener('click', download)
 resetBtn.addEventListener('click', loadSample)
 
+initTheme()
+initCollapsiblePanels()
 loadSample()
