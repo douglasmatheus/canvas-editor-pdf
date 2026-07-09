@@ -115,6 +115,14 @@ describe('PDF output — sample fixture', () => {
     }
   })
 
+  it('tiles the repeating text watermark', () => {
+    // The fixture sets watermark { data: 'CONFIDENTIAL', repeat: true }. Before
+    // the tiling fix the repeat branch drew nothing; now it stamps the text
+    // across the page, so it must appear more than once.
+    const occurrences = (squished.match(/CONFIDENTIAL/g) || []).length
+    expect(occurrences).toBeGreaterThanOrEqual(2)
+  })
+
   it('embeds the inline image as a PDF image operator', () => {
     // The fixture has one inline PNG. Raw-byte scanning fails because the
     // content stream is Flate-compressed (compress: true), so detect it via

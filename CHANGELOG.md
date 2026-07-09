@@ -22,6 +22,20 @@
 ### Fixed
 - LaTeX elements clear their target rect before drawing, avoiding overdraw when
   a page is re-rendered.
+- **Text watermark rendering.** The non-repeating watermark is now centered on
+  the page (was anchored near the bottom-left and rendered off-center), and
+  `repeat: true` now actually tiles the text across the page (the previous
+  code relied on a canvas pattern fill that jsPDF's `Context2d` doesn't
+  support, so a repeating watermark drew nothing). `gap` spacing applies to the
+  tiled layout. Image watermarks are unaffected (still single, non-repeating).
+- **Page number font.** The page-number renderer rewrote the font family
+  `Microsoft YaHei` → `Yahei` before drawing, but fonts register with jsPDF
+  under a lowercased id (e.g. `microsoft yahei`) and no `Yahei` exists, so CJK
+  page numbers (e.g. `第{pageNo}页/共{pageCount}页`) fell back to a Latin font
+  and rendered as garbage. Page numbers now resolve the font the same way body
+  text does — lowercasing the family to match the registered id and calling
+  `setFont` — and the text is measured with that font so centered/right
+  alignment stays accurate.
 
 ## 0.4.2 (2026-05-27)
 

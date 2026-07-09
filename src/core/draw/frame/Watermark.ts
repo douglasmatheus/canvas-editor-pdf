@@ -26,13 +26,15 @@ export class Watermark {
     } = this.options
     const width = this.draw.getWidth()
     const height = this.draw.getHeight()
+    const fontString = `${size * scale}px ${font}`
     // 开始绘制
     ctx2d.save()
     this.draw.getPdf().setGState(new GState({
       opacity
     }))
     ctx2d.globalAlpha = opacity
-    ctx2d.font = `${size * scale}px ${font}`
+    ctx2d.font = fontString
+    ctx2d.fillStyle = color
     // 格式化文本
     let text = data
     const pageNoReg = new RegExp(FORMAT_PLACEHOLDER.PAGE_NO)
@@ -53,67 +55,42 @@ export class Watermark {
         numberType
       )
     }
-    const measureText = this.draw.getFakeCtx().measureText(data)
-    if (repeat) {
-      const dpr = this.draw.getPagePixelRatio()
-      // Initial 1x1 — width/height are reset below to the computed pattern size.
-      // We can't pass them here because they depend on textMetrics measured above.
-      const temporaryCanvas = platform.createCanvas(1, 1)
-      const temporaryCtx = temporaryCanvas.getContext('2d')!
-      // 勾股定理计算旋转后的宽高对角线尺寸 a^2 + b^2 = c^2
-      const textWidth = measureText.width
-      const textHeight =
-        measureText.actualBoundingBoxAscent +
-        measureText.actualBoundingBoxDescent
-      const diagonalLength = Math.sqrt(
-        Math.pow(textWidth, 2) + Math.pow(textHeight, 2)
-      )
-      // 加上 gap 间距
-      const patternWidth = diagonalLength + 2 * gap[0] * scale
-      const patternHeight = diagonalLength + 2 * gap[1] * scale
-      // 宽高设置
-      temporaryCanvas.width = patternWidth
-      temporaryCanvas.height = patternHeight
-      // CSS style is cosmetic-only (sets the displayed canvas size in the DOM).
-      // The PDF pipeline only consumes the canvas pixel buffer above, and
-      // @napi-rs/canvas has no `.style` — guard so the Node build doesn't crash.
-      if (temporaryCanvas.style) {
-        temporaryCanvas.style.width = `${patternWidth * dpr}px`
-        temporaryCanvas.style.height = `${patternHeight * dpr}px`
-      }
-      // 旋转45度
-      temporaryCtx.translate(patternWidth / 2, patternHeight / 2)
-      temporaryCtx.rotate((-45 * Math.PI) / 180)
-      temporaryCtx.translate(-patternWidth / 2, -patternHeight / 2)
-      // 绘制文本
-      temporaryCtx.font = `${size * scale}px ${font}`
-      temporaryCtx.fillStyle = color
-      temporaryCtx.fillText(
-        text,
-        (patternWidth - textWidth) / 2,
-        (patternHeight - textHeight) / 2 + measureText.actualBoundingBoxAscent
-      )
-      // 创建平铺模式
-      // const pattern = this.draw.getDraw().getCtx().createPattern(temporaryCanvas, 'repeat')
-      // if (pattern) {
-      ctx2d.createPattern()
-      // ctx2d.fillStyle = pattern
-      ctx2d.fillRect(0, 0, width, height)
-      // }
-    } else {
-      const x = width / 2.8
-      const y = height
-      ctx2d.globalAlpha = opacity
-      ctx2d.font = `${size * scale}px ${font}`
-      ctx2d.fillStyle = color
-      // 移动到中心位置再旋转
-      ctx2d.translate(x, y)
+    // Measure with the same font the watermark draws in (fakeCtx would
+    // otherwise measure against whatever font it last held).
+    const metrics = this.draw.measureText(fontString, text)
+    const textWidth = metrics.width
+    const textHeight =
+      metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+    // Draw the -45° rotated text centered on (cx, cy). The baseline offset
+    // (ascent - descent) / 2 vertically centers the glyph box on cy.
+    const drawRotated = (cx: number, cy: number) => {
+      ctx2d.save()
+      ctx2d.translate(cx, cy)
       ctx2d.rotate((-45 * Math.PI) / 180)
       ctx2d.fillText(
         text,
-        -measureText.width / 2,
-        measureText.actualBoundingBoxAscent - (size * scale) / 2
+        -textWidth / 2,
+        (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2
       )
+      ctx2d.restore()
+    }
+    if (repeat) {
+      // jsPDF's Context2d has no working canvas-pattern fill, so tile manually:
+      // step by the rotated text's bounding diagonal (so neighbours don't
+      // overlap) plus the configured gap, and stamp the text in each cell.
+      const diagonalLength = Math.sqrt(
+        Math.pow(textWidth, 2) + Math.pow(textHeight, 2)
+      )
+      const stepX = diagonalLength + 2 * gap[0] * scale
+      const stepY = diagonalLength + 2 * gap[1] * scale
+      for (let cy = stepY / 2; cy < height + stepY; cy += stepY) {
+        for (let cx = stepX / 2; cx < width + stepX; cx += stepX) {
+          drawRotated(cx, cy)
+        }
+      }
+    } else {
+      // Single watermark centered on the page.
+      drawRotated(width / 2, height / 2)
     }
     this.draw.getPdf().setGState(new GState({
       opacity: 1

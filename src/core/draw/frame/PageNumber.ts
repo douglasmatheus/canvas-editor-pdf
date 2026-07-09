@@ -71,15 +71,22 @@ export class PageNumber {
     const y = height - pageNumberBottom
     ctx2d.save()
     ctx2d.fillStyle = color
-    let newFont = font
-    if (newFont.includes('Microsoft YaHei')) {
-      newFont = newFont.replace('Microsoft YaHei', 'Yahei')
-    }
-    ctx2d.font = `${size * scale}px ${newFont}`
+    // Resolve the font exactly like the body-text path (TextParticle): fonts
+    // register with jsPDF under a lowercased id (e.g. 'microsoft yahei'), so
+    // the family must be lowercased to match, and setFont must be called
+    // explicitly. A previous hack instead rewrote 'Microsoft YaHei' → 'Yahei'
+    // (a font that was never registered), which forced a Latin fallback and
+    // rendered CJK page numbers (e.g. 第{pageNo}页/共{pageCount}页) as garbage.
+    const family = font.toLowerCase()
+    const fontString = `${size * scale}px ${family}`
+    ctx2d.font = fontString
+    this.draw.getPdf().setFont(family, '', 'normal')
     // 计算x位置-居左、居中、居右
     let x = 0
     const margins = this.draw.getMargins()
-    const { width: textWidth } = this.draw.getFakeCtx().measureText(text)
+    // Measure with the same font we draw in (fakeCtx would otherwise measure
+    // against whatever font it last held), so centered/right flex is accurate.
+    const { width: textWidth } = this.draw.measureText(fontString, text)
     if (rowFlex === RowFlex.CENTER) {
       x = (width - textWidth) / 2
     } else if (rowFlex === RowFlex.RIGHT) {
