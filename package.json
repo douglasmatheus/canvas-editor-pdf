@@ -59,9 +59,9 @@
     "build:node:cjs": "vite build --mode lib-node-cjs",
     "build:types": "tsc -p tsconfig.json",
     "lint": "eslint .",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "type:check": ""
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type:check": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
     "@hufe921/canvas-editor": "^0.9.133",
@@ -85,13 +85,13 @@
     "@types/prismjs": "^1.26.0",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
-    "cypress": "13.6.0",
-    "cypress-file-upload": "^5.0.8",
     "eslint": "^7.32.0",
+    "pdfjs-dist": "^6.1.200",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.8.1",
     "vite": "^5.4.21",
-    "vite-plugin-css-injected-by-js": "^3.5.2"
+    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "jspdf": "^4.2.1",

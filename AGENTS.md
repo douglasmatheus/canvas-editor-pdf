@@ -19,34 +19,51 @@ The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor`
 | `npm run build:node:cjs` | `vite build --mode lib-node-cjs` → `dist/node/index.cjs.js` |
 | `npm run build:types` | `tsc -p tsconfig.json` → `.d.ts` files in `dist/types/` |
 | `npm run lint` | ESLint over the repo |
-| `npm run cypress:open` / `npm run cypress:run` | E2E tests (Cypress) — **note:** the test files were inherited from canvas-editor and currently target a demo URL / import paths that no longer exist. Treat as broken until rewritten. |
+| `npm test` | Vitest suite (`tests/`) — runs against `src/` under Node, no build needed. |
+| `npm run test:watch` | Vitest in watch mode. |
+| `npm run type:check` | `tsc --noEmit` type check (no output emitted). |
 | `node scripts/smoke/node/run.mjs` | Manual Node smoke test (renders the shared fixture to `scripts/smoke/out/out-node.pdf`). Requires a prior `npm run build`. |
 | `npx serve scripts/smoke/browser` | Serve the browser smoke test page (open in browser, click "Generate PDF"). |
 
 ## Testing
 
-Right now the only tests are the **manual smoke scripts** under
-[scripts/smoke/](scripts/smoke/) (Cypress is inherited from upstream and
-broken — treat as non-functional). Roadmap for automated coverage, cheapest
-first; each level is independent:
+Automated tests run under **Vitest** (`npm test`). They hit `src/` directly
+under Node — no build required — because [vitest.config.ts](vitest.config.ts)
+mirrors the two things the Node lib build does: it aliases `./platform/current`
+→ `./platform/node.ts` (so there's no DOM dependency) and defines `__VERSION__`.
+Fast iteration lives here; the built bundles are validated separately by the
+smoke scripts below.
 
-1. **Unit tests for the platform shim** (Vitest — the project already uses
-   Vite). Test each `IPlatform` method in isolation, run twice (browser shim
-   under JSDOM/`@vitest/browser`, Node shim natively): `createMeasurementCanvas()`
-   returns a working `measureText`; `loadFontAsBase64()` returns non-empty
-   base64; `svgToPngDataUrl()` returns a `data:image/png;base64,…`. → `tests/platform/`
-2. **PDF output assertions** (medium). Render the same fixture in browser and
-   Node, then use `pdf-parse`/`pdfjs-dist` to compare *extracted text per page*
-   (deterministic) rather than raw bytes — also check page count and presence
-   of image XObjects. → `tests/integration/`
+Cypress was removed — it was inherited from upstream canvas-editor and only
+made sense for driving the editor's interactive demo UI, which this library
+doesn't have. A PDF exporter is tested by asserting on its output, not by
+clicking a browser.
+
+Current suites:
+
+1. **PDF output assertions** → [tests/integration/](tests/integration/). Render
+   the shared `sample` fixture and assert with `pdfjs-dist` on extracted text
+   per page (deterministic), page count, per-page header/footer, and embedded
+   image operators. This is the layer that catches layout/pagination
+   regressions (multi-column, per-page header/footer, tables).
+2. **Platform shim units** → [tests/platform/](tests/platform/). Exercise the
+   Node shim (`@napi-rs/canvas` + `@resvg/resvg-js`): `measureText`, `createCanvas`
+   sizing, `getBundledFontPath`, path validation, and `svgToPngDataUrl`. The
+   browser shim isn't unit-tested — a fake DOM has no real canvas metrics, so
+   the browser path is covered end-to-end by the browser smoke script instead.
+
+The fixture in [scripts/smoke/fixtures/sample.js](scripts/smoke/fixtures/sample.js)
+is the single canonical example, shared by the smoke scripts and the Vitest
+integration test (and slated to become the default input for the future demo
+page). Keep it representative when adding features.
+
+Roadmap (not yet built), cheapest first:
+
 3. **Visual diff with tolerance** (advanced). Rasterize each PDF page to PNG
    (`pdfjs-dist` or `@napi-rs/canvas`) and compare against a baseline with
    `pixelmatch` at a threshold (~5%). Save diffs for human inspection. → `tests/visual/`
 4. **Property-based fuzzing** (bonus). `fast-check` to generate random
    `IEditorData` and assert `render()` never throws.
-
-Suggested priority: shim units next (high value, cheap), then output
-assertions, then visual/fuzzing on demand once subtle rendering bugs appear.
 
 ## Reducing published font size
 
