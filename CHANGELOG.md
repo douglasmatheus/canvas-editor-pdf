@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-07-09)
 
 ### Added
 - **Multi-column layout** via a new `column` option (`count`, `gap`,
