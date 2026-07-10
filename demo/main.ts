@@ -6,6 +6,14 @@ import { DrawPdf } from '../src/index'
 // @ts-expect-error — plain JS fixture, no types
 import { sampleEditorData, editorOptions } from '../scripts/smoke/fixtures/sample.js'
 
+declare global {
+  interface Window {
+    goatcounter?: {
+      count?: (opts: { path: string; title?: string; event?: boolean }) => void
+    }
+  }
+}
+
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
 // ---- Theme toggle (Auto → Light → Dark). Auto follows the OS via CSS; the
@@ -46,6 +54,29 @@ function initCollapsiblePanels() {
       head.parentElement?.classList.toggle('collapsed')
     })
   })
+}
+
+// ---- Optional usage analytics (GoatCounter — privacy-friendly, no cookies).
+// Set GOATCOUNTER_CODE to your site code (the subdomain, e.g. 'canvas-editor-pdf'
+// for https://canvas-editor-pdf.goatcounter.com) to enable. Leave '' to disable
+// — everything below is then a no-op. Counts a pageview on load and a
+// 'generate-pdf' event each time a PDF is successfully generated.
+const GOATCOUNTER_CODE = 'canvas-editor-pdf'
+
+function initAnalytics() {
+  if (!GOATCOUNTER_CODE) return
+  const script = document.createElement('script')
+  script.async = true
+  script.src = '//gc.zgo.at/count.js'
+  script.setAttribute(
+    'data-goatcounter',
+    `https://${GOATCOUNTER_CODE}.goatcounter.com/count`
+  )
+  document.head.appendChild(script)
+}
+
+function countEvent(path: string) {
+  window.goatcounter?.count?.({ path, event: true })
 }
 
 const optionsEl = $<HTMLTextAreaElement>('options')
@@ -130,6 +161,7 @@ async function generate() {
 
     downloadBtn.disabled = false
     setStatus('Rendered.', 'ok')
+    countEvent('generate-pdf')
   } catch (err) {
     console.error(err)
     setStatus('✗ ' + ((err as Error)?.message || String(err)), 'err')
@@ -154,4 +186,5 @@ resetBtn.addEventListener('click', loadSample)
 
 initTheme()
 initCollapsiblePanels()
+initAnalytics()
 loadSample()
