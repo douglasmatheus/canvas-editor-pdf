@@ -10,7 +10,6 @@ export const defaultModeRuleOption: Readonly<DeepRequired<IModeRule>> = {
     imagePreviewerDisabled: false,
     backgroundDisabled: false,
     filterEmptyControl: false,
-    filterHideElementRow: false,
     areaHideDisabled: false
   },
   readonly: {

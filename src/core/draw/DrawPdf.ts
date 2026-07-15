@@ -1959,14 +1959,20 @@ export class DrawPdf {
       }
       // 行结束时逻辑
       if (isWrap || i === elementList.length - 1) {
-        // 打印模式下隐藏行元素均为隐藏元素 => 行不显示
-        if (
-          this.mode === EditorMode.PRINT &&
-          this.options.modeRule[EditorMode.PRINT].filterHideElementRow
-        ) {
-          const isAllHidden = curRow.elementList
-            .filter(el => el.value !== ZERO)
-            .every(el => el.hide || el.control?.hide || el.area?.hide)
+        // 行内全部为隐藏元素时 => 行高折叠
+        if (!this.isDesignMode() && curRow.height > 0) {
+          // Only collapse a row whose (non-zero-width) content is entirely
+          // hidden. Guard against an empty result: a newline-only row filters
+          // down to [], and [].every() is true — collapsing it would wrongly
+          // remove intentional blank lines and shift pagination.
+          const visibleElements = curRow.elementList.filter(
+            el => el.value !== ZERO
+          )
+          const isAllHidden =
+            visibleElements.length > 0 &&
+            visibleElements.every(
+              el => el.hide || el.control?.hide || el.area?.hide
+            )
           if (isAllHidden) {
             curRow.height = 0
             curRow.ascent = 0

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- A row whose visible content is entirely hidden (`element.hide` /
+  `control.hide` / `area.hide`) now collapses to zero height in any non-design
+  render mode, so hidden content leaves no blank gap in the exported PDF.
+  Empty/newline-only rows are unaffected. Previously this only happened in
+  PRINT mode, gated behind `modeRule.print.filterHideElementRow`.
+
+### Removed
+- **Breaking:** the `modeRule.print.filterHideElementRow` option. Hidden-row
+  collapsing is now unconditional in non-design modes (see above), so the flag
+  no longer had any effect.
+
 ## 0.5.0 (2026-07-09)
 
 ### Added
