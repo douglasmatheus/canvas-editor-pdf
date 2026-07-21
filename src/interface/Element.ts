@@ -62,6 +62,7 @@ export interface IListElement {
   listStyle?: ListStyle
   listId?: string
   listWrap?: boolean
+  listLevel?: number
 }
 
 export interface ITableAttr {

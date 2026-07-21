@@ -185,7 +185,15 @@ export class DrawPdf {
   public defaultFontsLoadedPromise: Promise<boolean>
 
   constructor(
-    options: IEditorOption,
+    // canvas-editor's IEditorOption is a separate copy — and, when consumed
+    // from the editor's own source, a different module instance entirely — so
+    // its enum-typed fields (mode, pageMode, …) are nominally incompatible and
+    // no type union can accept `editor.command.getValue().options`. Options are
+    // normalized by mergeOption at the boundary, so accept a loose object here;
+    // pass this lib's IEditorOption for full autocomplete. (`object` rather
+    // than Record<string, unknown> because interface types have no implicit
+    // index signature and aren't assignable to Record.)
+    options: IEditorOption | object,
     data: IEditorData | ICEEditorData,
     pdfOptions: PdfOptions = {}
     // draw: Draw
@@ -199,7 +207,7 @@ export class DrawPdf {
     this.ctxListInfos = []
     this.pageNo = 0
     this.pagePixelRatio = null
-    this.options = mergeOption(options)
+    this.options = mergeOption(options as IEditorOption)
     this.mode = this.options.mode
     data = data as IEditorData
     let headerElementList: IElement[] = []
@@ -1269,8 +1277,8 @@ export class DrawPdf {
     })
   }
 
-  public updateOptions(payload: IUpdateOption) {
-    const newOption = mergeOption(payload)
+  public updateOptions(payload: IUpdateOption | object) {
+    const newOption = mergeOption(payload as IEditorOption)
     Object.entries(newOption).forEach(([key, value]) => {
       Reflect.set(this.options, key, value)
     })
@@ -1335,8 +1343,8 @@ export class DrawPdf {
       y = pageStartY
     }
     // 列表位置
-    let listId: string | undefined
-    let listIndex = 0
+    // 不同 listId 独立计数，避免父列表与子列表序号互相影响
+    const listIndexMap: Map<string, number> = new Map()
     // 控件最小宽度
     let controlRealWidth = 0
     // 分栏游标
@@ -1354,7 +1362,11 @@ export class DrawPdf {
       // 实际可用宽度
       const offsetX =
         curRow.offsetX ||
-        (element.listId && listStyleMap.get(element.listId)) ||
+        (element.listId &&
+          (listStyleMap.get(element.listId) || 0) +
+            (element.listLevel
+              ? this.listParticle.LIST_INDENT_WIDTH * element.listLevel * scale
+              : 0)) ||
         0
       const rowMaxWidth = isColumnEnabled && layout ? layout.width : innerWidth
       const availableWidth = rowMaxWidth - offsetX
@@ -1853,14 +1865,16 @@ export class DrawPdf {
         }
       }
       // 列表信息
-      if (element.listId) {
-        if (element.listId !== listId) {
-          listIndex = 0
-        } else if (element.value === ZERO && !element.listWrap) {
-          listIndex++
+      if (element.listId && element.value === ZERO && !element.listWrap) {
+        if (listIndexMap.has(element.listId)) {
+          listIndexMap.set(
+            element.listId,
+            (listIndexMap.get(element.listId) ?? 0) + 1
+          )
+        } else {
+          listIndexMap.set(element.listId, 0)
         }
       }
-      listId = element.listId
       // 计算四周环绕导致的元素偏移量
       const surroundPosition = this.position.setSurroundPosition({
         pageNo,
@@ -1931,8 +1945,12 @@ export class DrawPdf {
         // 列表缩进
         if (element.listId) {
           row.isList = true
-          row.offsetX = listStyleMap.get(element.listId!)
-          row.listIndex = listIndex
+          row.offsetX =
+            (listStyleMap.get(element.listId!) || 0) +
+            (element.listLevel
+              ? this.listParticle.LIST_INDENT_WIDTH * element.listLevel * scale
+              : 0)
+          row.listIndex = listIndexMap.get(element.listId!) ?? 0
         }
         // Y轴偏移量
         row.offsetY =

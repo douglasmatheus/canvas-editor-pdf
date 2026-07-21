@@ -22,6 +22,8 @@ export class ListParticle {
   private readonly UN_COUNT_STYLE_WIDTH = 20
   private readonly MEASURE_BASE_TEXT = '0'
   private readonly LIST_GAP = 10
+  // 每一级列表的缩进宽度（用于嵌套列表）
+  public readonly LIST_INDENT_WIDTH = 30
 
   constructor(draw: DrawPdf) {
     this.draw = draw
@@ -211,7 +213,11 @@ export class ListParticle {
         leftTop: [startX, startY]
       }
     } = position
-    const x = startX - offsetX! + tabWidth
+    // 嵌套列表按层级缩进标记位置
+    const indentWidth = startElement.listLevel
+      ? this.LIST_INDENT_WIDTH * startElement.listLevel * scale
+      : 0
+    const x = startX - offsetX! + indentWidth + tabWidth
     const y = startY + ascent
     // 复选框样式特殊处理
     if (startElement.listStyle === ListStyle.CHECKBOX) {
@@ -240,9 +246,15 @@ export class ListParticle {
     } else {
       let text = ''
       if (startElement.listType === ListType.UL) {
-        text =
-          ulStyleMapping[<UlStyle>(<unknown>startElement.listStyle)] ||
-          ulStyleMapping[UlStyle.DISC]
+        // 无序列表按层级轮换项目符号（level 0 用配置样式）
+        const level = startElement.listLevel ?? 0
+        const rotation = [UlStyle.DISC, UlStyle.CIRCLE, UlStyle.SQUARE]
+        const rotated = rotation[level % rotation.length]
+        const fallbackStyle =
+          level === 0
+            ? <UlStyle>(<unknown>startElement.listStyle) || UlStyle.DISC
+            : rotated
+        text = ulStyleMapping[fallbackStyle] || ulStyleMapping[UlStyle.DISC]
       } else {
         text = `${listIndex! + 1}${KeyMap.PERIOD}`
       }

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Fixed
+- `new DrawPdf(editor.command.getValue().options, …)` and `updateOptions(...)`
+  no longer raise a type error. canvas-editor's option types are a separate copy
+  — and, when consumed from the editor's own source, a different module instance
+  — so their enum-typed fields are nominally incompatible with this lib's and no
+  type union can bridge them. The `options` parameter now accepts a loose object
+  at the boundary (it is normalized by `mergeOption` anyway); pass this lib's
+  `IEditorOption` for full autocomplete.
+
+### Added
+- Nested list rendering (aligned with canvas-editor): `element.listLevel` is now
+  honored — nested markers and content indent per level, unordered bullets
+  rotate by depth (disc → circle → square), and ordered-list numbering is
+  tracked per `listId` so a parent list resumes its sequence after a nested
+  child. (The editor-side indent/outdent commands were not ported — this
+  library only renders.)
+
 ### Changed
 - A row whose visible content is entirely hidden (`element.hide` /
   `control.hide` / `area.hide`) now collapses to zero height in any non-design
