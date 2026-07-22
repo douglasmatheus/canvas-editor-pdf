@@ -990,7 +990,7 @@ function render(expr: Expr): number[][][] {
   return o
 }
 
-interface ExportOpt {
+export interface ExportOpt {
   MIN_CHAR_H?: number
   MAX_W?: number
   MAX_H?: number

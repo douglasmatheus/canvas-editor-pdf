@@ -55,7 +55,6 @@ import { IRowElement } from '../interface/Row'
 import { ITd } from '../interface/table/Td'
 import { ITr } from '../interface/table/Tr'
 import { IEditorOption } from '../interface/Editor'
-import { svgString2Image } from '..'
 import { IElement } from '../interface/Element'
 import { ElementType } from '../dataset/enum/Element'
 import { RowFlex } from '../dataset/enum/Row'
@@ -542,15 +541,14 @@ export async function formatElementList(
       el.id = getUUID()
     }
     if (el.type === ElementType.LATEX) {
-      const { svg, width, height } = LaTexParticle.convertLaTextToSVG(el.value)
+      // Only the intrinsic size is needed here (for layout). The formula is
+      // drawn as vector polylines at render time (LaTexParticle.render), so
+      // there is no async SVG→PNG rasterization — which previously could stall
+      // an awaited caller (e.g. setValue) forever when the image never loaded.
+      const { width, height } = LaTexParticle.convertLaTextToPolylines(el.value)
       el.width = el.width || width
       el.height = el.height || height
-      el.laTexSVG = svg
       el.id = getUUID()
-      await svgString2Image(el.laTexSVG, width, height, 'png', (pngData: any) => {
-        // pngData is base64 png string
-        el.laTexSVG = pngData
-      })
     }
     i++
   }

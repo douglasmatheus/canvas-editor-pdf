@@ -50,7 +50,7 @@ export const platform: IPlatform = {
   },
 
   svgToPngDataUrl(svg, width, height) {
-    return new Promise<string>(resolve => {
+    return new Promise<string>((resolve, reject) => {
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -61,7 +61,18 @@ export const platform: IPlatform = {
         ctx.drawImage(img, 0, 0, width, height)
         resolve(canvas.toDataURL('image/png'))
       }
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)))
+      // Without onerror the promise would hang forever if the image never
+      // loads — which is exactly what a malformed src did before this guard.
+      img.onerror = () =>
+        reject(new Error('canvas-editor-pdf: failed to rasterize SVG'))
+      // LaTexUtils.svg() already returns a `data:image/svg+xml;base64,…` URL
+      // (the Node shim unwraps it for resvg). Feeding that straight back into
+      // another data-URL wrapper double-encodes it, the <img> never loads, and
+      // — with no onerror — svgToPngDataUrl never resolves, hanging any awaited
+      // caller (e.g. setValue). Use it as-is; only wrap raw SVG markup.
+      img.src = svg.startsWith('data:image/svg+xml')
+        ? svg
+        : 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)))
     })
   }
 }

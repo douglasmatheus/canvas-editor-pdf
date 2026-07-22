@@ -1007,7 +1007,9 @@ export class DrawPdf {
     const pageComponentData = [header, main, footer]
     for (let i = 0; i < pageComponentData.length; i++) {
       const data = pageComponentData[i]
-      if (!data) return
+      // Skip an absent zone — `return` here aborted the whole method (and
+      // never reached setEditorData) whenever header/footer were missing.
+      if (!data) continue
       await formatElementList(data, {
         editorOptions: this.options,
         isForceCompensation: true

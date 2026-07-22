@@ -3,6 +3,26 @@
 ## Unreleased
 
 ### Fixed
+- LaTeX no longer hangs `setValue()` in the browser. The root cause was a
+  browser-shim regression (0.4.0, Node-support refactor): `LaTexUtils.svg()`
+  returns an already-wrapped `data:image/svg+xml;base64,…` URL, but
+  `svgToPngDataUrl` wrapped it a second time — the resulting `<img>` never
+  loaded and, with no `onerror` handler, the promise never resolved, stalling
+  any awaited caller. LaTeX rendering no longer rasterizes at all (see below),
+  so this path is gone; the shim was also hardened (uses an already-encoded
+  data URL as-is, rejects on image load failure) for its remaining public use
+  via `svgString2Image`.
+- Nested ordered lists now number each level independently instead of running
+  the count straight through. `getValue()` strips `listId` from a list's
+  `valueList` items (only `listLevel` survives serialization), but
+  `formatElementList` reused a single `listId` for the whole list, so nested
+  items shared the parent's counter. It now assigns a distinct `listId` per
+  `listLevel` on re-import (matching canvas-editor), so a child restarts at 1
+  and the parent resumes afterward.
+- `setValue()` no longer aborts early when a document has no header or footer.
+  It used `return` instead of `continue` while iterating the header/main/footer
+  zones, so a missing zone bailed out of the whole method before
+  `setEditorData` ran, leaving the content unset.
 - `new DrawPdf(editor.command.getValue().options, …)` and `updateOptions(...)`
   no longer raise a type error. canvas-editor's option types are a separate copy
   — and, when consumed from the editor's own source, a different module instance
@@ -20,6 +40,13 @@
   library only renders.)
 
 ### Changed
+- LaTeX formulas now render as **vector paths** drawn straight onto the jsPDF
+  context, instead of being rasterized to a PNG and placed as an image. Output
+  is crisp at any zoom, the PDF is smaller, and the render path is fully
+  synchronous (no `Image`/SVG decoding — it can never stall an awaited caller).
+  The formula's polylines come from `LaTexUtils`; stroke color follows the
+  element's `color`. `svgString2Image`/`platform.svgToPngDataUrl` remain
+  exported for back-compat but are no longer used internally.
 - A row whose visible content is entirely hidden (`element.hide` /
   `control.hide` / `area.hide`) now collapses to zero height in any non-design
   render mode, so hidden content leaves no blank gap in the exported PDF.
