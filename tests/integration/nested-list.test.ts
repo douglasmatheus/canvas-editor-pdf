@@ -2,8 +2,23 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { DrawPdf } from '../../src/core/draw/DrawPdf'
 import { ZERO } from '../../src/dataset/constant/Common'
+import { ElementType } from '../../src/dataset/enum/Element'
 import { ListStyle, ListType } from '../../src/dataset/enum/List'
 import type { IElement } from '../../src/interface/Element'
+
+async function renderMarkers(main: IElement[]): Promise<string[]> {
+  const instance = new DrawPdf({}, { main: [{ value: ZERO }] })
+  await instance.setValue({ main })
+  instance.render()
+  const bytes = new Uint8Array(
+    instance.getPdf().output('arraybuffer') as ArrayBuffer
+  )
+  const doc = await getDocument({ data: bytes, verbosity: 0 }).promise
+  const content = await (await doc.getPage(1)).getTextContent()
+  return content.items
+    .map(item => ('str' in item ? item.str.trim() : ''))
+    .filter(str => /^\d+\.$/.test(str))
+}
 
 // Nested ordered-list rendering (aligned with canvas-editor's listLevel
 // handling). A list item in the flat element form is a leading ZERO carrying
@@ -67,5 +82,33 @@ describe('nested ordered list', () => {
     expect(inner.x).toBeGreaterThan(outer1.x)
     // Both level-0 markers share the same indent.
     expect(Math.abs(outer2.x - outer1.x)).toBeLessThan(1)
+  })
+})
+
+// The shape canvas-editor's getValue() actually emits: a single LIST element
+// whose valueList expresses nesting purely through listLevel — listId is
+// stripped on serialization (it is not in EDITOR_ELEMENT_ZIP_ATTR). Re-import
+// must reassign a distinct listId per level so numbering is independent;
+// otherwise every item shares one listId and the count just runs straight
+// through (1, 2, 3, 4, …), which is the bug this guards against.
+describe('nested list from a LIST element (getValue shape)', () => {
+  const listEl = (): IElement => ({
+    type: ElementType.LIST,
+    value: '',
+    listId: 'root',
+    listType: ListType.OL,
+    listStyle: ListStyle.DECIMAL,
+    // Each item starts with a newline; nested items only differ by listLevel.
+    valueList: [
+      { value: '\nAlpha', listLevel: 0 },
+      { value: '\nBeta', listLevel: 1 },
+      { value: '\nGamma', listLevel: 0 }
+    ]
+  })
+
+  it('numbers each level independently — parent resumes, child restarts', async () => {
+    const markers = await renderMarkers([listEl(), { value: ZERO }])
+    // Without per-level listId this would be ['1.', '2.', '3.'].
+    expect(markers).toEqual(['1.', '1.', '2.'])
   })
 })

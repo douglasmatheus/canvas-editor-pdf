@@ -153,18 +153,30 @@ export async function formatElementList(
       })
       // 追加节点
       if (valueList.length) {
-        const listId = el.listId || getUUID()
+        const fallbackListId = el.listId || getUUID()
+        // 嵌套列表还原时按层级分配 listId，保证父子列表独立编号：
+        // 每个 listLevel 拿自己的 listId，回到较浅层级后再次深入时重新发号。
+        const listIdMap = new Map<number, string>([[0, fallbackListId]])
         for (let v = 0; v < valueList.length; v++) {
           const value = valueList[v]
-          value.listId = listId
-          value.listType = el.listType
-          value.listStyle = el.listStyle
+          const listLevel = value.listLevel ?? el.listLevel ?? 0
+          if (!value.listId) {
+            value.listId = listIdMap.get(listLevel) || getUUID()
+          }
+          listIdMap.set(listLevel, value.listId)
+          Array.from(listIdMap.keys()).forEach(level => {
+            if (level > listLevel) {
+              listIdMap.delete(level)
+            }
+          })
+          value.listType = value.listType || el.listType
+          value.listStyle = value.listStyle || el.listStyle
+          value.listLevel = listLevel
           elementList.splice(i, 0, value)
           i++
         }
         // 尾部如果不是换行符则补充一个换行符
         if (
-          elementList[i] &&
           elementList[i] &&
           (elementList[i].valueList?.length
             ? !START_LINE_BREAK_REG.test(elementList[i].valueList![0].value)
