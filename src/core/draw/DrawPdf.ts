@@ -412,10 +412,10 @@ export class DrawPdf {
     return true
   }
 
-  public getFont(el: IElement): string {
+  public getFont(el: IElement, scale = 1): string {
     const { defaultSize, defaultFont } = this.options
     const font = el.font || defaultFont
-    const size = el.actualSize || el.size || defaultSize
+    const size = (el.actualSize || el.size || defaultSize) * scale
     return `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${size}px ${font}`
   }
 
@@ -1025,15 +1025,6 @@ export class DrawPdf {
     newPagePdf.context2d.scale(dpr, dpr)
   }
 
-  public getElementFont(el: IElement, scale = 1): string {
-    const { defaultSize, defaultFont } = this.options
-    const font = el.font || defaultFont
-    const size = el.actualSize || el.size || defaultSize
-    return `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${
-      size * scale
-    }px ${font}`
-  }
-
   public getElementSize(el: IElement) {
     return el.actualSize || el.size || this.options.defaultSize
   }
@@ -1490,7 +1481,7 @@ export class DrawPdf {
       } else if (element.isControlMinWidthPlaceholder) {
         metrics.width = (element.width || 0) * scale
         metrics.height = defaultSize * scale
-        this.getCtx2d().font = this.getElementFont(element)
+        this.getCtx2d().font = this.getFont(element)
         const basisMetrics = this.textParticle.measureBasisWord(
           this.getCtx2d(),
           element.font!
@@ -1513,7 +1504,7 @@ export class DrawPdf {
           defaultSize,
           label: { defaultPadding }
         } = this.options
-        this.getCtx2d().font = this.getElementFont(element)
+        this.getCtx2d().font = this.getFont(element)
         const fontMetrics = this.textParticle.measureText(
           this.getCtx2d(),
           element
@@ -1534,7 +1525,7 @@ export class DrawPdf {
           element.actualSize = Math.ceil(size * 0.6)
         }
         metrics.height = (element.actualSize || size) * scale
-        this.getCtx2d().font = this.getElementFont(element)
+        this.getCtx2d().font = this.getFont(element)
         const fontMetrics = this.textParticle.measureText(
           this.getCtx2d(),
           element
@@ -1574,7 +1565,7 @@ export class DrawPdf {
       const rowElement: IRowElement = Object.assign(element, {
         metrics,
         left: 0,
-        style: this.getElementFont(element, scale)
+        style: this.getFont(element, scale)
       })
       // 控件开始时统计宽度，结束时消费最小宽度并补充跨行占位
       if (
@@ -2247,7 +2238,7 @@ export class DrawPdf {
             // 基线文字测量信息
             const standardMetrics = this.textParticle.measureBasisWord(
               this.getCtx2d(),
-              this.getElementFont(element)
+              this.getFont(element)
             )
             // 文字渲染位置 + 基线文字下偏移量 - 一半文字高度
             let adjustY =
@@ -2545,6 +2536,32 @@ export class DrawPdf {
     }
   }
 
+  private _syncPageCount() {
+    const targetPageCount = this.pageRowList.length
+    for (let i = 0; i < targetPageCount; i++) {
+      if (!this.pageList[i]) {
+        this._createPage(i)
+      }
+    }
+    if (this.pageList.length > targetPageCount) {
+      this.pageList.splice(targetPageCount).forEach(page => {
+        if (page.remove) {
+          page.remove()
+        }
+      })
+    }
+    const pdfPageCount = this.getPdf().getNumberOfPages()
+    if (pdfPageCount > targetPageCount) {
+      for (let i = pdfPageCount; i > targetPageCount; i--) {
+        this.getPdf().deletePage(i)
+      }
+    } else if (pdfPageCount < targetPageCount) {
+      for (let i = pdfPageCount; i < targetPageCount; i++) {
+        this.getPdf().addPage()
+      }
+    }
+  }
+
   public render(payload?: IDrawOption) {
     // Resets the content of jsPDF pages to prevent successive renders
     // from stacking operators in the content stream (causing PDF size to increase)
@@ -2601,45 +2618,8 @@ export class DrawPdf {
       // this.control.computeHighlightList()
     }
     // 创建纸张
-    for (let i = 0; i < this.pageRowList.length; i++) {
-      if (!this.pageList[i]) {
-        this._createPage(i)
-      }
-    }
-    // 移除多余页
-    const curPageCount = this.pageRowList.length
-    const prePageCount = this.pageList.length
-    if (prePageCount > curPageCount) {
-      const deleteCount = prePageCount - curPageCount
-      this.pageList.splice(curPageCount, deleteCount).forEach((page, index) => {
-        if (page.remove) {
-          page.remove()
-        }
-        this.getPdf().deletePage(index + 1)
-      })
-    }
-    if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
-      const deleteCount =
-        this.getPdf().getNumberOfPages() - this.getPageList().length
-      for (let i = 1; i <= deleteCount; i++) {
-        this.getPdf().deletePage(i)
-      }
-    }
-    if (this.getPdf().getNumberOfPages() < this.getPageList().length) {
-      const addCount =
-        this.getPageList().length - this.getPdf().getNumberOfPages()
-      for (let i = 1; i <= addCount; i++) {
-        this.getPdf().addPage()
-      }
-    }
+    this._syncPageCount()
     this._immediateRender()
-    if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
-      const deleteCount =
-        this.getPdf().getNumberOfPages() - this.getPageList().length
-      for (let i = 1; i <= deleteCount; i++) {
-        this.getPdf().deletePage(i)
-      }
-    }
   }
 
   // Recreates the jsPDF instance with each render to prevent internal state accumulation
