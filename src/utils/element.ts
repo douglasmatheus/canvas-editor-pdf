@@ -49,6 +49,7 @@ import {
 import { ImageDisplay, LocationPosition } from '../dataset/enum/Common'
 import { ControlComponent, ControlType } from '../dataset/enum/Control'
 import { ListStyle, ListType, UlStyle } from '../dataset/enum/List'
+import { TitleLevel } from '../dataset/enum/Title'
 import { DeepRequired } from '../interface/Common'
 import { IControlSelect } from '../interface/Control'
 import { IRowElement } from '../interface/Row'
@@ -569,11 +570,10 @@ export async function formatElementList(
 export function transformArray(inputArray) {
   function processValue(value, obj) {
     // Divide e mantém partes incluindo espaços e \n separadamente
-    return value.match(/[^\n]+|\n/g)
-      .map(part => ({
-        ...obj, // Copia as propriedades do objeto original
-        value: part//.replaceAll(/\n/g, '/n') // Atualiza o valor
-      }))
+    return value.match(/[^\n]+|\n/g).map(part => ({
+      ...obj, // Copia as propriedades do objeto original
+      value: part //.replaceAll(/\n/g, '/n') // Atualiza o valor
+    }))
   }
 
   function processObject(obj) {
@@ -593,8 +593,8 @@ export function transformArray(inputArray) {
         }))
       }
     } else if (
-      obj.type === 'list' && Array.isArray(obj.valueList)
-      || obj.type === 'title' && Array.isArray(obj.valueList)
+      (obj.type === 'list' && Array.isArray(obj.valueList)) ||
+      (obj.type === 'title' && Array.isArray(obj.valueList))
     ) {
       return {
         ...obj,
@@ -1460,7 +1460,7 @@ export function getElementListByHTML(
           elementList.push({
             value: '',
             type: ElementType.TITLE,
-            level: titleNodeNameMapping[node.nodeName],
+            level: titleNodeNameMapping[node.nodeName] as TitleLevel,
             valueList
           })
           if (
