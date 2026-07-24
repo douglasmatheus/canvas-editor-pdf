@@ -6,19 +6,11 @@ import {
   IDrawOption,
   IDrawPagePayload,
   IDrawRowPayload,
-  IGetImageOption,
   IGetOriginValueOption,
-  IGetValueOption,
+  IGetValueOption
 } from '../../interface/Draw'
-import {
-  IEditorData,
-  IEditorOption,
-  IEditorResult,
-} from '../../interface/Editor'
-import {
-  IElement,
-  IElementMetrics,
-} from '../../interface/Element'
+import { IEditorData, IEditorOption } from '../../interface/Editor'
+import { IElement, IElementMetrics } from '../../interface/Element'
 import { deepClone, getUUID } from '../../utils'
 import { Position } from '../position/Position'
 import { Background } from './frame/Background'
@@ -38,11 +30,9 @@ import { Header } from './frame/Header'
 import { SuperscriptParticle } from './particle/Superscript'
 import { SubscriptParticle } from './particle/Subscript'
 import { SeparatorParticle } from './particle/Separator'
-// import { PageBreakParticle } from './particle/PageBreak'
 import { Watermark } from './frame/Watermark'
 import { WatermarkLayer } from '../../dataset/enum/Watermark'
 import {
-  // EditorComponent,
   EditorMode,
   EditorZone,
   PageMode,
@@ -66,13 +56,10 @@ import { formatElementList } from '../../utils/element'
 import { DateParticle } from './particle/date/DateParticle'
 import { IMargin } from '../../interface/Margin'
 import { BlockParticle } from './particle/block/BlockParticle'
-// import { EDITOR_COMPONENT } from '../../dataset/constant/Editor'
 import { I18n } from '../i18n/I18n'
 import { ImageObserver } from '../observer/ImageObserver'
 import { Footer } from './frame/Footer'
-import {
-  TEXTLIKE_ELEMENT_TYPE
-} from '../../dataset/constant/Element'
+import { TEXTLIKE_ELEMENT_TYPE } from '../../dataset/constant/Element'
 import { ListParticle } from './particle/ListParticle'
 import { Placeholder } from './frame/Placeholder'
 import { Group } from './interactive/Group'
@@ -81,19 +68,12 @@ import { PUNCTUATION_REG } from '../../dataset/constant/Regular'
 import { LineBreakParticle } from './particle/LineBreakParticle'
 import { LineNumber } from './frame/LineNumber'
 import { PageBorder } from './frame/PageBorder'
-// Named import (not default) so this works in both browser bundlers and Node
-// ESM. jsPDF v4's CJS publishes module.exports as the namespace object, so the
-// default import yields the whole namespace in Node — only the named `jsPDF`
-// is the actual constructor in both worlds.
 import { jsPDF, Context2d } from 'jspdf'
 import { IRow, IRowElement } from '../../interface/Row'
 import { IColumnLayout, IColumnOption } from '../../interface/Column'
 import { ColumnManager } from './column/ColumnManager'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
-import { IForceUpdateOption } from '../../interface/Draw'
-import { IUpdateOption } from '../../interface/Editor'
-import type { IEditorData as ICEEditorData } from '@hufe921/canvas-editor'
 import { Area } from './interactive/Area'
 import { Graffiti } from './graffiti/Graffiti'
 import { Badge } from './frame/Badge'
@@ -126,16 +106,19 @@ export class DrawPdf {
   private fakeCtx: CanvasRenderingContext2D
   // private container: HTMLDivElement
   private pageList: any[]
-  private ctxList: CanvasRenderingContext2D[]
   private ctxListInfos: any[]
   private pageNo: number
-  private pagePixelRatio: number | null
   private mode: EditorMode
   private options: DeepRequired<IEditorOption>
   private position: Position
   private elementList: IElement[]
   private pdf!: jsPDF
-  private fontCache: Array<{ fileName: string, base64: string, id: string, type: string }> = []
+  private fontCache: Array<{
+    fileName: string
+    base64: string
+    id: string
+    type: string
+  }> = []
   private fontSource: FontSource = 'cdn'
 
   private i18n: I18n
@@ -194,7 +177,7 @@ export class DrawPdf {
     // than Record<string, unknown> because interface types have no implicit
     // index signature and aren't assignable to Record.)
     options: IEditorOption | object,
-    data: IEditorData | ICEEditorData,
+    data: IEditorData,
     pdfOptions: PdfOptions = {}
     // draw: Draw
   ) {
@@ -203,10 +186,8 @@ export class DrawPdf {
     this.fakeCtx = this.fakeCanvas.getContext('2d')!
     // this.container = draw.getContainer()
     this.pageList = []
-    this.ctxList = []
     this.ctxListInfos = []
     this.pageNo = 0
-    this.pagePixelRatio = null
     this.options = mergeOption(options as IEditorOption)
     this.mode = this.options.mode
     data = data as IEditorData
@@ -234,9 +215,7 @@ export class DrawPdf {
     })
     pageComponentData.forEach(datas => {
       if (datas) {
-        datas = this.filterAssistElement(
-          datas
-        )
+        datas = this.filterAssistElement(datas)
       }
     })
     this.elementList = data.main
@@ -304,43 +283,6 @@ export class DrawPdf {
     this.controlMinWidthPlaceholderElementListSet = new WeakSet()
   }
 
-  // 设置打印数据
-  public setPrintData() {
-    this.printModeData = {
-      header: this.header.getElementList(),
-      main: this.elementList,
-      footer: this.footer.getElementList()
-    }
-    // 过滤控件辅助元素
-    const clonePrintModeData = deepClone(this.printModeData)
-    const editorDataKeys: (keyof Omit<IEditorData, 'graffiti'>)[] = [
-      'header',
-      'main',
-      'footer'
-    ]
-    editorDataKeys.forEach(key => {
-      clonePrintModeData[key] = this.filterAssistElement(
-        clonePrintModeData[key]
-      )
-      // clonePrintModeData[key] = this.control.filterAssistElement(
-        // clonePrintModeData[key]
-      // )
-    })
-    this.setEditorData(clonePrintModeData)
-  }
-
-  // 还原打印数据
-  public clearPrintData() {
-    if (this.printModeData) {
-      this.setEditorData(this.printModeData)
-      this.printModeData = null
-    }
-  }
-
-  // public getDraw(): Draw {
-  //   return this.draw
-  // }
-
   public getCtx2d(): Context2d {
     return this.pdf.context2d
   }
@@ -363,7 +305,12 @@ export class DrawPdf {
    * font allowlist or an absolute filesystem path — see src/platform/node.ts for
    * the SSRF/path-traversal checks applied.
    */
-  public async downloadFont(source: string, fileName: string, id: string, type: string) {
+  public async downloadFont(
+    source: string,
+    fileName: string,
+    id: string,
+    type: string
+  ) {
     const base64 = await platform.loadFontAsBase64(source)
     const font = { fileName, base64, id, type }
     this.fontCache.push(font)
@@ -376,7 +323,7 @@ export class DrawPdf {
 
   private _applyFont(
     pdf: jsPDF,
-    font: { fileName: string, base64: string, id: string, type: string }
+    font: { fileName: string; base64: string; id: string; type: string }
   ) {
     pdf.addFileToVFS(font.fileName, font.base64)
     pdf.addFont(font.fileName, font.id, font.type)
@@ -390,31 +337,31 @@ export class DrawPdf {
     id: string
     type: 'normal' | 'bold' | 'italic' | 'bolditalic'
   }> = [
-    { fileName: 'msyh.ttf',                id: 'microsoft yahei', type: 'normal' },
+    { fileName: 'msyh.ttf', id: 'microsoft yahei', type: 'normal' },
     // Bold msyh shares the 'msyh.ttf' VFS name with the normal weight — that's
     // the existing behavior pre-0.4.0 (see git history). jsPDF keys fonts by
     // (id, type), so this works, but it means addFileToVFS overwrites once.
-    { fileName: 'msyh-bold.ttf',           id: 'microsoft yahei', type: 'bold' },
-    { fileName: 'Arial.ttf',               id: 'arial',           type: 'normal' },
-    { fileName: 'Arial_Bold.ttf',          id: 'arial',           type: 'bold' },
-    { fileName: 'Arial_Italic.ttf',        id: 'arial',           type: 'italic' },
-    { fileName: 'Arial_Bold_Italic.ttf',   id: 'arial',           type: 'bolditalic' },
-    { fileName: 'calibri-regular.ttf',     id: 'calibri',         type: 'normal' },
-    { fileName: 'calibri-bold.ttf',        id: 'calibri',         type: 'bold' },
-    { fileName: 'calibri-italic.ttf',      id: 'calibri',         type: 'italic' },
-    { fileName: 'calibri-bold-italic.ttf', id: 'calibri',         type: 'bolditalic' },
-    { fileName: 'Cambria.ttf',             id: 'cambria',         type: 'normal' },
-    { fileName: 'cambriab.ttf',            id: 'cambria',         type: 'bold' },
-    { fileName: 'cambriai.ttf',            id: 'cambria',         type: 'italic' },
-    { fileName: 'cambriaz.ttf',            id: 'cambria',         type: 'bolditalic' },
-    { fileName: 'Verdana.ttf',             id: 'verdana',         type: 'normal' },
-    { fileName: 'Verdana_Bold.ttf',        id: 'verdana',         type: 'bold' },
-    { fileName: 'Verdana_Italic.ttf',      id: 'verdana',         type: 'italic' },
-    { fileName: 'Verdana_Bold_Italic.ttf', id: 'verdana',         type: 'bolditalic' },
-    { fileName: 'Inkfree.ttf',             id: 'ink free',        type: 'normal' },
-    { fileName: 'segoe-ui.ttf',            id: 'segoe ui',        type: 'normal' },
-    { fileName: 'segoe-ui-bold.ttf',       id: 'segoe ui',        type: 'bold' },
-    { fileName: 'segoeuii.ttf',            id: 'segoe ui',        type: 'italic' }
+    { fileName: 'msyh-bold.ttf', id: 'microsoft yahei', type: 'bold' },
+    { fileName: 'Arial.ttf', id: 'arial', type: 'normal' },
+    { fileName: 'Arial_Bold.ttf', id: 'arial', type: 'bold' },
+    { fileName: 'Arial_Italic.ttf', id: 'arial', type: 'italic' },
+    { fileName: 'Arial_Bold_Italic.ttf', id: 'arial', type: 'bolditalic' },
+    { fileName: 'calibri-regular.ttf', id: 'calibri', type: 'normal' },
+    { fileName: 'calibri-bold.ttf', id: 'calibri', type: 'bold' },
+    { fileName: 'calibri-italic.ttf', id: 'calibri', type: 'italic' },
+    { fileName: 'calibri-bold-italic.ttf', id: 'calibri', type: 'bolditalic' },
+    { fileName: 'Cambria.ttf', id: 'cambria', type: 'normal' },
+    { fileName: 'cambriab.ttf', id: 'cambria', type: 'bold' },
+    { fileName: 'cambriai.ttf', id: 'cambria', type: 'italic' },
+    { fileName: 'cambriaz.ttf', id: 'cambria', type: 'bolditalic' },
+    { fileName: 'Verdana.ttf', id: 'verdana', type: 'normal' },
+    { fileName: 'Verdana_Bold.ttf', id: 'verdana', type: 'bold' },
+    { fileName: 'Verdana_Italic.ttf', id: 'verdana', type: 'italic' },
+    { fileName: 'Verdana_Bold_Italic.ttf', id: 'verdana', type: 'bolditalic' },
+    { fileName: 'Inkfree.ttf', id: 'ink free', type: 'normal' },
+    { fileName: 'segoe-ui.ttf', id: 'segoe ui', type: 'normal' },
+    { fileName: 'segoe-ui-bold.ttf', id: 'segoe ui', type: 'bold' },
+    { fileName: 'segoeuii.ttf', id: 'segoe ui', type: 'italic' }
   ]
 
   // Same version-pinned CDN base used pre-0.4.0. Pinning to 0.2.7 means the
@@ -452,10 +399,15 @@ export class DrawPdf {
   }
 
   public loadDefaultFonts() {
-    return this.defaultFontsLoadedPromise = this._addDefaultFont()
+    return (this.defaultFontsLoadedPromise = this._addDefaultFont())
   }
 
-  public async addFont(url: string, fileName: string, id: string, type: string) {
+  public async addFont(
+    url: string,
+    fileName: string,
+    id: string,
+    type: string
+  ) {
     await this.downloadFont(url, fileName, id, type)
     return true
   }
@@ -463,15 +415,16 @@ export class DrawPdf {
   public getFont(el: IElement): string {
     const { defaultSize, defaultFont } = this.options
     const font = el.font || defaultFont
-    // if (font === 'Microsoft YaHei') {
-    //   font = 'Yahei'
-    // }
     const size = el.actualSize || el.size || defaultSize
     return `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${size}px ${font}`
   }
 
   public getLetterReg(): RegExp {
     return this.LETTER_REG
+  }
+
+  public getPagePixelRatio(): number {
+    return 1
   }
 
   public getMode(): EditorMode {
@@ -607,14 +560,14 @@ export class DrawPdf {
   public getCanvasWidth(pageNo = -1): number {
     // console.log('page')
     // console.log(pageNo)
-    const page = this.ctxListInfos[pageNo]//this.getPdf().getPageInfo(pageNo + 1)
+    const page = this.ctxListInfos[pageNo] //this.getPdf().getPageInfo(pageNo + 1)
     // console.log(this.getCtx2d())
     // console.log(page)
     return page.width
   }
 
   public getCanvasHeight(pageNo = -1): number {
-    const page = this.ctxListInfos[pageNo]//this.getPdf().getPageInfo(pageNo + 1)
+    const page = this.ctxListInfos[pageNo] //this.getPdf().getPageInfo(pageNo + 1)
     // const page = this.getPdf().getPageInfo(pageNo)
     return page.height
   }
@@ -754,10 +707,6 @@ export class DrawPdf {
 
   public getPdf(): jsPDF {
     return this.pdf
-  }
-
-  public getCtx(): CanvasRenderingContext2D {
-    return this.ctxList[this.pageNo]
   }
 
   public getOptions(): DeepRequired<IEditorOption> {
@@ -962,46 +911,7 @@ export class DrawPdf {
     return this.graffiti
   }
 
-  public getRowCount(): number {
-    return this.getRowList().length
-  }
-
-  public async getDataURL(payload: IGetImageOption = {}): Promise<string[]> {
-    const { pixelRatio, mode, snapDomFunction } = payload
-    // 放大像素比
-    if (pixelRatio) {
-      this.setPagePixelRatio(pixelRatio)
-    }
-    // 不同模式
-    const currentMode = this.mode
-    const isSwitchMode = !!mode && currentMode !== mode
-    if (isSwitchMode) {
-      // this.setMode(mode)
-    }
-    this.render({
-      isLazy: false,
-      isCompute: false,
-      isSetCursor: false,
-      isSubmitHistory: false
-    })
-    await this.imageObserver.allSettled()
-    // 叠加iframe图片
-    if (snapDomFunction) {
-      await this.blockParticle.drawIframeToPage(this.pageList, snapDomFunction)
-    }
-    const dataUrlList = this.pageList.map(c => c.toDataURL())
-    // 还原
-    if (pixelRatio) {
-      this.setPagePixelRatio(null)
-    }
-    if (isSwitchMode) {
-      // this.setMode(currentMode)
-    }
-    return dataUrlList
-  }
-
-  public async setValue(payload: Partial<IEditorData> | Partial<ICEEditorData>) {
-    payload = payload as Partial<IEditorData>
+  public async setValue(payload: Partial<IEditorData>) {
     const { header, main, footer } = deepClone(payload)
     if (!header && !main && !footer) return
     const pageComponentData = [header, main, footer]
@@ -1017,121 +927,13 @@ export class DrawPdf {
     }
     pageComponentData.forEach(datas => {
       if (datas) {
-        datas = this.filterAssistElement(
-          datas
-        )
+        datas = this.filterAssistElement(datas)
       }
     })
     this.setEditorData({
       header,
       main,
       footer
-    })
-  }
-
-  public setPageScale(payload: number) {
-    const dpr = this.getPagePixelRatio()
-    this.options.scale = payload
-    const width = this.getWidth()
-    const height = this.getHeight()
-    // this.container.style.width = `${width}px`
-    this.pageList.forEach((p, i) => {
-      p.width = width * dpr
-      p.height = height * dpr
-      p.style.width = `${width}px`
-      p.style.height = `${height}px`
-      p.style.marginBottom = `${this.getPageGap()}px`
-      this._initPageContext(this.ctxList[i])
-    })
-    const cursorPosition = this.position.getCursorPosition()
-    this.render({
-      isSubmitHistory: false,
-      isSetCursor: !!cursorPosition,
-      curIndex: cursorPosition?.index
-    })
-  }
-
-  public getPagePixelRatio(): number {
-    // Fall back to 1 in non-browser environments (no `window`). For PDF
-    // output the DPR mostly affects pattern canvas sizing in Watermark —
-    // 1 produces the cleanest result since the PDF is vector anyway.
-    return (
-      this.pagePixelRatio ||
-      (typeof window !== 'undefined' ? window.devicePixelRatio : 1)
-    )
-  }
-
-  public setPagePixelRatio(payload: number | null) {
-    const browserDpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1
-    if (
-      (!this.pagePixelRatio && payload === browserDpr) ||
-      payload === this.pagePixelRatio
-    ) {
-      return
-    }
-    this.pagePixelRatio = payload
-    this.setPageDevicePixel()
-  }
-
-  public setPageDevicePixel() {
-    const dpr = this.getPagePixelRatio()
-    const width = this.getWidth()
-    const height = this.getHeight()
-    this.pageList.forEach((p, i) => {
-      p.width = width * dpr
-      p.height = height * dpr
-      this._initPageContext(this.ctxList[i])
-    })
-    this.render({
-      isSubmitHistory: false,
-      isSetCursor: false
-    })
-  }
-
-  public setPaperSize(width: number, height: number) {
-    this.options.width = width
-    this.options.height = height
-    const dpr = this.getPagePixelRatio()
-    const realWidth = this.getWidth()
-    const realHeight = this.getHeight()
-    // this.container.style.width = `${realWidth}px`
-    this.pageList.forEach((p, i) => {
-      p.width = realWidth * dpr
-      p.height = realHeight * dpr
-      p.style.width = `${realWidth}px`
-      p.style.height = `${realHeight}px`
-      this._initPageContext(this.ctxList[i])
-    })
-    this.render({
-      isSubmitHistory: false,
-      isSetCursor: false
-    })
-  }
-
-  public setPaperDirection(payload: PaperDirection) {
-    const dpr = this.getPagePixelRatio()
-    this.options.paperDirection = payload
-    const width = this.getWidth()
-    const height = this.getHeight()
-    // this.container.style.width = `${width}px`
-    this.pageList.forEach((p, i) => {
-      p.width = width * dpr
-      p.height = height * dpr
-      p.style.width = `${width}px`
-      p.style.height = `${height}px`
-      this._initPageContext(this.ctxList[i])
-    })
-    this.render({
-      isSubmitHistory: false,
-      isSetCursor: false
-    })
-  }
-
-  public setPaperMargin(payload: IMargin) {
-    this.options.margins = payload
-    this.render({
-      isSubmitHistory: false,
-      isSetCursor: false
     })
   }
 
@@ -1158,8 +960,8 @@ export class DrawPdf {
     return data
   }
 
-  public getValue(options: IGetValueOption = {}): IEditorResult {
-    const originData = this.getOriginValue(options)
+  public getValue(options: IGetValueOption = {}): IEditorData {
+    const originData = this.getOriginValue({ pageNo: options.pageNo })
     const { extraPickAttrs } = options
     const data: IEditorData = {
       header: zipElementList(originData.header, {
@@ -1174,11 +976,7 @@ export class DrawPdf {
       }),
       graffiti: originData.graffiti
     }
-    return {
-      version: __VERSION__,
-      data,
-      options: deepClone(this.options)
-    }
+    return data
   }
 
   public setEditorData(payload: Partial<Omit<IEditorData, 'graffiti'>>) {
@@ -1205,9 +1003,10 @@ export class DrawPdf {
     const width = this.getWidth()
     const height = this.getHeight()
     // // 调整分辨率
-    const dpr = 1//this.getPagePixelRatio()
+    const dpr = 1 //this.getPagePixelRatio()
 
-    const orientation = this.getOptions().paperDirection === PaperDirection.VERTICAL ? 'p' : 'l'
+    const orientation =
+      this.getOptions().paperDirection === PaperDirection.VERTICAL ? 'p' : 'l'
     this.ctxListInfos.push({
       width,
       height,
@@ -1226,21 +1025,13 @@ export class DrawPdf {
     newPagePdf.context2d.scale(dpr, dpr)
   }
 
-  private _initPageContext(ctx: CanvasRenderingContext2D) {
-    const dpr = this.getPagePixelRatio()
-    ctx.scale(dpr, dpr)
-    // 重置以下属性是因部分浏览器(chrome)会应用css样式
-    ctx.letterSpacing = '0px'
-    ctx.wordSpacing = '0px'
-    ctx.direction = 'ltr'
-  }
-
   public getElementFont(el: IElement, scale = 1): string {
     const { defaultSize, defaultFont } = this.options
     const font = el.font || defaultFont
     const size = el.actualSize || el.size || defaultSize
-    return `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${size * scale
-      }px ${font}`
+    return `${el.italic ? 'italic ' : ''}${el.bold ? 'bold ' : ''}${
+      size * scale
+    }px ${font}`
   }
 
   public getElementSize(el: IElement) {
@@ -1268,24 +1059,6 @@ export class DrawPdf {
       (el.rowMargin ?? defaultRowMargin) *
       scale
     )
-  }
-
-  public forceUpdate(options?: IForceUpdateOption) {
-    const { isSubmitHistory = false } = options || {}
-    // this.range.clearRange()
-    this.render({
-      isSubmitHistory,
-      isSetCursor: false
-    })
-  }
-
-  public updateOptions(payload: IUpdateOption | object) {
-    const newOption = mergeOption(payload as IEditorOption)
-    Object.entries(newOption).forEach(([key, value]) => {
-      Reflect.set(this.options, key, value)
-    })
-    this.setColumnConfig(this.options.column)
-    // this.forceUpdate()
   }
 
   public computeRowList(payload: IComputeRowListPayload) {
@@ -1317,7 +1090,10 @@ export class DrawPdf {
       this.controlMinWidthPlaceholderElementListSet.delete(elementList)
     }
     // 计算列表偏移宽度
-    const listStyleMap = this.listParticle.computeListStyle(this.getCtx2d(), elementList)
+    const listStyleMap = this.listParticle.computeListStyle(
+      this.getCtx2d(),
+      elementList
+    )
     const rowList: IRow[] = []
     const layout =
       isPagingMode && !isFromTable ? this.columnManager.getLayout() : null
@@ -1707,7 +1483,10 @@ export class DrawPdf {
         metrics.height = defaultSize * scale
         metrics.boundingBoxDescent = 0
         metrics.boundingBoxAscent =
-          this.textParticle.getBasisWordBoundingBoxAscent(this.getCtx2d(), this.getCtx2d().font)
+          this.textParticle.getBasisWordBoundingBoxAscent(
+            this.getCtx2d(),
+            this.getCtx2d().font
+          )
       } else if (element.isControlMinWidthPlaceholder) {
         metrics.width = (element.width || 0) * scale
         metrics.height = defaultSize * scale
@@ -1735,7 +1514,10 @@ export class DrawPdf {
           label: { defaultPadding }
         } = this.options
         this.getCtx2d().font = this.getElementFont(element)
-        const fontMetrics = this.textParticle.measureText(this.getCtx2d(), element)
+        const fontMetrics = this.textParticle.measureText(
+          this.getCtx2d(),
+          element
+        )
         metrics.width =
           (fontMetrics.width + defaultPadding[1] + defaultPadding[3]) * scale
         metrics.height = (element.size || defaultSize) * scale
@@ -1753,7 +1535,10 @@ export class DrawPdf {
         }
         metrics.height = (element.actualSize || size) * scale
         this.getCtx2d().font = this.getElementFont(element)
-        const fontMetrics = this.textParticle.measureText(this.getCtx2d(), element)
+        const fontMetrics = this.textParticle.measureText(
+          this.getCtx2d(),
+          element
+        )
         metrics.width = fontMetrics.width * scale
         if (element.letterSpacing) {
           metrics.width += element.letterSpacing * scale
@@ -2108,7 +1893,6 @@ export class DrawPdf {
         pageDom.style.height = `${reduceHeight}px`
         pageDom.height = reduceHeight * dpr
       }
-      this._initPageContext(this.ctxList[0])
     } else {
       // 每页页眉/页脚禁用状态可能不同，按页计算外部占位高度
       let pageHeight = this.getMainOuterHeight(0)
@@ -2146,14 +1930,11 @@ export class DrawPdf {
     return pageRowList
   }
 
-  private _drawHighlight(
-    ctx2d: Context2d,
-    payload: IDrawRowPayload
-  ) {
+  private _drawHighlight(ctx2d: Context2d, payload: IDrawRowPayload) {
     const {
       control: { activeBackgroundColor }
     } = this.options
-    const { rowList, positionList/*, elementList */} = payload
+    const { rowList, positionList /*, elementList */ } = payload
     const marginHeight = this.getDefaultBasicRowMarginHeight()
     const highlightMarginHeight = this.getHighlightMarginHeight()
     // const activeControlElement = this.control.getActiveControl()?.getElement()
@@ -2194,7 +1975,7 @@ export class DrawPdf {
             curRow.height - 2 * marginHeight + 2 * highlightMarginHeight,
             element.highlight || activeBackgroundColor
           )
-          //     } else 
+          //     } else
           // if (preElement?.highlight) {
           //   // 之前是高亮元素，当前不是需立即绘制
           this.highlight.render(ctx2d)
@@ -2280,7 +2061,12 @@ export class DrawPdf {
           this.tableParticle.render(this.getCtx2d(), element, x, y)
         } else if (element.type === ElementType.HYPERLINK) {
           this.textParticle.complete()
-          this.hyperlinkParticle.render(this.getCtx2d(), element, x, y + offsetY)
+          this.hyperlinkParticle.render(
+            this.getCtx2d(),
+            element,
+            x,
+            y + offsetY
+          )
         } else if (element.type === ElementType.LABEL) {
           this.textParticle.complete()
           this.labelParticle.render(this.getCtx2d(), element, x, y + offsetY)
@@ -2297,11 +2083,21 @@ export class DrawPdf {
           }
         } else if (element.type === ElementType.SUPERSCRIPT) {
           this.textParticle.complete()
-          this.superscriptParticle.render(this.getCtx2d(), element, x, y + offsetY)
+          this.superscriptParticle.render(
+            this.getCtx2d(),
+            element,
+            x,
+            y + offsetY
+          )
         } else if (element.type === ElementType.SUBSCRIPT) {
           this.underline.render(this.getCtx2d())
           this.textParticle.complete()
-          this.subscriptParticle.render(this.getCtx2d(), element, x, y + offsetY)
+          this.subscriptParticle.render(
+            this.getCtx2d(),
+            element,
+            x,
+            y + offsetY
+          )
         } else if (element.type === ElementType.SEPARATOR) {
           this.separatorParticle.render(this.getCtx2d(), element, x, y)
         } else if (element.type === ElementType.PAGE_BREAK) {
@@ -2370,7 +2166,12 @@ export class DrawPdf {
           !curRow.isWidthNotEnough &&
           j === curRow.elementList.length - 1
         ) {
-          this.lineBreakParticle.render(this.getCtx2d(), element, x, y + curRow.height / 2)
+          this.lineBreakParticle.render(
+            this.getCtx2d(),
+            element,
+            x,
+            y + curRow.height / 2
+          )
         }
         // // 边框绘制（目前仅支持控件）
         // if (element.control?.border) {
@@ -2439,7 +2240,7 @@ export class DrawPdf {
                 (preElement.type === ElementType.SUPERSCRIPT &&
                   element.type !== ElementType.SUPERSCRIPT) ||
                 this.getElementSize(preElement) !==
-                this.getElementSize(element))
+                  this.getElementSize(element))
             ) {
               this.strikeout.render(this.getCtx2d())
             }
@@ -2460,7 +2261,12 @@ export class DrawPdf {
             } else if (element.type === ElementType.SUPERSCRIPT) {
               adjustY += this.superscriptParticle.getOffsetY(element)
             }
-            this.strikeout.recordFillInfo(this.getCtx2d(), x, adjustY, metrics.width)
+            this.strikeout.recordFillInfo(
+              this.getCtx2d(),
+              x,
+              adjustY,
+              metrics.width
+            )
           }
         } else if (preElement?.strikeout) {
           this.strikeout.render(this.getCtx2d())
@@ -2571,10 +2377,7 @@ export class DrawPdf {
     }
   }
 
-  private _drawFloat(
-    ctx2d: Context2d,
-    payload: IDrawFloatPayload
-  ) {
+  private _drawFloat(ctx2d: Context2d, payload: IDrawFloatPayload) {
     const { scale } = this.options
     const floatPositionList = this.position.getFloatPositionList()
     const { imgDisplays, pageNo } = payload
@@ -2748,9 +2551,7 @@ export class DrawPdf {
     // with each export when reusing the same instance.
     this._resetPdf()
     const { header, footer } = this.options
-    const {
-      isCompute = true
-    } = payload || {}
+    const { isCompute = true } = payload || {}
     const innerWidth = this.getInnerWidth()
     const isPagingMode = this.getOptions().pageMode === PageMode.PAGING
     // 缓存当前页数信息
@@ -2787,7 +2588,7 @@ export class DrawPdf {
         elementList: this.elementList
       })!
       // 页面信息
-      this.pageRowList = this._computePageList()//this.draw.getPageRowList()
+      this.pageRowList = this._computePageList() //this.draw.getPageRowList()
       // 位置信息
       this.position.computePositionList()
       // 区域信息
@@ -2810,31 +2611,31 @@ export class DrawPdf {
     const prePageCount = this.pageList.length
     if (prePageCount > curPageCount) {
       const deleteCount = prePageCount - curPageCount
-      this.ctxList.splice(curPageCount, deleteCount)
-      this.pageList
-        .splice(curPageCount, deleteCount)
-        .forEach((page, index) => {
-          if (page.remove) {
-            page.remove()
-          }
-          this.getPdf().deletePage(index + 1)
-        })
+      this.pageList.splice(curPageCount, deleteCount).forEach((page, index) => {
+        if (page.remove) {
+          page.remove()
+        }
+        this.getPdf().deletePage(index + 1)
+      })
     }
     if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
-      const deleteCount = this.getPdf().getNumberOfPages() - this.getPageList().length
+      const deleteCount =
+        this.getPdf().getNumberOfPages() - this.getPageList().length
       for (let i = 1; i <= deleteCount; i++) {
         this.getPdf().deletePage(i)
       }
     }
     if (this.getPdf().getNumberOfPages() < this.getPageList().length) {
-      const addCount = this.getPageList().length - this.getPdf().getNumberOfPages()
+      const addCount =
+        this.getPageList().length - this.getPdf().getNumberOfPages()
       for (let i = 1; i <= addCount; i++) {
         this.getPdf().addPage()
       }
     }
     this._immediateRender()
     if (this.getPdf().getNumberOfPages() > this.getPageList().length) {
-      const deleteCount = this.getPdf().getNumberOfPages() - this.getPageList().length
+      const deleteCount =
+        this.getPdf().getNumberOfPages() - this.getPageList().length
       for (let i = 1; i <= deleteCount; i++) {
         this.getPdf().deletePage(i)
       }
