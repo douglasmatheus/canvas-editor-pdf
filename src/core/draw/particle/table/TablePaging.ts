@@ -74,6 +74,8 @@ export class TablePaging {
         pageHeight += row.height + (row.offsetY || 0)
         newRowList.push(row)
       }
+      // Upstream also ORs in traceParticle.isTraceHidden(element) here;
+      // trace mode is not ported to this fork.
       const isHiddenTable =
         element?.type === ElementType.TABLE &&
         (element.hide ||
@@ -480,7 +482,8 @@ export class TablePaging {
   // maxPageNo 截断：按片段边界裁剪表格，保留已展示片段内容。
   // 处理拆分行部分内容、跨越裁剪点的 rowspan 收缩；
   // 返回是否有内容被保留（首个片段即超限时返回 false，应整体删除）
-  // 注：上游在此还会迁移光标上下文/选区，本库无光标故不适用
+  // Upstream also migrates the cursor context / selection here; this fork
+  // has no cursor, so that part is dropped (hence the unused _elementList).
   public truncateTableByFragment(
     element: IElement,
     fragment: ITableRowFragment,

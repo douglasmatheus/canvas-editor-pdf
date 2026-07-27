@@ -985,7 +985,8 @@ export class Position {
     }
     // 表格跨页片段命中（非首片段的位置记录不在主列表中）
     if (!isTable) {
-      // 上游此处还判断 isMainActive；本库无 zone，主区域恒为活动
+      // Upstream also gates this on isMainActive; this fork has no zone, so
+      // the main zone is always the active one.
       // 仅遍历当前页的片段位置，避免长文档全表线性扫描
       const pageFragmentPositionList =
         this.tablePagingPositionMap.get(curPageNo) || []

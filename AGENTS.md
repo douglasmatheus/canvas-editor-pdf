@@ -8,6 +8,8 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Codex, etc
 
 The library is published to npm as `canvas-editor-pdf`. `@hufe921/canvas-editor` is a peer dependency — consumers install both. This is a library-only project; the one exception is the [demo/](demo/) playground (see below), a static page deployed to GitHub Pages — it's a consumer of the library, not part of the published package.
 
+Because it tracks an upstream project, [UPSTREAM.md](UPSTREAM.md) records how far the fork is aligned with canvas-editor, how to port changes, and which upstream features were reviewed and deliberately skipped. Read it before porting anything.
+
 ## Commands
 
 | Command | What it does |
@@ -190,4 +192,4 @@ Pre-0.4.0, three enum files ([Common.ts](src/dataset/enum/Common.ts), [Editor.ts
 - **Bug in PDF output for a specific element type** → find the matching `*Particle.ts` under [src/core/draw/particle/](src/core/draw/particle/) and check its `render()`.
 - **Page chrome bug (header/footer/margin/etc.)** → [src/core/draw/frame/](src/core/draw/frame/).
 - **Wrong layout / element positioning** → [src/core/position/Position.ts](src/core/position/Position.ts) + `computeRowList` / `_computePageList` in `DrawPdf`.
-- **Adding a feature that upstream canvas-editor already has** → diff against the upstream file (paths mirror exactly) and port the changes; the `// 中文` comments are a hint that the line came from upstream.
+- **Adding a feature that upstream canvas-editor already has** → read [UPSTREAM.md](UPSTREAM.md) first. It records how far the fork is aligned, how to list what's new, the rule for deciding whether a commit affects the PDF at all, and which upstream features were already reviewed and deliberately skipped. Then diff against the upstream file (paths mirror exactly) and port the changes **verbatim**; the `// 中文` comments are a hint that the line came from upstream.
