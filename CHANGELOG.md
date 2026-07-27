@@ -23,6 +23,16 @@
   It used `return` instead of `continue` while iterating the header/main/footer
   zones, so a missing zone bailed out of the whole method before
   `setEditorData` ran, leaving the content unset.
+- Table row height now adapts correctly for a row-spanning cell with tall
+  content. When regrouping cells by column, the rowspan target was compared
+  against the column index instead of the current row index, so a tall
+  `rowspan` cell could land in the wrong row and its height not propagate.
+  (Ported from canvas-editor.)
+- A table that spans pages no longer corrupts `getValue()`. The old renderer
+  paginated by *cloning* the table element per page (`pagingId`/`pagingIndex`)
+  and merging the clones back on serialization; repeated (`pagingRepeat`)
+  header rows survived the merge, so a 60-row table came back with 63 rows.
+  Pagination is now render-only and the data layer keeps a single table.
 - `new DrawPdf(editor.command.getValue().options, …)` and `updateOptions(...)`
   no longer raise a type error. canvas-editor's option types are a separate copy
   — and, when consumed from the editor's own source, a different module instance
@@ -40,6 +50,15 @@
   library only renders.)
 
 ### Changed
+- **Table pagination reworked** (ported from canvas-editor's optimize-table-
+  pagination change). A table crossing a page boundary is now split into
+  per-page *fragments* at the render layer — the data layer keeps one table
+  element — instead of being cloned into several table elements. A row taller
+  than the remaining space is split mid-row, `pagingRepeat` header rows are
+  re-shown on continuation pages, and row-spanning cells carry across the
+  break. New `TablePaging` module plus fragment-aware `TableParticle` and
+  `Position`. **Breaking (data shape):** `element.pagingId` / `pagingIndex`
+  are gone — they described the old clone-per-page model.
 - LaTeX formulas now render as **vector paths** drawn straight onto the jsPDF
   context, instead of being rasterized to a PNG and placed as an image. Output
   is crisp at any zoom, the PDF is smaller, and the render path is fully
@@ -52,6 +71,14 @@
   render mode, so hidden content leaves no blank gap in the exported PDF.
   Empty/newline-only rows are unaffected. Previously this only happened in
   PRINT mode, gated behind `modeRule.print.filterHideElementRow`.
+- **Breaking (default change):** `table.overflow` now defaults to `false`
+  (was `true`), matching canvas-editor. When `overflow` is false, a table wider
+  than the content area is proportionally shrunk to fit (columns compress down
+  to `table.defaultColMinWidth`, then stop) and its horizontal offset is reset —
+  so wide tables no longer bleed past the page margin in the exported PDF. Set
+  `table: { overflow: true }` to restore the old behavior. (Rendering side of
+  canvas-editor's table-width-autofit feature; the editor-only autofit menu
+  commands were not ported.)
 
 ### Removed
 - **Breaking:** the `modeRule.print.filterHideElementRow` option. Hidden-row
