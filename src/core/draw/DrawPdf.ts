@@ -9,7 +9,7 @@ import {
   IGetOriginValueOption,
   IGetValueOption
 } from '../../interface/Draw'
-import { IEditorData, IEditorOption } from '../../interface/Editor'
+import { IEditorData, IEditorOption, IUpdateOption } from '../../interface/Editor'
 import { IElement, IElementMetrics } from '../../interface/Element'
 import { deepClone, getUUID } from '../../utils'
 import { Position } from '../position/Position'
@@ -711,6 +711,17 @@ export class DrawPdf {
 
   public getOptions(): DeepRequired<IEditorOption> {
     return this.options
+  }
+
+  // Merge new options into the current ones at runtime. Kept as public API
+  // (documented) even though the PDF-only fork usually configures via the
+  // constructor; call render() afterwards to reflect changes.
+  public updateOptions(payload: IUpdateOption | object) {
+    const newOption = mergeOption(payload as IEditorOption)
+    Object.entries(newOption).forEach(([key, value]) => {
+      Reflect.set(this.options, key, value)
+    })
+    this.setColumnConfig(this.options.column)
   }
 
   public getGroup(): Group {

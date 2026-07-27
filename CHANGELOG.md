@@ -57,6 +57,22 @@
 - **Breaking:** the `modeRule.print.filterHideElementRow` option. Hidden-row
   collapsing is now unconditional in non-design modes (see above), so the flag
   no longer had any effect.
+- **Breaking:** a large dead-code cleanup dropped the unused interactive-editor
+  layer that this PDF-only fork never exercised (cursor, mouse/keyboard events,
+  `RangeManager`, zone, worker, previewer, table operate/tool, search, the
+  `Control` module, shortcuts, i18n, clipboard and print helpers, and their
+  CSS/SVG assets). Along with it, several `DrawPdf` public methods were removed:
+  `getDataURL` (page-to-PNG export), `setPaperSize` / `setPaperDirection` /
+  `setPaperMargin` / `setPageScale` / `setPagePixelRatio` / `setPageDevicePixel`
+  (runtime paper/DPR reconfiguration — configure via the constructor instead),
+  `setPrintData` / `clearPrintData`, `forceUpdate` (use `render()`),
+  `getRowCount`, and `getCtx`. `updateOptions` was intentionally **kept**.
+- **Breaking:** `getValue()` now returns the `IEditorData` object directly
+  (`{ header, main, footer, graffiti }`) instead of the `IEditorResult` wrapper
+  (`{ version, data, options }`). Read the returned object as the data itself —
+  `getValue().data` is no longer valid.
+- `getElementFont(el, scale)` was merged into `getFont(el, scale = 1)` (identical
+  behavior). This is internal API; callers should use `getFont`.
 
 ## 0.5.0 (2026-07-09)
 
