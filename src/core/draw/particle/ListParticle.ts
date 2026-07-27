@@ -149,7 +149,7 @@ export class ListParticle {
   private getListFontStyle(elementList: IElement[], scale: number): string {
     if (this.options.list.inheritStyle) {
       const styleElement = this.findStyledElement(elementList)
-      return this.draw.getElementFont(styleElement, scale)
+      return this.draw.getFont(styleElement, scale)
     } else {
       const { defaultFont, defaultSize } = this.options
       return `${defaultSize * scale}px ${defaultFont}`

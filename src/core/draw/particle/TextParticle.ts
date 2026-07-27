@@ -46,10 +46,7 @@ export class TextParticle {
     this.cacheMeasureText = new Map()
   }
 
-  public measureBasisWord(
-    ctx2d: Context2d,
-    font: string
-  ): ITextMetrics {
+  public measureBasisWord(ctx2d: Context2d, font: string): ITextMetrics {
     ctx2d.save()
     ctx2d.font = font
     const textMetrics = this.measureText(ctx2d, {
@@ -86,19 +83,13 @@ export class TextParticle {
     }
   }
 
-  public measurePunctuationWidth(
-    ctx2d: Context2d,
-    element: IElement
-  ): number {
+  public measurePunctuationWidth(ctx2d: Context2d, element: IElement): number {
     if (!element || !PUNCTUATION_LIST.includes(element.value)) return 0
-    ctx2d.font = this.draw.getElementFont(element)
+    ctx2d.font = this.draw.getFont(element)
     return this.measureText(ctx2d, element).width
   }
 
-  public measureText(
-    ctx2d: Context2d,
-    element: IElement
-  ): ITextMetrics {
+  public measureText(ctx2d: Context2d, element: IElement): ITextMetrics {
     // 优先使用自定义字宽设置
     const font = this.draw.getFont(element)
     const value = element.value === `\n` ? '' : element.value
@@ -125,10 +116,7 @@ export class TextParticle {
     return textMetrics
   }
 
-  public getBasisWordBoundingBoxAscent(
-    ctx2d: Context2d,
-    font: string
-  ): number {
+  public getBasisWordBoundingBoxAscent(ctx2d: Context2d, font: string): number {
     return this.measureBasisWord(ctx2d, font).actualBoundingBoxAscent
   }
 
@@ -137,12 +125,7 @@ export class TextParticle {
     this.text = ''
   }
 
-  public record(
-    ctx2d: Context2d,
-    element: IRowElement,
-    x: number,
-    y: number
-  ) {
+  public record(ctx2d: Context2d, element: IRowElement, x: number, y: number) {
     this.ctx2d = ctx2d
     // 兼容模式立即绘制
     if (this.options.renderMode === RenderMode.COMPATIBILITY) {
@@ -190,7 +173,9 @@ export class TextParticle {
     const fontWeight = this.bold ? 'bold' : 'normal'
     const fontItalic = this.italic ? 'italic' : ''
     // this.draw.getPdf().setFontSize(this.size)
-    this.draw.getPdf().setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
+    this.draw
+      .getPdf()
+      .setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
     this.draw.getPdf().setCharSpace(0.1) // https://jsfiddle.net/pg7byu80/5/
     // this.draw.getPdf().internal.write(0, "Tw")
     // this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful

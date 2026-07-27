@@ -1,5 +1,10 @@
-import { EditorZone } from '../dataset/enum/Editor'
-import { IElement } from './Element'
+export interface ITitle {
+  fontSize?: number
+  fontWeight?: string
+  fontFamily?: string
+  color?: string
+  disabled?: boolean
+}
 
 export interface ITitleSizeOption {
   defaultFirstSize?: number
@@ -11,22 +16,3 @@ export interface ITitleSizeOption {
 }
 
 export type ITitleOption = ITitleSizeOption & {}
-
-export interface ITitleRule {
-  deletable?: boolean
-  disabled?: boolean
-}
-
-export type ITitle = ITitleRule & {
-  conceptId?: string
-}
-
-export interface IGetTitleValueOption {
-  conceptId: string
-}
-
-export type IGetTitleValueResult = (ITitle & {
-  value: string | null
-  elementList: IElement[]
-  zone: EditorZone
-})[]

@@ -1,38 +1,35 @@
-import { ITitleOption, ITitleSizeOption } from '../../interface/Title'
-import { TitleLevel } from '../enum/Title'
-
-export const defaultTitleOption: Readonly<Required<ITitleOption>> = {
-  defaultFirstSize: 26,
-  defaultSecondSize: 24,
-  defaultThirdSize: 22,
-  defaultFourthSize: 20,
-  defaultFifthSize: 18,
-  defaultSixthSize: 16
+export const titleNodeNameMapping: Record<string, string> = {
+  H1: 'first',
+  H2: 'second',
+  H3: 'third',
+  H4: 'fourth',
+  H5: 'fifth',
+  H6: 'sixth'
 }
 
-export const titleSizeMapping: Record<TitleLevel, keyof ITitleSizeOption> = {
-  [TitleLevel.FIRST]: 'defaultFirstSize',
-  [TitleLevel.SECOND]: 'defaultSecondSize',
-  [TitleLevel.THIRD]: 'defaultThirdSize',
-  [TitleLevel.FOURTH]: 'defaultFourthSize',
-  [TitleLevel.FIFTH]: 'defaultFifthSize',
-  [TitleLevel.SIXTH]: 'defaultSixthSize'
+export const titleOrderNumberMapping: Record<string, number> = {
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+  fifth: 5,
+  sixth: 6
 }
 
-export const titleOrderNumberMapping: Record<TitleLevel, number> = {
-  [TitleLevel.FIRST]: 1,
-  [TitleLevel.SECOND]: 2,
-  [TitleLevel.THIRD]: 3,
-  [TitleLevel.FOURTH]: 4,
-  [TitleLevel.FIFTH]: 5,
-  [TitleLevel.SIXTH]: 6
+export const titleSizeMapping: Record<string, string> = {
+  first: 'defaultFirstSize',
+  second: 'defaultSecondSize',
+  third: 'defaultThirdSize',
+  fourth: 'defaultFourthSize',
+  fifth: 'defaultFifthSize',
+  sixth: 'defaultSixthSize'
 }
 
-export const titleNodeNameMapping: Record<string, TitleLevel> = {
-  H1: TitleLevel.FIRST,
-  H2: TitleLevel.SECOND,
-  H3: TitleLevel.THIRD,
-  H4: TitleLevel.FOURTH,
-  H5: TitleLevel.FIFTH,
-  H6: TitleLevel.SIXTH
+export const defaultTitleOption = {
+  defaultFirstSize: 22,
+  defaultSecondSize: 18,
+  defaultThirdSize: 16,
+  defaultFourthSize: 14,
+  defaultFifthSize: 12,
+  defaultSixthSize: 11
 }

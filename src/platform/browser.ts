@@ -1,4 +1,4 @@
-import type { IPlatform, IPlatformFont } from './types'
+import type { IPlatform } from './types'
 
 export const platform: IPlatform = {
   defaultFontSource: 'cdn',
@@ -21,14 +21,16 @@ export const platform: IPlatform = {
     // (interpreted as a base URL) or stick with the default 'cdn' source.
     throw new Error(
       `fontSource 'bundled' is not supported in the browser build (looking up ${fileName}). ` +
-      `Use 'cdn' (default) or host the TTFs and pass { dir: '/your/url/base' }.`
+        `Use 'cdn' (default) or host the TTFs and pass { dir: '/your/url/base' }.`
     )
   },
 
   async loadFontAsBase64(source) {
     const response = await fetch(source)
     if (!response.ok) {
-      throw new Error(`Font fetch failed: ${response.status} ${response.statusText}`)
+      throw new Error(
+        `Font fetch failed: ${response.status} ${response.statusText}`
+      )
     }
     const blob = await response.blob()
     return new Promise<string>((resolve, reject) => {
@@ -43,7 +45,7 @@ export const platform: IPlatform = {
     })
   },
 
-  registerFontForMeasurement(_font: IPlatformFont, _fontBytesBase64: string) {
+  registerFontForMeasurement(): void {
     // No-op: browsers use the OS/system font registry for canvas measureText.
     // The font name passed to jsPDF (e.g. 'arial') must match a system font
     // available to the user agent. Same behavior as pre-0.4.0.
