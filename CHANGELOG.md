@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (2026-08-01)
+
+> **Migrating from 0.5.0** — four breaking changes, each detailed below:
+> `getValue()` returns `IEditorData` directly (drop the `.data`);
+> `table.overflow` now defaults to `false`; `modeRule.print.filterHideElementRow`
+> and a set of unused `DrawPdf` methods (`getDataURL`, the `setPaper*` /
+> `setPage*` reconfiguration setters, `setPrintData`, `forceUpdate`,
+> `getRowCount`, `getCtx`) were removed; and `element.pagingId` / `pagingIndex`
+> no longer exist in the data shape.
 
 ### Fixed
 - LaTeX no longer hangs `setValue()` in the browser. The root cause was a

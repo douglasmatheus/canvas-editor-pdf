@@ -12,15 +12,25 @@ changes.
 — paste a canvas-editor `options` object and `data` and preview the PDF in the
 browser.
 
-## What's new in 0.5.0
+## What's new in 0.6.0
 
-- **Multi-column layout** via the `column` option.
-- **Per-page header/footer** control (`disabledPages`, `editable`).
-- **Nested tables** and **areas inside table cells** now lay out and paginate.
-- Fixes: text watermark centering + `repeat` tiling, and CJK page-number font.
+- **Table pagination reworked** — a table crossing a page boundary is split into
+  per-page fragments at the render layer, so rows split mid-row, `pagingRepeat`
+  header rows repeat on continuation pages, and `getValue()` no longer comes
+  back with duplicated rows.
+- **Nested lists** render with per-level indent, rotating bullets and
+  independent numbering.
+- **LaTeX formulas draw as vector paths** instead of a rasterized PNG — crisp at
+  any zoom, smaller PDFs, and fully synchronous.
+- Wide tables shrink to fit the content area (`table.overflow` now defaults to
+  `false`) and fully hidden rows collapse to zero height in any non-design mode.
 - Runs in both the browser and Node.js (`canvas-editor-pdf/node`), with a
   pluggable font source (`'cdn'` / `'bundled'` / custom directory).
-- See the [CHANGELOG](./CHANGELOG.md) for the full list.
+- ⚠️ **Contains breaking changes** — `getValue()` now returns the data object
+  directly, `table.overflow` flipped its default, and a dead-code cleanup
+  dropped several unused `DrawPdf` methods. See the
+  [CHANGELOG](./CHANGELOG.md#060-2026-08-01) for the migration notes and the
+  full list.
 
 ---
 
