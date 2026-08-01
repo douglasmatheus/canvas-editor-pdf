@@ -32,16 +32,46 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-07-27 |
-| Reviewed through | `d5bad244` — *feat: add ruler option #438* |
+| Date | 2026-08-01 |
+| Reviewed through | `eba1d108` — *feat: add compare api #1024* (`origin/main`) |
 | Upstream version | 0.9.137 (+ commits past the release tag) |
-| Fork commit | `474a2c4` — *feat: align table rendering with canvas-editor* |
+| Fork commit | `4893432` — *docs: track upstream canvas-editor sync state* |
+| Unmerged branch watched | `origin/improve/performance` @ `30e14e55` — see log below |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-08-01 — reviewed `d5bad244..origin/main` (1 commit)
+
+**Not ported**
+
+- `eba1d108` — compare api #1024. A `compare` command that diffs two documents
+  and writes the result as *trace* records. Every piece lands in a subsystem
+  this fork removed: `Command`/`CommandAdapt`, `TraceParticle` (a DOM popup),
+  and the new `interface/Compare.ts`. The new `utils/diff.ts` (697 lines) is
+  self-contained and portable in principle, but its only consumer is the
+  command, and its output — trace records — is never drawn here. The
+  `getNonTraceElementList` helper added to `utils/element.ts` builds on
+  `getNonDeletedElementList`, which this fork does not have either.
+
+**Also present in the clone, outside the window**
+
+- `origin/improve/performance` @ `30e14e55` — *improve: render performance.*
+  Not on `origin/main`, so not part of this window, but worth watching: it
+  touches `Draw.ts` (+355), adds `IncrementalRowCompute.ts`, and reworks
+  `TextParticle` measurement. The incremental-row half is input-event driven
+  (recompute only the rows an edit touched) and buys nothing for a one-shot
+  export. The `TextParticle` half might: it caches `measureBasisWord` per font
+  and threads an explicit `font` argument through `measureText`/`measureWord`
+  to avoid reading `ctx.font` per element. Revisit if it merges — a jsPDF
+  `Context2d` has different `ctx.font` read costs than a browser canvas, so
+  measure before assuming a win.
+- `94a1b012` — *fix: render vertical ruler on every page #438*, and the dirty
+  `index.html` / `src/main.ts` / `PROPOSTA-recuo-paragrafo.md` in the working
+  tree: local work on the `fork` remote, not upstream. Excluded by request.
 
 ### 2026-07-27 — reviewed `56a51c42..d5bad244` (9 commits)
 
@@ -87,6 +117,7 @@ for one of these reasons needs no explanation beyond naming it in the log.
 | Events — mouse, keyboard, paste, drag, shortcuts | Removed in PR #9. Nothing is interactive. |
 | Controls (form controls) | The `Control` module was removed in PR #9. Includes cascade, validation, member state. |
 | Trace mode (track changes) | Editor review UI. |
+| Compare / diff (`utils/diff.ts`, `interface/Compare.ts`) | Diffs two documents into trace records. Reaches the page only through trace rendering, which is absent. |
 | Macro recording / playback | Editor command plumbing. |
 | Accessibility (ARIA, screen readers) | DOM-only. |
 | Screen overlays — magnifier, ruler | Draw on their own canvases/elements outside the page container. |
@@ -96,21 +127,31 @@ for one of these reasons needs no explanation beyond naming it in the log.
 
 ## How to review
 
-List everything since the last review:
+List everything since the last review. Use `origin/main`, **not `HEAD`** — the
+checkout may sit on a local or fork branch, which both hides upstream commits
+and drags in ones that were never upstream:
 
 ```bash
-git -C <upstream> log --oneline d5bad244..HEAD
+git -C <upstream> remote -v                    # confirm origin = Hufe921
+git -C <upstream> log --oneline eba1d108..origin/main
 ```
 
 Then narrow to the files that can affect output:
 
 ```bash
-git -C <upstream> log --oneline d5bad244..HEAD -- \
+git -C <upstream> log --oneline eba1d108..origin/main -- \
   src/editor/core/draw src/editor/core/position src/editor/utils
 ```
 
-Replace `d5bad244` with the "Reviewed through" value above. When done, add a
-log block for the window and update **Last check**.
+Replace `eba1d108` with the "Reviewed through" value above. Also glance at
+unmerged upstream branches, which sometimes hold the interesting rendering
+work for weeks:
+
+```bash
+git -C <upstream> branch -r --no-merged origin/main
+```
+
+When done, add a log block for the window and update **Last check**.
 
 ## Decision rule
 
