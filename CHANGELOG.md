@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Mixed page orientations by section** (ported from canvas-editor). A page
+  break element now accepts `paperDirection`, and page breaks act as section
+  boundaries: every page from that break onward is laid out and emitted in the
+  given direction until the next break. A break with no `paperDirection`
+  returns to the document's global direction, and page 1 always follows the
+  global direction. Portrait body text can now be followed by a landscape page
+  for a wide table in a single PDF. Page geometry, margins, inner width,
+  header/footer layout, column layout, page border, page number, watermark,
+  line numbers and cross-page table splitting all resolve per page. New
+  `getPageDirection(pageNo)`, `getPageDirectionList()` and `getPageSize(pageNo)`
+  on `DrawPdf`; `paperDirection` survives `getValue()`.
+
+### Fixed
+- Each PDF page carried the *previous* page's dimensions and orientation.
+  `_resetPdf()` opens jsPDF page 1, and `_createPage()` then added one page per
+  document page, so the page count overshot by one and the trailing page was
+  deleted — leaving jsPDF page N built from `_createPage(N-1)`. The defect was
+  invisible while every page was the same size; it surfaced as soon as pages
+  could differ. `_createPage(0)` now reuses the page `_resetPdf()` already
+  opened.
+
 ## 0.6.0 (2026-08-01)
 
 > **Migrating from 0.5.0** — four breaking changes, each detailed below:

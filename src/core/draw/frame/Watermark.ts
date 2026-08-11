@@ -24,8 +24,7 @@ export class Watermark {
       watermark: { data, opacity, font, size, color, repeat, gap, numberType },
       scale
     } = this.options
-    const width = this.draw.getWidth()
-    const height = this.draw.getHeight()
+    const { width, height } = this.draw.getPageSize(pageNo)
     const fontString = `${size * scale}px ${font}`
     // 开始绘制
     ctx2d.save()
@@ -98,7 +97,7 @@ export class Watermark {
     ctx2d.restore()
   }
 
-  public renderImage(ctx2d: Context2d) {
+  public renderImage(ctx2d: Context2d, pageNo: number) {
     const {
       watermark: { width, height, data, opacity, repeat, gap },
       scale
@@ -117,8 +116,8 @@ export class Watermark {
       // }
       // return
     }
-    const docWidth = this.draw.getWidth()
-    const docHeight = this.draw.getHeight()
+    const { width: docWidth, height: docHeight } =
+      this.draw.getPageSize(pageNo)
     const imageWidth = width * scale
     const imageHeight = height * scale
     // 开始绘制
@@ -195,7 +194,7 @@ export class Watermark {
 
   public render(ctx2d: Context2d, pageNo: number) {
     if (this.options.watermark.type === WatermarkType.IMAGE) {
-      this.renderImage(ctx2d)
+      this.renderImage(ctx2d, pageNo)
     } else {
       this.renderText(ctx2d, pageNo)
     }

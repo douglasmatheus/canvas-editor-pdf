@@ -32,17 +32,70 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-08-01 |
-| Reviewed through | `eba1d108` — *feat: add compare api #1024* (`origin/main`) |
-| Upstream version | 0.9.137 (+ commits past the release tag) |
-| Fork commit | `4893432` — *docs: track upstream canvas-editor sync state* |
-| Unmerged branch watched | `origin/improve/performance` @ `30e14e55` — see log below |
+| Date | 2026-08-11 |
+| Reviewed through | `6a554b4f` — *feat: expand cascade expression functions* (`origin/main`) |
+| Upstream version | 1.0.0 |
+| Fork commit | `fc8e5cc` — *chore(release): 0.6.0* |
+| Unmerged branch watched | `origin/improve/performance` @ `30e14e55` — still unmerged as of 1.0.0 |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-08-11 — reviewed `eba1d108..origin/main` (9 commits)
+
+Upstream released **1.0.0** in this window (`1533a220` is the release commit
+itself — CHANGELOG, README and a version bump, no code).
+
+**Ported**
+
+- `499c239d` — mixed page orientations by section #718 #866. The section model
+  is small and entirely render-layer: a `PAGE_BREAK` element carries
+  `paperDirection`, layout copies it onto the page-break `IRow`, and
+  `_computePageList` walks the rows building a `pageDirectionList` that every
+  geometry getter then indexes by page. `getOriginalWidth/Height`, `getWidth`,
+  `getHeight`, `getInnerWidth`, `getMargins`, `getOriginalMargins` and
+  `getMainOuterHeight` all take an optional direction; `getPageSize(pageNo)`
+  bundles the four values callers actually want. `Header`/`Footer` swap their
+  single `rowList`/`positionList` for a `layoutMap` keyed by direction (lazy
+  per direction), `ColumnManager` precomputes both directions, and
+  `TablePaging` tracks the current section while splitting.
+  - *Left out:* `setPageDirection` (reads the cursor range and the active zone
+    to find the enclosing section — this fork has neither, and consumers set
+    `paperDirection` on the element directly); `getPageOffset` /
+    `_getPageMaxWidth` / `_updatePageSizes` and the `HyperlinkParticle`,
+    `ImageParticle`, `BaseBlock`, `DatePicker`, `TableTool`, `Previewer`,
+    `Search`, `Cursor` and `Zone` call sites, which exist only to re-position
+    DOM overlays over CSS-centred canvases; `utils/print.ts`.
+  - *Adapted:* upstream resizes `<canvas>` elements per page; here the
+    direction reaches the output through `_createPage`, which already passed an
+    orientation to `jsPDF.addPage` and now takes it from `getPageDirection(pageNo)`.
+    Uncovered a **pre-existing off-by-one** in that path — see CHANGELOG; the
+    page-break `isForceBreak` clause came along since row splitting on a break
+    is what makes a section start at a row boundary.
+
+**Not ported**
+
+- `1855372c` — hover hint for elements #762. `HintParticle` builds a DOM popup
+  driven by `mousemove`. Its data-layer half (`hint` on `IElement`/`ITd`,
+  inheritance from title/list/area/hyperlink containers, the `hint` option) has
+  no render path here either — nothing reads `hint` at paint time.
+- `6a554b4f` — cascade expression functions. `Control` module, removed in PR #9.
+- `21bed9ba` — row layout by paragraph #605. Touches only `CommandAdapt`,
+  the backspace/delete key handlers and `RangeManager`.
+
+**Ignored** — no bearing on this library
+
+- `1533a220` (release notes + version bump), `403b1d88`, `77819319`
+  (dependency bumps), `f1d3f522` (dependabot config), `561fb3fc` (docs).
+
+**Note on the clone.** The 1.0.0 checkout has a single remote (`origin` =
+Hufe921) and sits on `main`, so `HEAD` and `origin/main` agree here — unlike
+the previous clone. `origin/improve/performance` @ `30e14e55` is still not
+merged into `main`; the `TextParticle` measurement caching in it remains the
+part worth revisiting.
 
 ### 2026-08-01 — reviewed `d5bad244..origin/main` (1 commit)
 
@@ -118,6 +171,7 @@ for one of these reasons needs no explanation beyond naming it in the log.
 | Controls (form controls) | The `Control` module was removed in PR #9. Includes cascade, validation, member state. |
 | Trace mode (track changes) | Editor review UI. |
 | Compare / diff (`utils/diff.ts`, `interface/Compare.ts`) | Diffs two documents into trace records. Reaches the page only through trace rendering, which is absent. |
+| Hover hints (`HintParticle`, `element.hint`) | DOM popup driven by `mousemove`. Nothing reads `hint` at paint time. |
 | Macro recording / playback | Editor command plumbing. |
 | Accessibility (ARIA, screen readers) | DOM-only. |
 | Screen overlays — magnifier, ruler | Draw on their own canvases/elements outside the page container. |
@@ -133,17 +187,17 @@ and drags in ones that were never upstream:
 
 ```bash
 git -C <upstream> remote -v                    # confirm origin = Hufe921
-git -C <upstream> log --oneline eba1d108..origin/main
+git -C <upstream> log --oneline 6a554b4f..origin/main
 ```
 
 Then narrow to the files that can affect output:
 
 ```bash
-git -C <upstream> log --oneline eba1d108..origin/main -- \
+git -C <upstream> log --oneline 6a554b4f..origin/main -- \
   src/editor/core/draw src/editor/core/position src/editor/utils
 ```
 
-Replace `eba1d108` with the "Reviewed through" value above. Also glance at
+Replace `6a554b4f` with the "Reviewed through" value above. Also glance at
 unmerged upstream branches, which sometimes hold the interesting rendering
 work for weeks:
 

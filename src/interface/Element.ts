@@ -1,5 +1,6 @@
 import { ImageDisplay } from '../dataset/enum/Common'
 import { ControlComponent } from '../dataset/enum/Control'
+import { PaperDirection } from '../dataset/enum/Editor'
 import { ElementType } from '../dataset/enum/Element'
 import { ListStyle, ListType } from '../dataset/enum/List'
 import { RowFlex } from '../dataset/enum/Row'
@@ -193,6 +194,11 @@ export interface ILabelElement {
   }
 }
 
+export interface IPageBreakElement {
+  // 分页符之后页面的纸张方向
+  paperDirection?: PaperDirection
+}
+
 export type IElement = IElementBasic &
   IElementStyle &
   IElementRule &
@@ -211,7 +217,8 @@ export type IElement = IElementBasic &
   ITitleElement &
   IListElement &
   IAreaElement &
-  ILabelElement
+  ILabelElement &
+  IPageBreakElement
 
 export interface IElementMetrics {
   width: number

@@ -64,9 +64,8 @@ export class PageNumber {
         numberType
       )
     }
-    const width = this.draw.getWidth()
+    const { width, height, margins } = this.draw.getPageSize(pageNo)
     // 计算y位置
-    const height = this.draw.getHeight()
     const pageNumberBottom = this.draw.getPageNumberBottom()
     const y = height - pageNumberBottom
     ctx2d.save()
@@ -83,7 +82,6 @@ export class PageNumber {
     this.draw.getPdf().setFont(family, '', 'normal')
     // 计算x位置-居左、居中、居右
     let x = 0
-    const margins = this.draw.getMargins()
     // Measure with the same font we draw in (fakeCtx would otherwise measure
     // against whatever font it last held), so centered/right flex is accurate.
     const { width: textWidth } = this.draw.measureText(fontString, text)
