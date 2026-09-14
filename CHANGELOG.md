@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 (2026-09-14)
+
+> **Upgrading from 0.6.0** — no breaking changes; nothing in your code has to
+> move. One packaging note, though: this package is still `0.x`, where a caret
+> pins the *minor*. A `"canvas-editor-pdf": "^0.6.0"` range means
+> `>=0.6.0 <0.7.0` and will **not** pick this release up on its own — bump it
+> to `^0.7.0` by hand. (This release fixes the same trap on the other side: the
+> `@hufe921/canvas-editor` peer range no longer excludes 1.x.)
 
 ### Added
 - A type-level check on the consumer boundary

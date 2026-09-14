@@ -12,25 +12,27 @@ changes.
 — paste a canvas-editor `options` object and `data` and preview the PDF in the
 browser.
 
-## What's new in 0.6.0
+## What's new in 0.7.0
 
-- **Table pagination reworked** — a table crossing a page boundary is split into
-  per-page fragments at the render layer, so rows split mid-row, `pagingRepeat`
-  header rows repeat on continuation pages, and `getValue()` no longer comes
-  back with duplicated rows.
-- **Nested lists** render with per-level indent, rotating bullets and
-  independent numbering.
-- **LaTeX formulas draw as vector paths** instead of a rasterized PNG — crisp at
-  any zoom, smaller PDFs, and fully synchronous.
-- Wide tables shrink to fit the content area (`table.overflow` now defaults to
-  `false`) and fully hidden rows collapse to zero height in any non-design mode.
-- Runs in both the browser and Node.js (`canvas-editor-pdf/node`), with a
-  pluggable font source (`'cdn'` / `'bundled'` / custom directory).
-- ⚠️ **Contains breaking changes** — `getValue()` now returns the data object
-  directly, `table.overflow` flipped its default, and a dead-code cleanup
-  dropped several unused `DrawPdf` methods. See the
-  [CHANGELOG](./CHANGELOG.md#060-2026-08-01) for the migration notes and the
-  full list.
+- **Mixed page orientations in one document** — a page break can carry a
+  `paperDirection`, and acts as a section boundary: every page from that break
+  onward is laid out and emitted in that direction. Portrait body text followed
+  by a landscape page for a wide table, in a single PDF. Margins, header and
+  footer, columns, page border, page number, watermark, line numbers and
+  cross-page table splitting all resolve per page.
+- **Works with canvas-editor 1.x.** The peer range was `^0.9.133`, which under
+  semver stops at `<0.10.0` — so npm refused to install alongside the 1.x line.
+  It is now `>=0.9.133 <2.0.0`.
+- **The editor is an optional peer.** Nothing in the published bundles or types
+  references `@hufe921/canvas-editor`, so a server that turns stored JSON into a
+  PDF no longer has to install a text editor to satisfy npm.
+- Table cell slashes no longer repaint the page's margin indicators — or the
+  table's own outline — in the border colour.
+- Each page now carries its own dimensions instead of the previous page's; the
+  defect was invisible until pages could differ in size.
+- No breaking changes. But `^0.6.0` will **not** resolve to 0.7.0 on its own —
+  `0.x` carets pin the minor, so bump the range by hand. See the
+  [CHANGELOG](./CHANGELOG.md#070-2026-09-14).
 
 ---
 
