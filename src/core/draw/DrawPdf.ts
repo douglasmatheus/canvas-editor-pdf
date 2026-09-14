@@ -984,7 +984,7 @@ export class DrawPdf {
       // Skip an absent zone — `return` here aborted the whole method (and
       // never reached setEditorData) whenever header/footer were missing.
       if (!data) continue
-      await formatElementList(data, {
+      formatElementList(data, {
         editorOptions: this.options,
         isForceCompensation: true
       })

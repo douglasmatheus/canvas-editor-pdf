@@ -81,7 +81,13 @@ interface IFormatElementListOption {
   editorOptions: DeepRequired<IEditorOption>
 }
 
-export async function formatElementList(
+// Synchronous, like upstream's. It was async while LaTeX needed SVG to PNG
+// rasterization; that work is gone (formulas are drawn as vector polylines
+// at render time), and the async lingered without a single await in the
+// body. The DrawPdf constructor proves it has to stay synchronous: it calls
+// this and reads the formatted data on the next line, and a constructor
+// cannot await.
+export function formatElementList(
   elementList: IElement[],
   options: IFormatElementListOption
 ) {

@@ -63,6 +63,11 @@ export class BlockParticle {
     }
     ctx
     // 打印模式截图，其他模式更新位置
+    // The snapshot branch stays commented out: it paints a video frame onto a
+    // real canvas, which a jsPDF Context2d is not. That makes BaseBlock.snapshot
+    // (and the VideoBlock it drives) unreachable here — they are kept verbatim
+    // from upstream, floating promises and all, rather than "fixed" in code that
+    // never runs.
     // if (this.draw.isPrintMode()) {
     //   cacheBlock.snapshot(ctx, x, y)
     // } else {

@@ -224,6 +224,70 @@ filesystem path.
 
 ---
 
+## What doesn't render: video and iframe blocks
+
+canvas-editor's `block` elements — `video` and `iframe` embeds — come out of
+the PDF blank. They aren't dropped or broken; there is simply nothing to draw.
+
+The editor snapshots a video by handing a live `<video>` element to
+`drawImage`, and the browser decodes the current frame for the canvas. jsPDF's
+`Context2d` isn't a canvas: it takes an image that already exists, as a data
+URL. An `iframe` is further out of reach — photographing an arbitrary web page
+needs a headless browser.
+
+If you need the video's frame in the PDF, put it there yourself: replace the
+block element with an ordinary `image` element before handing the data to
+`DrawPdf`. This is the same "convert first, then render" shape the library
+uses for SVG through `svgString2Image`.
+
+```js
+// Browser — capture a frame as a PNG data URL, with its intrinsic size
+async function captureVideoFrame(src, seconds = 0) {
+  const video = document.createElement('video')
+  video.crossOrigin = 'anonymous' // the host must send CORS headers,
+  video.muted = true              // or the canvas is tainted and toDataURL throws
+  video.src = src
+  await new Promise((ok, fail) => {
+    video.onloadeddata = ok
+    video.onerror = fail
+  })
+  video.currentTime = seconds
+  await new Promise(ok => (video.onseeked = ok))
+  const canvas = document.createElement('canvas')
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  canvas.getContext('2d').drawImage(video, 0, 0)
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    width: video.videoWidth,
+    height: video.videoHeight
+  }
+}
+
+// Swap the block for an image the exporter can draw
+for (const element of data.main) {
+  if (element.type === 'block' && element.block?.type === 'video') {
+    const frame = await captureVideoFrame(element.block.videoBlock.src)
+    element.type = 'image'
+    element.value = frame.dataUrl
+    // A block may carry no width — layout gives it the full column. An image
+    // needs both, so fall back to the frame's own size.
+    element.width = element.width || frame.width
+    element.height = element.height || frame.height
+    delete element.block
+  }
+}
+```
+
+Capturing in the browser, while the document is being edited, and storing the
+data URL with it is usually the cheapest route: your server then never needs to
+decode video at all. Extracting the frame server-side works too, but nothing in
+Node decodes video — that means shelling out to `ffmpeg` or an equivalent, which
+is why this library doesn't do it for you. A poster image or the thumbnail your
+video host already provides is often enough.
+
+---
+
 ## Running on a server
 
 When you render server-side, `DrawPdf` turns whatever `IEditorData` it's
