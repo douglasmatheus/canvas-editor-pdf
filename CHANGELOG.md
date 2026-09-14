@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.1 (2026-09-14)
+
+### Fixed
+- `setValue()` (and the constructor) threw `TypeError: Cannot read properties
+  of undefined (reading 'length')` when any element arrived with no `value`.
+  `formatElementList` read `el.value.length` where canvas-editor's own copy of
+  the same expression reads `el.value?.length` — a one-character divergence
+  that had been in this fork since before 0.3.2. It only surfaced now because
+  canvas-editor 1.x reworked `zipElementList`, and `pickElementAttr` passes
+  `value: payload.value` through untouched, so documents started arriving with
+  elements the older releases never produced.
+
+  Note that the element is still rendered, and an undefined value reaches the
+  page as the literal text `undefined` — `TextParticle` appends it to the run
+  exactly as the editor's own `TextParticle` does. Emitting an element without
+  a value is a data problem upstream of this library; the guarantee here is
+  only that it no longer throws.
+
 ## 0.7.0 (2026-09-14)
 
 > **Upgrading from 0.6.0** — no breaking changes; nothing in your code has to
