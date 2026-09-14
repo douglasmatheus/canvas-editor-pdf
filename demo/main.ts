@@ -139,7 +139,6 @@ async function generate() {
     const data = parseJson('Data', dataEl.value || '{}')
 
     setStatus('Loading fonts…')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const instance = new DrawPdf(options as any, data as any, {
       loadDefaultFonts: true // fontSource defaults to 'cdn' in the browser
     })
