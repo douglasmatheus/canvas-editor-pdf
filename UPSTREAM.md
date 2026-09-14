@@ -32,17 +32,50 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-08-11 |
-| Reviewed through | `6a554b4f` — *feat: expand cascade expression functions* (`origin/main`) |
-| Upstream version | 1.0.0 |
-| Fork commit | `fc8e5cc` — *chore(release): 0.6.0* |
-| Unmerged branch watched | `origin/improve/performance` @ `30e14e55` — still unmerged as of 1.0.0 |
+| Date | 2026-09-14 |
+| Reviewed through | `bd590116` — *docs: update plugin markdown* (`origin/main`) |
+| Upstream version | 1.0.3 |
+| Fork commit | `a1d21d5` — *feat: support mixed page orientations by section* |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-09-14 — reviewed `6a554b4f..origin/main` (20 commits)
+
+Upstream released **1.0.1**, **1.0.2** and **1.0.3** in this window. A quiet
+window for this fork: one line of it renders.
+
+**Ported**
+
+- `ad684544` — table slash pollutes page corner color #1476. One line:
+  `beginPath()` before `_drawSlash` lays down its diagonal. Without it the
+  slash's `stroke()` also repaints whatever path was still open — the table
+  outline it had just drawn, or the page margin indicators — in the table's
+  border colour. Covered by [tests/integration/table-slash.test.ts](tests/integration/table-slash.test.ts),
+  which reads the page's path operators back out of the PDF.
+
+**Not ported**
+
+- `04e37352` — configurable spellcheck #1106. A new `core/draw/interactive/`
+  module: it holds a range list built from a plugin's dictionary lookups and
+  paints squiggles under the misspelled words, gated on `!isPrintMode` like
+  `Search` beside it. Screen-only decoration by construction, plus a `Command`
+  API, an eventbus event and `mousedown` handling. Added to the subsystem list.
+- `3f61e23c`, `86aa51cc`, `099b94e1` — `isOverwrite` on the set-control-value
+  API, duplicated placeholder on empty control value, inserting multiple
+  controls in one line. `Control`/`CommandAdapt`, removed in PR #9.
+- `480cd951`, `fde11fa6` — `getSurroundElementList` and `getGroupRectList`
+  command APIs. Both read the cursor range and return geometry for DOM
+  overlays; `Command`/`CommandAdapt`.
+
+**Ignored** — no bearing on this library
+
+- `3d27125a`, `83985f72`, `473169f6` (releases), `0c8cdd05`, `fd5bc00e`,
+  `99a06c79`, `03a481bb`, `47f49af8` (dependency bumps), `bd590116`,
+  `0d9d8b7c`, `3db6563a`, `7adb602b`, `165885f2` (plugin-list docs).
 
 ### 2026-08-11 — reviewed `eba1d108..origin/main` (9 commits)
 
@@ -175,6 +208,7 @@ for one of these reasons needs no explanation beyond naming it in the log.
 | Macro recording / playback | Editor command plumbing. |
 | Accessibility (ARIA, screen readers) | DOM-only. |
 | Screen overlays — magnifier, ruler | Draw on their own canvases/elements outside the page container. |
+| Spellcheck (`core/draw/interactive/Spellcheck.ts`) | Squiggles under misspelled words, gated on `!isPrintMode`. Fed by a plugin's dictionary lookups through a command API. |
 | Context menu, toolbar, CSS, demo app chrome | Not document content. (`I18n` *is* still present and instantiated by `DrawPdf` — don't assume it's gone.) |
 | Zone switching (header/footer active zone) | Editor focus concept; export always renders all zones. |
 | Previewer, table tool/operate, search, worker | Removed in PR #9. |
@@ -187,7 +221,7 @@ and drags in ones that were never upstream:
 
 ```bash
 git -C <upstream> remote -v                    # confirm origin = Hufe921
-git -C <upstream> log --oneline 6a554b4f..origin/main
+git -C <upstream> log --oneline bd590116..origin/main
 ```
 
 Then narrow to the files that can affect output:
@@ -197,13 +231,11 @@ git -C <upstream> log --oneline 6a554b4f..origin/main -- \
   src/editor/core/draw src/editor/core/position src/editor/utils
 ```
 
-Replace `6a554b4f` with the "Reviewed through" value above. Also glance at
-unmerged upstream branches, which sometimes hold the interesting rendering
-work for weeks:
+Replace `bd590116` with the "Reviewed through" value above.
 
-```bash
-git -C <upstream> branch -r --no-merged origin/main
-```
+Review **`origin/main` only**. Upstream's unmerged branches (`feature/*`,
+`improve/performance`) are long-abandoned — most sit a thousand-plus commits
+behind `main` — and nothing there is worth porting ahead of a merge.
 
 When done, add a log block for the window and update **Last check**.
 
@@ -251,5 +283,6 @@ git clone https://github.com/Hufe921/canvas-editor
 ```
 
 Check out the source matching the `@hufe921/canvas-editor` version in
-[package.json](package.json)'s `peerDependencies`, then `git pull` to see what
-has landed since.
+[package.json](package.json)'s `devDependencies` — `peerDependencies` carries a
+wide compatibility range, not the version this fork is aligned with — then
+`git pull` to see what has landed since.
