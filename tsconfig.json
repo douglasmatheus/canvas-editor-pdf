@@ -6,7 +6,9 @@
       "ESNext",
       "DOM"
     ],
-    "moduleResolution": "Node",
+    // Vite does the bundling; tsc only type-checks and emits .d.ts. The old
+    // "Node" (node10) value is deprecated as of TS 6 and goes away in TS 7.
+    "moduleResolution": "bundler",
     "strict": true,
     "sourceMap": true,
     "resolveJsonModule": true,
