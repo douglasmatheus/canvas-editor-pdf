@@ -63,14 +63,17 @@
     "demo:build": "vite build --config demo/vite.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type:check": "tsc -p tsconfig.json --noEmit"
+    "type:check": "tsc -p tsconfig.json --noEmit && tsc -p tests/types/tsconfig.json"
   },
   "peerDependencies": {
-    "@hufe921/canvas-editor": "^0.9.133",
+    "@hufe921/canvas-editor": ">=0.9.133 <2.0.0",
     "@napi-rs/canvas": "^0.1.0 || ^1.0.0",
     "@resvg/resvg-js": "^2.0.0"
   },
   "peerDependenciesMeta": {
+    "@hufe921/canvas-editor": {
+      "optional": true
+    },
     "@napi-rs/canvas": {
       "optional": true
     },
@@ -79,11 +82,11 @@
     }
   },
   "devDependencies": {
-    "@hufe921/canvas-editor": "^0.9.134",
+    "@hufe921/canvas-editor": "^1.0.3",
     "@napi-rs/canvas": "^1.0.0",
     "@resvg/resvg-js": "^2.0.0",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "16.18.96",
+    "@types/node": "^20.19.0",
     "@types/prismjs": "^1.26.0",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
@@ -91,7 +94,6 @@
     "pdfjs-dist": "^6.1.200",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.8.1",
     "vite": "^5.4.21",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vitest": "^4.1.10"

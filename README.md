@@ -52,6 +52,36 @@ npm install canvas-editor-pdf @napi-rs/canvas @resvg/resvg-js
 dependencies**. Browser consumers don't need them; Node consumers must install
 them explicitly. Requires Node 18+.
 
+### canvas-editor versions
+
+The `@hufe921/canvas-editor` peer range is `>=0.9.133 <2.0.0` — every 0.9.x
+from 0.9.133 and the whole 1.x line, including 1.0.3. Pick whichever version
+your editor runs; you do not have to match the one this library was built
+against.
+
+It is also an **optional** peer. The coupling is a **data format, not an API** —
+nothing here imports `@hufe921/canvas-editor` at runtime or in the published
+types — so a server that receives stored JSON and returns a PDF never has to
+install the editor at all. Browser consumers already have it, and when it is
+present the range above is enforced normally. `src/interface/` and `src/dataset/enum/` are copies of the editor's
+types, so the only contract is the shape of the `options` / `data` you hand to
+`DrawPdf`. Fields this library doesn't know about are ignored, which is what
+makes a newer editor safe to pair with an older exporter.
+
+Those copies are kept identical to upstream's, which is what lets you pass
+`editor.command.getValue()` straight through with no cast and no clone.
+A type-level check in the fork's own build
+([tests/types/consumer-boundary.ts](./tests/types/consumer-boundary.ts))
+compiles that exact consumer snippet on every `npm run type:check`, so a
+divergence fails here rather than in your project.
+
+The upper bound stops at the next major on purpose — a canvas-editor 2.0 could
+reshape the document model, and that has to be reviewed before it is claimed
+as supported. Until then, `>=0.9.133 <2.0.0` never blocks an install.
+
+Which upstream version the render pipeline is actually aligned with is tracked
+in [UPSTREAM.md](./UPSTREAM.md).
+
 ---
 
 ## Quickstart — browser

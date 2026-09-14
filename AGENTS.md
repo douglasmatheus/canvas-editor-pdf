@@ -50,7 +50,15 @@ Current suites:
    per page (deterministic), page count, per-page header/footer, and embedded
    image operators. This is the layer that catches layout/pagination
    regressions (multi-column, per-page header/footer, tables).
-2. **Platform shim units** → [tests/platform/](tests/platform/). Exercise the
+2. **Consumer boundary (type-level)** → [tests/types/](tests/types/). Compiles,
+   never runs: `npm run type:check` builds
+   [consumer-boundary.ts](tests/types/consumer-boundary.ts) against the
+   `@hufe921/canvas-editor` in `devDependencies` and fails if the editor's own
+   `getValue()` output stops being assignable to `DrawPdf`. That is the alarm
+   for the enum copies described under *Types and enums are duplicated from
+   canvas-editor* — bump the devDependency when you port, and this check moves
+   with it.
+3. **Platform shim units** → [tests/platform/](tests/platform/). Exercise the
    Node shim (`@napi-rs/canvas` + `@resvg/resvg-js`): `measureText`, `createCanvas`
    sizing, `getBundledFontPath`, path validation, and `svgToPngDataUrl`. The
    browser shim isn't unit-tested — a fake DOM has no real canvas metrics, so
@@ -63,10 +71,10 @@ page). Keep it representative when adding features.
 
 Roadmap (not yet built), cheapest first:
 
-3. **Visual diff with tolerance** (advanced). Rasterize each PDF page to PNG
+4. **Visual diff with tolerance** (advanced). Rasterize each PDF page to PNG
    (`pdfjs-dist` or `@napi-rs/canvas`) and compare against a baseline with
    `pixelmatch` at a threshold (~5%). Save diffs for human inspection. → `tests/visual/`
-4. **Property-based fuzzing** (bonus). `fast-check` to generate random
+5. **Property-based fuzzing** (bonus). `fast-check` to generate random
    `IEditorData` and assert `render()` never throws.
 
 ## Reducing published font size
@@ -175,7 +183,11 @@ The folders `actuator/`, `cursor/`, `event/`, `history/`, `i18n/`, `listener/`, 
 
 ### Types and enums are duplicated from canvas-editor
 
-[src/interface/](src/interface/) and [src/dataset/enum/](src/dataset/enum/) are **copies** of canvas-editor's types/enums, not re-exports. This is intentional (lets the library evolve independently) but causes friction at the consumer boundary: `IElement` here ≠ `IElement` from `@hufe921/canvas-editor`. Consumers typically `JSON.parse(JSON.stringify(editor.command.getValue().data))` to cross the boundary — that's a known wart, not a bug.
+[src/interface/](src/interface/) and [src/dataset/enum/](src/dataset/enum/) are **copies** of canvas-editor's types/enums, not re-exports. Nothing in `src/` imports `@hufe921/canvas-editor` — keep it that way: the empty import graph is what lets `peerDependencies` advertise the wide `>=0.9.133 <2.0.0` range. This is intentional — it lets the library evolve independently.
+
+It does **not** cost consumers a conversion, which an earlier version of this note claimed. Two string enums are mutually assignable in TypeScript when their members match exactly in name and value, so as long as the copies stay in step with upstream, `editor.command.getValue()` flows straight into `new DrawPdf(options, data)` with no cast, no `JSON.parse(JSON.stringify(…))` and no clone (`DrawPdf` and `setValue` `deepClone` the input themselves). Verified against canvas-editor 1.0.3.
+
+That exact-match rule is also the tripwire: the moment upstream adds a member to an enum this fork copies, the editor's enum stops being assignable to the local one and every consumer sees a compile error at the call site. Keeping the copies in sync is therefore part of porting, not an optional tidy-up.
 
 Pre-0.4.0, three enum files ([Common.ts](src/dataset/enum/Common.ts), [Editor.ts](src/dataset/enum/Editor.ts), [Element.ts](src/dataset/enum/Element.ts)) were **re-exports** rather than copies. That broke the Node ESM build because canvas-editor publishes as CJS and Node's ESM-CJS interop can't analyze named exports. As of 0.4.0 those files are local copies too — keep them in sync with upstream enum values if you ever pull updates.
 
@@ -184,6 +196,7 @@ Pre-0.4.0, three enum files ([Common.ts](src/dataset/enum/Common.ts), [Editor.ts
 - **jsPDF loads fonts synchronously** — instantiating with many fonts can freeze the UI. As of v0.2.12, default fonts are **opt-in** via `{ loadDefaultFonts: true }` in the constructor (or `instance.loadDefaultFonts()` later). Don't add font loading to the constructor's hot path.
 - **jsPDF doesn't support SVG** — LaTeX elements (`element.laTexSVG`) must be pre-converted to PNG via the exported `svgString2Image(svgString, w, h, 'png', cb)` helper before `render()`. See README for the consumer-side pattern.
 - **Build externals** — `vite.config.ts` externalizes `@hufe921/canvas-editor` and `jspdf` in `lib` mode. Don't import from those expecting them to be bundled.
+- **The live ESLint config is [.eslintrc](.eslintrc), not [eslint.config.mjs](eslint.config.mjs).** ESLint 7 only reads the legacy format, so the flat config has never executed — it imports `@eslint/js`, which isn't installed, and calls `__dirname` from an ESM module, which would throw. Edit `.eslintrc` when you change lint rules. Finishing the flat-config migration means eslint 9, `typescript-eslint` 8 (removed from devDeps as dead weight — it was the sole reason `npm install` needed `--legacy-peer-deps`), deleting `.eslintrc`/`.eslintignore`, and absorbing whatever `recommendedTypeChecked` turns up; that's a project of its own, not a drive-by.
 - **Code style** — ESLint enforces `semi: never` (no trailing semicolons) and single quotes. Prettier: 80 col, no trailing comma, `arrowParens: 'avoid'`, LF line endings.
 - **TS** — `strict: true`, `noUnusedLocals`, `noUnusedParameters`, `emitDeclarationOnly: true` (vite handles the JS output, tsc only emits `.d.ts`).
 

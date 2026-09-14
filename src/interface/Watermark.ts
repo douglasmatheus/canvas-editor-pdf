@@ -1,4 +1,4 @@
-import { NumberType } from '@hufe921/canvas-editor'
+import { NumberType } from '../dataset/enum/Common'
 import { WatermarkLayer, WatermarkType } from '../dataset/enum/Watermark'
 
 export interface IWatermark {

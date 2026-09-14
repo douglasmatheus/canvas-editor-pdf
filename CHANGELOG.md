@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- A type-level check on the consumer boundary
+  (`tests/types/consumer-boundary.ts`, wired into `npm run type:check`). It
+  compiles the README's snippet — `editor.command.getValue()` handed straight
+  to `DrawPdf` — against the `@hufe921/canvas-editor` in `devDependencies`.
+  Because TypeScript makes two string enums assignable only when their members
+  match exactly, an upstream enum gaining a member now breaks this build
+  instead of a consumer's project after release.
 - **Mixed page orientations by section** (ported from canvas-editor). A page
   break element now accepts `paperDirection`, and page breaks act as section
   boundaries: every page from that break onward is laid out and emitted in the
@@ -15,7 +22,32 @@
   `getPageDirection(pageNo)`, `getPageDirectionList()` and `getPageSize(pageNo)`
   on `DrawPdf`; `paperDirection` survives `getValue()`.
 
+### Changed
+- **The `@hufe921/canvas-editor` peer range is no longer pinned to 0.9.x.**
+  It was `^0.9.133`, which under semver means `>=0.9.133 <0.10.0` — a caret on
+  a `0.x` version only widens the patch range, so canvas-editor 1.x failed to
+  resolve and npm 7+ rejected the install outright. The range is now
+  `>=0.9.133 <2.0.0`, covering 0.9.133 onward and the whole 1.x line.
+  The coupling was never technical: after this release nothing in `src/` or in
+  the published `.d.ts` files imports `@hufe921/canvas-editor` at all, so the
+  only contract is the shape of the `options` / `data` passed to `DrawPdf`.
+  The upper bound stops before a hypothetical 2.0, which could reshape the
+  document model.
+- **`@hufe921/canvas-editor` is now an optional peer dependency.** Nothing in
+  the published bundles or `.d.ts` files references it, so a Node deployment
+  that renders stored JSON no longer has to install the editor to satisfy npm.
+  When it *is* installed the version range above still applies.
+- `src/interface/Watermark.ts` took `NumberType` from `@hufe921/canvas-editor`
+  while every other enum already came from the local copy in
+  `src/dataset/enum/Common.ts` (identical values). It now uses the local one,
+  which removes the last reference to the editor from the published package.
+
 ### Fixed
+- Table cell slashes no longer re-stroke whatever path was still open
+  (ported from canvas-editor). `_drawSlash` built its diagonal without
+  `beginPath()`, so the slash `stroke()` also repainted the last path left
+  behind — the table outline, or the page margin indicators — in the table's
+  border colour.
 - Each PDF page carried the *previous* page's dimensions and orientation.
   `_resetPdf()` opens jsPDF page 1, and `_createPage()` then added one page per
   document page, so the page count overshot by one and the trailing page was
