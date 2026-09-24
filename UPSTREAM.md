@@ -32,16 +32,66 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-09-14 |
-| Reviewed through | `bd590116` — *docs: update plugin markdown* (`origin/main`) |
-| Upstream version | 1.0.3 |
-| Fork commit | `a1d21d5` — *feat: support mixed page orientations by section* |
+| Date | 2026-09-24 |
+| Reviewed through | `b4bea504` — *fix: resolve date picker, image caption and empty table row bugs* (`origin/main`) |
+| Upstream version | 1.0.3 (unreleased fixes on top) |
+| Fork commit | on top of `b0570e5` — *fix: guard el.value before reading length in formatElementList* |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-09-24 — reviewed `bd590116..origin/main` (3 commits)
+
+Two upstream "misc bug" sweeps, no release. Of the four hunks that touch a
+render path, one came over cleanly, one came over as dead code, and two were
+**deliberately left out because porting them would break this fork**.
+
+**Ported**
+
+- `0111a98f` — misc editor bugs in controls, table tools and range handling.
+  Only two hunks of it.
+  - `LabelParticle`: background height used `padding[0] + padding[3]`
+    (top + left) instead of `padding[0] + padding[2]` (top + bottom).
+    Covered by [tests/integration/label.test.ts](tests/integration/label.test.ts).
+  - `Draw.getContextInnerWidth`: reads the unscaled `options.table.tdPadding`
+    instead of the scaled `getTdPadding()`, since `td.width` is unscaled.
+    Nothing in this fork calls `getContextInnerWidth` (upstream's only caller
+    is `TableOperate`); copied so `DrawPdf` stays diffable.
+  - *Left out:* the `LineNumber` hunk — see *Not ported*. `setPageMode`
+    (resizes `<canvas>` styles), and the `Control`, `TableTool`, `DatePicker`,
+    `CommandAdapt`, `ContextMenu`, drag-handler and `Signature` hunks.
+
+**Not ported**
+
+- `0111a98f`, `LineNumber` hunk — drops `* scale` from the measured width and
+  ascent. Correct upstream, where `ctx.measureText` sees the `size * scale`
+  font set just before it. **Wrong here**: this fork's
+  `TextParticle.measureText` ignores `ctx2d.font` and measures via
+  `draw.getFont(element)` at scale 1, so the width already arrives unscaled
+  and the existing `(width + right) * scale` is right. Ported verbatim, the
+  numbers drift right as `scale` grows. Guarded by
+  [tests/integration/line-number.test.ts](tests/integration/line-number.test.ts).
+  (Side effect of the same divergence, pre-existing and not fixed: the line
+  number is measured with `defaultSize`/`defaultFont`, not `lineNumber.size`
+  / `lineNumber.font`.)
+- `b4bea504`, `ImageParticle` hunk — `{imageNo}` in image captions.
+  **Upstream regression; do not port as-is.** The old code counted images
+  inside a table cell wrongly (the nested `break` only left the inner loop,
+  so images after the table were counted too). The fix returns `-1` on
+  hitting the target *at any depth, including the top level*, and the caller
+  clamps with `Math.max(…, 0) + 1` — so every image is numbered **1**. For
+  `[img, img, table[img], img]` the old code gives 1, 2, 4, 4; the new one
+  1, 1, 1, 1; correct is 1, 2, 3, 4. Revisit when upstream fixes it (worth
+  reporting there).
+- `b4bea504`, rest — `DatePicker`, `BaseBlock` resize handles, `TableOperate`
+  empty-row insertion, `TableTool` and `Search` replace. All editor-only.
+
+**Ignored** — no bearing on this library
+
+- `d06ad7ff` (dev-dependency bump).
 
 ### 2026-09-14 — reviewed `6a554b4f..origin/main` (20 commits)
 

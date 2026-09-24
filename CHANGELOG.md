@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- A label's background box was sized with the top + **left** padding instead
+  of top + bottom (ported from canvas-editor). The default padding is
+  symmetric, so this only showed with a custom `label.padding` whose left
+  side differed from its bottom — the box came out too short or too tall
+  around the text.
+
 ## 0.7.1 (2026-09-14)
 
 ### Fixed
