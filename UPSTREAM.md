@@ -35,7 +35,6 @@ ported.
 | Date | 2026-09-24 |
 | Reviewed through | `b4bea504` — *fix: resolve date picker, image caption and empty table row bugs* (`origin/main`) |
 | Upstream version | 1.0.3 (unreleased fixes on top) |
-| Fork commit | on top of `b0570e5` — *fix: guard el.value before reading length in formatElementList* |
 
 ## Review log
 
