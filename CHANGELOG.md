@@ -2,7 +2,27 @@
 
 ## Unreleased
 
+### Added
+- Paragraph spacing: `spacingBefore` / `spacingAfter` on elements (ported
+  from canvas-editor 1.0.5+ #499). `spacingBefore` is read from the newline
+  that opens a paragraph (or the element right after it) and pushes that
+  paragraph down; `spacingAfter` is read from the paragraph's last element and
+  adds height below its last row. Both are in editor pixels and follow
+  `scale`. List-item wraps are not spaced, and the first paragraph of the
+  document gets no `spacingBefore`, matching the editor. The underline and
+  highlight on a paragraph's last row stay on the text and don't stretch into
+  the `spacingAfter` gap (canvas-editor #1498).
+- Per-cell table borders: `borderColor` / `borderWidth` on a `td` (ported from
+  canvas-editor #1053). A cell with either set is stroked after the regular
+  table grid, so its edges win over the shared default lines; unset values
+  fall back to the table's `borderColor` / `borderWidth`. When the cell also
+  has `borderTypes`, only those sides are drawn; otherwise the full rectangle.
+
 ### Fixed
+- `getValue({ extraPickAttrs })` dropped table row ids and every cell
+  attribute outside the built-in list, even when asked for them. Row `id` now
+  survives when `'id'` is requested, and cell attributes named in
+  `extraPickAttrs` are kept (ported from canvas-editor #1492).
 - A label's background box was sized with the top + **left** padding instead
   of top + bottom (ported from canvas-editor). The default padding is
   symmetric, so this only showed with a custom `label.padding` whose left

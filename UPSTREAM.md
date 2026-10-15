@@ -32,15 +32,92 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-09-24 |
-| Reviewed through | `b4bea504` — *fix: resolve date picker, image caption and empty table row bugs* (`origin/main`) |
-| Upstream version | 1.0.3 (unreleased fixes on top) |
+| Date | 2026-10-15 |
+| Reviewed through | `1d7cd1a7` — *fix: exclude paragraph spacingAfter from row decorations #1498* (`origin/main`) |
+| Upstream version | 1.0.5 (unreleased features on top) |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-10-15 — reviewed `4a2bf92c..origin/main` (1 commit)
+
+Our fix for the `spacingAfter` quirk recorded in the block below, sent
+upstream and merged the same day.
+
+**Ported**
+
+- `1d7cd1a7` — exclude paragraph `spacingAfter` from row decorations #1498.
+  `rowContentHeight` in `_drawHighlight` and `drawRow`: highlight, underline,
+  line-break marker and the group fill. Covered by the two decoration cases
+  in [tests/integration/paragraph-spacing.test.ts](tests/integration/paragraph-spacing.test.ts).
+  - *Adapted:* the control-border and `rangeRecord` lines changed only inside
+    the fork's commented-out blocks; there is no white-space marker or
+    `TraceParticle` here.
+
+### 2026-10-15 — reviewed `b4bea504..origin/main` (16 commits)
+
+Upstream released **1.0.4** and **1.0.5** in this window; the two features
+that render landed after 1.0.5. `devDependencies` bumped to
+`@hufe921/canvas-editor@^1.0.5` (the consumer-boundary check passes).
+
+**Ported**
+
+- `124bbcc5` — paragraph spacing #499. `spacingBefore`/`spacingAfter` on
+  `IElementStyle`, `spacingAfter` on `IRow`, the two `computeRowList` hunks
+  (`offsetY` on a paragraph's first row, extra `height` on its last), the
+  `group.recordFillInfo` height, and the attribute lists in
+  `dataset/constant/Element.ts`. Covered by
+  [tests/integration/paragraph-spacing.test.ts](tests/integration/paragraph-spacing.test.ts).
+  - *Left out:* `Position.getPositionByXY` (click hit-testing in the offset
+    area), `RangeManager`/`IRangeStyle`, `Command`/`CommandAdapt`, toolbar.
+    `EDITOR_ELEMENT_PARAGRAPH_STYLE_ATTR` does not exist here. The two
+    `rangeRecord.height` lines were updated inside the commented-out
+    selection block, to keep it diffable.
+  - Upstream quirk, kept: `spacingAfter` is folded into `curRow.height`, and
+    only selection and group fills subtract it back. The underline
+    (`y + curRow.height - rowMargin`) and highlight on a paragraph's last row
+    therefore sit against the taller row — the underline drops into the gap.
+    *Fixed upstream in `1d7cd1a7` (#1498) and ported — see the block above.*
+- `4a2bf92c` — table cell border colour/width #1053. `ITd.borderColor` /
+  `borderWidth`, `TABLE_TD_ZIP_ATTR`, and the deferred-stroke pass in
+  `TableParticle.render`. Covered by
+  [tests/integration/table-td-border.test.ts](tests/integration/table-td-border.test.ts).
+  - *Left out:* `TableOperate.tableTdBorderColor/Width`, `Command`, and the
+    `createDomFromElementList` hunk — the fork's copy is a vestigial clipboard
+    exporter with no callers and its `mergeOption` line commented out, which
+    the new code reads `defaultBorderColor` from.
+- `71aa0996` — honor `extraPickAttrs` for table row/cell identities #1492.
+  Both `zipElementList` hunks; reachable through `DrawPdf.getValue`.
+
+**Not ported**
+
+- `93599dab` — control highlight overflow with several controls in a row.
+  Fixes upstream's run-merging in `drawHighlight` when the colour comes from
+  `getControlHighlight`. This fork's `_drawHighlight` already diverged: it
+  renders every highlighted element on its own and has no control-colour
+  source (`ControlSearch` is gone), so the bug cannot occur.
+- `921e9243` — per-control background colours. Lives in `ControlSearch`; the
+  `IControlBasic` fields were not copied either (that interface already lags
+  upstream's control-only fields).
+- `ffa18f9c` — row-level incremental layout #837 (`lab.incrementalCompute`,
+  off by default). Edit-driven: dirty ranges, row snapshots and resume
+  points, plus a per-page position cache. A one-shot export lays out once, so
+  there is nothing to reuse. The `ListParticle` hunks only route mutations
+  through the new `setElementProperty` accessors; `getSlimCloneElementList`
+  is history-only. Neither changes output. The `lab` option was not added.
+- `d9af16b5` — skip history snapshots when `historyMaxRecordCount === 0`.
+  History.
+- `bc4fcd70`, `a68c0e46` — caret formatting toggles, shift+click selection
+  anchor. `CommandAdapt`, cursor and events.
+
+**Ignored** — no bearing on this library
+
+- `9af964c2`, `f8435acb` (releases; the latter also reformats two
+  `CommandAdapt` lines), `b943af57`, `9503e3db`, `1d5fb8e3` (dependency
+  bumps), `f5d6837b` (`mock.ts`), `e8d0be8f` (upstream test).
 
 ### 2026-09-24 — reviewed `bd590116..origin/main` (3 commits)
 

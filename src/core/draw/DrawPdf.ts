@@ -1687,6 +1687,13 @@ export class DrawPdf {
           element.areaId !== elementList[i - 1]?.areaId
             ? element.area.top * scale
             : 0
+        // 段前间距：换行符引领的行为新段落首行
+        // 换行符归属于新段落元素集合，优先从换行符自身读取
+        if (element.value === ZERO && !element.listWrap) {
+          row.offsetY +=
+            (element.spacingBefore || elementList[i + 1]?.spacingBefore || 0) *
+            scale
+        }
         rowList.push(row)
       } else {
         curRow.width += metrics.width
@@ -1705,6 +1712,15 @@ export class DrawPdf {
       }
       // 行结束时逻辑
       if (isWrap || i === elementList.length - 1) {
+        // 段后间距：段落末行增加高度
+        // 换行符归属于下一段落元素集合，需从当前段落末尾元素读取
+        if (isWrap && element.value === ZERO && !element.listWrap) {
+          const spacingAfter = (elementList[i - 1]?.spacingAfter || 0) * scale
+          if (spacingAfter) {
+            curRow.spacingAfter = spacingAfter
+            curRow.height += spacingAfter
+          }
+        }
         // 行内全部为隐藏元素时 => 行高折叠
         if (!this.isDesignMode() && curRow.height > 0) {
           // Only collapse a row whose (non-zero-width) content is entirely
@@ -1930,6 +1946,8 @@ export class DrawPdf {
     // const activeControlElement = this.control.getActiveControl()?.getElement()
     for (let i = 0; i < rowList.length; i++) {
       const curRow = rowList[i]
+      // 内容高度：不含段后间距
+      const rowContentHeight = curRow.height - (curRow.spacingAfter || 0)
       for (let j = 0; j < curRow.elementList.length; j++) {
         const element = curRow.elementList[j]
         if (element.highlight) {
@@ -1962,7 +1980,7 @@ export class DrawPdf {
             x - offsetX,
             y + marginHeight - highlightMarginHeight, // 先减去行margin，再加上高亮margin
             element.metrics.width + offsetX,
-            curRow.height - 2 * marginHeight + 2 * highlightMarginHeight,
+            rowContentHeight - 2 * marginHeight + 2 * highlightMarginHeight,
             element.highlight || activeBackgroundColor
           )
           //     } else
@@ -2002,6 +2020,8 @@ export class DrawPdf {
     // let offY = 0
     for (let i = 0; i < rowList.length; i++) {
       const curRow = rowList[i]
+      // 内容高度：不含段后间距
+      const rowContentHeight = curRow.height - (curRow.spacingAfter || 0)
       // 选区绘制记录
       // const rangeRecord: IElementFillRect = {
       //   x: 0,
@@ -2166,7 +2186,7 @@ export class DrawPdf {
             this.getCtx2d(),
             element,
             x,
-            y + curRow.height / 2
+            y + rowContentHeight / 2
           )
         }
         // // 边框绘制（目前仅支持控件）
@@ -2184,7 +2204,7 @@ export class DrawPdf {
         //     x,
         //     y + rowMargin,
         //     element.metrics.width,
-        //     curRow.height - 2 * rowMargin
+        //     rowContentHeight - 2 * rowMargin
         //   )
         // } else if (preElement?.control?.border) {
         //   this.control.drawPdfBorder(this.getCtx2d())
@@ -2215,7 +2235,7 @@ export class DrawPdf {
           this.underline.recordFillInfo(
             this.getCtx2d(),
             x - offsetX,
-            y + curRow.height - rowMargin + offsetY,
+            y + rowContentHeight - rowMargin + offsetY,
             metrics.width + offsetX,
             0,
             color,
@@ -2291,7 +2311,7 @@ export class DrawPdf {
         //       if (nextElement && nextElement.value === ZERO) {
         //         rangeRecord.x = x + metrics.width
         //         rangeRecord.y = y
-        //         rangeRecord.height = curRow.height
+        //         rangeRecord.height = rowContentHeight
         //         rangeRecord.width += this.options.rangeMinWidth
         //       }
         //     } else {
@@ -2304,7 +2324,7 @@ export class DrawPdf {
         //       if (!rangeRecord.width) {
         //         rangeRecord.x = x
         //         rangeRecord.y = y
-        //         rangeRecord.height = curRow.height
+        //         rangeRecord.height = rowContentHeight
         //       }
         //       rangeRecord.width += rangeWidth
         //     }
@@ -2312,7 +2332,13 @@ export class DrawPdf {
         // }
         // 组信息记录
         if (!group.disabled && element.groupIds) {
-          this.group.recordFillInfo(element, x, y, metrics.width, curRow.height)
+          this.group.recordFillInfo(
+            element,
+            x,
+            y,
+            metrics.width,
+            rowContentHeight
+          )
         }
         // index++
         // 绘制表格内元素
