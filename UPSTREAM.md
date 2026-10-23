@@ -32,15 +32,69 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-10-15 |
-| Reviewed through | `1d7cd1a7` — *fix: exclude paragraph spacingAfter from row decorations #1498* (`origin/main`) |
-| Upstream version | 1.0.5 (unreleased features on top) |
+| Date | 2026-10-23 |
+| Reviewed through | `d41e03ef` — *release: v1.0.6* (`origin/main`) |
+| Upstream version | 1.0.6 |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-10-23 — reviewed `1d7cd1a7..origin/main` (6 commits)
+
+Upstream released **1.0.6**, which bundles everything ported on 2026-10-15
+plus the two features below. `devDependencies` bumped to
+`@hufe921/canvas-editor@^1.0.6` (the consumer-boundary check passes).
+
+**Ported**
+
+- `75b4c14e` — area minimum height #1051. `IAreaStyle.minHeight`,
+  `IAreaRule.resizable`, `IAreaPaddingSegment` / `IAreaInfo.paddingSegmentList`,
+  `IRow.areaPadding` / `areaPaddingCarry`; in `Area`, `applyMinHeight`,
+  `computePaddingSegmentList`, the continuation segments in `render` and
+  `minHeight` in `computeProps`; in `DrawPdf`, `getMainRowList`, the
+  `applyMinHeight` call at the end of `computeRowList`, the carry-over branch
+  in `_computePageList` (including the blank continuation page), and
+  `areaPadding` subtracted from `rowContentHeight` in `_drawHighlight` and
+  `drawRow`. Covered by
+  [tests/integration/area-min-height.test.ts](tests/integration/area-min-height.test.ts).
+  - *Left out:* `AreaTool` (the drag handle, a DOM overlay) with its CSS,
+    `mousedown`/`GlobalEvent` hooks and the `render`/`setCursor`/
+    `clearSideEffect` call sites. The `Position` hunk only keeps the per-page
+    position cache aligned on blank pages; that cache belongs to the
+    incremental layout (`ffa18f9c`, not ported) — the fork's
+    `computePositionList` already skips an empty page.
+  - `resizable` is copied for type parity only; nothing reads it here.
+- `a3b2a93d` — checkbox cross mark #1501. `CheckboxMarkType` (new enum in
+  `dataset/enum/Common.ts`), `markType` on `ICheckbox`, `ICheckboxOption` and
+  `IControlCheckbox`, the default in `dataset/constant/Checkbox.ts`, the
+  element → control → option fallback in `CheckboxParticle.render`, and the
+  `ListParticle` hunk. Covered by
+  [tests/integration/checkbox.test.ts](tests/integration/checkbox.test.ts).
+  - *Left out:* the `src/editor/index.ts` export — the fork's entry point
+    exports no enums; consumers use upstream's `CheckboxMarkType`, which is
+    assignable to the local copy.
+- `3cf52b4f` — `checkMarkColor` for checkbox #1367. **Catch-up from outside
+  this window** (upstream 0.9.128, February 2026): found because `a3b2a93d`
+  builds on it. It was never ported, so the fork still read `fillStyle` as
+  the checked fill and `strokeStyle` as the tick — the pre-0.9.128 meaning —
+  while every editor inside the peer range (`>=0.9.133`) uses them for the
+  unchecked box. Ported whole (`CheckboxParticle`, the defaults, the three new
+  `ICheckboxOption` fields); recorded as a consumer-facing *Changed* entry in
+  CHANGELOG. `RadioParticle` was checked for the same lag and is aligned.
+
+**Not ported**
+
+- `b598ce92` — 24-hour date control and parsing by `dateFormat` #1503.
+  `DatePicker` only: how the popup reads the current value and what it writes
+  back. The rendered date is whatever text the element already holds.
+
+**Ignored** — no bearing on this library
+
+- `d41e03ef` (release), `ced4746b` (`prepublishOnly` script), `f150290d`
+  (dev-dependency bumps).
 
 ### 2026-10-15 — reviewed `4a2bf92c..origin/main` (1 commit)
 

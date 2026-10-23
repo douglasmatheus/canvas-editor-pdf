@@ -225,7 +225,8 @@ export class ListParticle {
       const checkboxRowElement: IRowElement = {
         ...startElement,
         checkbox: {
-          value: !!startElement.checkbox?.value
+          value: !!startElement.checkbox?.value,
+          markType: startElement.checkbox?.markType
         },
         metrics: {
           ...startElement.metrics,

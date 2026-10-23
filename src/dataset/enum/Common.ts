@@ -34,3 +34,8 @@ export enum FlexDirection {
   ROW = 'row',
   COLUMN = 'column'
 }
+
+export enum CheckboxMarkType {
+  CHECK = 'check',
+  CROSS = 'cross'
+}

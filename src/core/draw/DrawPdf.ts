@@ -760,6 +760,10 @@ export class DrawPdf {
     return this.pageRowList
   }
 
+  public getMainRowList(): IRow[] {
+    return this.rowList
+  }
+
   public getPdf(): jsPDF {
     return this.pdf
   }
@@ -1838,6 +1842,8 @@ export class DrawPdf {
         x += metrics.width
       }
     }
+    // 区域最小高度：内容高度不足时向区域末行补充高度（内容超出时由行高自然撑开）
+    this.area.applyMinHeight(rowList)
     return rowList
   }
 
@@ -1895,6 +1901,47 @@ export class DrawPdf {
           row.height + rowOffsetY + pageHeight > pageLimit ||
           this.rowList[i - 1]?.isPageBreak
         ) {
+          // 区域补高跨页顺延：内容能留在当前页时，本页补高截断至页底
+          // （避免末行被推入下一页），剩余补高顺延至下一页
+          const areaPadding = row.areaPadding
+          if (areaPadding && !this.rowList[i - 1]?.isPageBreak) {
+            const contentHeight = row.height - areaPadding.height
+            const remainHeight = pageLimit - pageHeight - rowOffsetY
+            if (contentHeight <= remainHeight) {
+              const carryHeight = row.height - remainHeight
+              const nextRow = this.rowList[i + 1]
+              if (carryHeight > 0) {
+                if (nextRow) {
+                  // 结转为下一行顶部间距，随分页流入下一页
+                  nextRow.offsetY = (nextRow.offsetY || 0) + carryHeight
+                  nextRow.areaPaddingCarry = {
+                    areaId: areaPadding.areaId,
+                    height: carryHeight
+                  }
+                } else if (
+                  !Number.isInteger(maxPageNo) ||
+                  pageNo < maxPageNo!
+                ) {
+                  // 区域位于文档末尾无后续行：以空白页延续（结转标记在末行自身）
+                  row.areaPaddingCarry = {
+                    areaId: areaPadding.areaId,
+                    height: carryHeight
+                  }
+                  pageDirectionList[pageNo + 1] = direction
+                  pageRowList.push([])
+                }
+              }
+              const inPagePadding = remainHeight - contentHeight
+              row.height = remainHeight
+              row.areaPadding = inPagePadding
+                ? { areaId: areaPadding.areaId, height: inPagePadding }
+                : undefined
+              pageHeight = pageLimit
+              pageRowList[pageNo].push(row)
+              prevColumnIndex = row.columnIndex
+              continue
+            }
+          }
           if (Number.isInteger(maxPageNo) && pageNo >= maxPageNo!) {
             // 跨页表格片段共享元素索引：按片段边界裁剪表格，
             // 保留已展示片段内容，不能直接按共享索引整体截断
@@ -1946,8 +1993,11 @@ export class DrawPdf {
     // const activeControlElement = this.control.getActiveControl()?.getElement()
     for (let i = 0; i < rowList.length; i++) {
       const curRow = rowList[i]
-      // 内容高度：不含段后间距
-      const rowContentHeight = curRow.height - (curRow.spacingAfter || 0)
+      // 内容高度：不含段后间距与区域补高
+      const rowContentHeight =
+        curRow.height -
+        (curRow.spacingAfter || 0) -
+        (curRow.areaPadding?.height || 0)
       for (let j = 0; j < curRow.elementList.length; j++) {
         const element = curRow.elementList[j]
         if (element.highlight) {
@@ -2020,8 +2070,11 @@ export class DrawPdf {
     // let offY = 0
     for (let i = 0; i < rowList.length; i++) {
       const curRow = rowList[i]
-      // 内容高度：不含段后间距
-      const rowContentHeight = curRow.height - (curRow.spacingAfter || 0)
+      // 内容高度：不含段后间距与区域补高
+      const rowContentHeight =
+        curRow.height -
+        (curRow.spacingAfter || 0) -
+        (curRow.areaPadding?.height || 0)
       // 选区绘制记录
       // const rangeRecord: IElementFillRect = {
       //   x: 0,

@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Area minimum height: `area.minHeight` (ported from canvas-editor 1.0.6
+  #1051). An area whose content is shorter than `minHeight` (editor pixels,
+  follows `scale`) is padded below its last row, so its background and border
+  cover the full height and the content after it moves down. Taller content is
+  left alone, and a hidden area is not padded. When the padding runs past the
+  bottom of the page, the box is drawn to the page bottom and the remainder
+  continues at the top of the next page, ahead of the following content; an
+  area at the very end of the document continues onto an extra blank page
+  (not when `pageNumber.maxPageNo` is already reached). The underline and
+  highlight on the area's last row stay on the text. `area.resizable` is
+  accepted in the data but has no effect in the PDF (it drives the editor's
+  drag handle).
+- Checkbox cross mark: `checkbox.markType` (`'check'` | `'cross'`) on the
+  element, on a checkbox control, or as the global `options.checkbox.markType`
+  — checked in that order, defaulting to the tick (ported from canvas-editor
+  1.0.6 #1501). Checkbox list items carry their `markType` too.
+- `options.checkbox.checkFillStyle`, `checkStrokeStyle` and `checkMarkColor`
+  for the fill, border and mark of a **checked** box (ported from
+  canvas-editor #1367). Defaults: `#5175f4`, `#5175f4`, `#ffffff` — the
+  colours a checked box already had.
+
+### Changed
+- `options.checkbox.fillStyle` / `strokeStyle` now style the **unchecked**
+  box (fill and border; defaults `#ffffff` / `#000000`), as they have in
+  canvas-editor since 0.9.128. Before, this library still used the older
+  meaning — `fillStyle` was the checked box's fill and border, `strokeStyle`
+  its tick — so a document with custom checkbox colours came out different in
+  the PDF than in the editor. With default options the only visible change is
+  that an unchecked box now gets a white fill instead of none. If you set
+  these options for the PDF only, move the values to `checkFillStyle` /
+  `checkMarkColor`.
+
 ## 0.7.2 (2026-10-15)
 
 ### Added

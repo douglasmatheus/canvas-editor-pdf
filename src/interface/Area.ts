@@ -11,6 +11,7 @@ export interface IAreaBasic {
 
 export interface IAreaStyle {
   top?: number
+  minHeight?: number
   borderColor?: string
   backgroundColor?: string
 }
@@ -19,6 +20,8 @@ export interface IAreaRule {
   mode?: AreaMode
   hide?: boolean
   deletable?: boolean
+  // 是否允许拖拽调整高度（默认允许）
+  resizable?: boolean
 }
 
 export type IArea = IAreaBasic & IAreaStyle & IAreaRule
@@ -47,6 +50,13 @@ export interface IGetAreaValueResult {
   value: IElement[]
 }
 
+// 区域补高的跨页延续段：分页结转产生（无元素位置），区域框需在对应页延续绘制
+export interface IAreaPaddingSegment {
+  pageNo: number
+  y: number
+  height: number
+}
+
 export interface IAreaInfo {
   id: string
   area: IArea
@@ -57,6 +67,7 @@ export interface IAreaInfo {
     td: ITd
     tablePosition: IElementPosition
   }
+  paddingSegmentList?: IAreaPaddingSegment[]
 }
 
 export interface ILocationAreaOption {

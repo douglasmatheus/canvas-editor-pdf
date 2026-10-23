@@ -1,5 +1,6 @@
 import { Context2d } from 'jspdf'
 import { NBSP, ZERO } from '../../../dataset/constant/Common'
+import { CheckboxMarkType } from '../../../dataset/enum/Common'
 import { VerticalAlign } from '../../../dataset/enum/VerticalAlign'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
@@ -43,10 +44,20 @@ export class CheckboxParticle {
     const { ctx2d, x, index, row } = payload
     let { y } = payload
     const {
-      checkbox: { gap, lineWidth, fillStyle, strokeStyle, verticalAlign },
+      checkbox: {
+        gap,
+        lineWidth,
+        fillStyle,
+        strokeStyle,
+        checkFillStyle,
+        checkStrokeStyle,
+        checkMarkColor,
+        markType,
+        verticalAlign
+      },
       scale
     } = this.options
-    const { metrics, checkbox } = row.elementList[index]
+    const { metrics, checkbox, control } = row.elementList[index]
     // 垂直布局设置
     if (
       verticalAlign === VerticalAlign.TOP ||
@@ -84,25 +95,42 @@ export class CheckboxParticle {
     ctx2d.translate(0.5, 0.5)
     // 绘制勾选状态
     if (checkbox?.value) {
-      // 边框
+      // 选中时填充背景
+      ctx2d.fillStyle = checkFillStyle
+      ctx2d.fillRect(left, top, width, height)
+      // 选中时绘制边框
+      ctx2d.beginPath()
       ctx2d.lineWidth = lineWidth
-      ctx2d.strokeStyle = fillStyle
+      ctx2d.strokeStyle = checkStrokeStyle
       ctx2d.rect(left, top, width, height)
       ctx2d.stroke()
-      // 背景色
+      // 勾选标记：元素 > 控件 > 全局配置
       ctx2d.beginPath()
-      ctx2d.fillStyle = fillStyle
-      ctx2d.fillRect(left, top, width, height)
-      // 勾选对号
-      ctx2d.beginPath()
-      ctx2d.strokeStyle = strokeStyle
+      ctx2d.strokeStyle = checkMarkColor
       ctx2d.lineWidth = lineWidth * 2 * scale
-      ctx2d.moveTo(left + 2 * scale, top + height / 2)
-      ctx2d.lineTo(left + width / 2, top + height - 3 * scale)
-      ctx2d.lineTo(left + width - 2 * scale, top + 3 * scale)
+      const checkMarkType = checkbox.markType || control?.markType || markType
+      if (checkMarkType === CheckboxMarkType.CROSS) {
+        // 叉号
+        const padding = 3 * scale
+        ctx2d.moveTo(left + padding, top + padding)
+        ctx2d.lineTo(left + width - padding, top + height - padding)
+        ctx2d.moveTo(left + width - padding, top + padding)
+        ctx2d.lineTo(left + padding, top + height - padding)
+      } else {
+        // 对号
+        ctx2d.moveTo(left + 2 * scale, top + height / 2)
+        ctx2d.lineTo(left + width / 2, top + height - 3 * scale)
+        ctx2d.lineTo(left + width - 2 * scale, top + 3 * scale)
+      }
       ctx2d.stroke()
     } else {
+      // 未选中时填充背景
+      ctx2d.fillStyle = fillStyle
+      ctx2d.fillRect(left, top, width, height)
+      // 未选中时绘制边框
+      ctx2d.beginPath()
       ctx2d.lineWidth = lineWidth
+      ctx2d.strokeStyle = strokeStyle
       ctx2d.rect(left, top, width, height)
       ctx2d.stroke()
     }
