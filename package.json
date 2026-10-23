@@ -83,7 +83,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@hufe921/canvas-editor": "^1.0.5",
+    "@hufe921/canvas-editor": "^1.0.6",
     "@napi-rs/canvas": "^1.0.0",
     "@resvg/resvg-js": "^2.0.0",
     "@rollup/plugin-typescript": "^11.1.6",
