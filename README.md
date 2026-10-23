@@ -12,27 +12,7 @@ changes.
 — paste a canvas-editor `options` object and `data` and preview the PDF in the
 browser.
 
-## What's new in 0.7.0
-
-- **Mixed page orientations in one document** — a page break can carry a
-  `paperDirection`, and acts as a section boundary: every page from that break
-  onward is laid out and emitted in that direction. Portrait body text followed
-  by a landscape page for a wide table, in a single PDF. Margins, header and
-  footer, columns, page border, page number, watermark, line numbers and
-  cross-page table splitting all resolve per page.
-- **Works with canvas-editor 1.x.** The peer range was `^0.9.133`, which under
-  semver stops at `<0.10.0` — so npm refused to install alongside the 1.x line.
-  It is now `>=0.9.133 <2.0.0`.
-- **The editor is an optional peer.** Nothing in the published bundles or types
-  references `@hufe921/canvas-editor`, so a server that turns stored JSON into a
-  PDF no longer has to install a text editor to satisfy npm.
-- Table cell slashes no longer repaint the page's margin indicators — or the
-  table's own outline — in the border colour.
-- Each page now carries its own dimensions instead of the previous page's; the
-  defect was invisible until pages could differ in size.
-- No breaking changes. But `^0.6.0` will **not** resolve to 0.7.0 on its own —
-  `0.x` carets pin the minor, so bump the range by hand. See the
-  [CHANGELOG](./CHANGELOG.md#070-2026-09-14).
+Release notes for every version are in the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -57,7 +37,7 @@ them explicitly. Requires Node 18+.
 ### canvas-editor versions
 
 The `@hufe921/canvas-editor` peer range is `>=0.9.133 <2.0.0` — every 0.9.x
-from 0.9.133 and the whole 1.x line, including 1.0.3. Pick whichever version
+from 0.9.133 and the whole 1.x line. Pick whichever version
 your editor runs; you do not have to match the one this library was built
 against.
 
