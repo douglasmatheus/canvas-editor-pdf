@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { IRowElement } from '../../../interface/Row'
 
 export class SubscriptParticle {
@@ -8,7 +8,7 @@ export class SubscriptParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IRowElement,
     x: number,
     y: number

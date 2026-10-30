@@ -8,7 +8,7 @@ import { IRowElement } from '../../../../interface/Row'
 import { loadImage } from '../../../../utils'
 import { BaseBlock } from './modules/BaseBlock'
 import { DrawPdf } from '../../DrawPdf'
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../../render/model/RenderContext'
 
 export class BlockParticle {
   private draw: DrawPdf
@@ -47,7 +47,7 @@ export class BlockParticle {
   }
 
   public render(
-    ctx: Context2d,
+    ctx: IRenderContext,
     pageNo: number,
     element: IRowElement,
     x: number,

@@ -32,15 +32,163 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-10-23 |
-| Reviewed through | `d41e03ef` — *release: v1.0.6* (`origin/main`) |
-| Upstream version | 1.0.6 |
+| Date | 2026-10-30 |
+| Reviewed through | `948e6ac5` — *feat: add paragraph indent and tab hanging indent* (`origin/main`) |
+| Upstream version | 1.0.6 (+ unreleased commits) |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-10-30 — reviewed `d41e03ef..origin/main` (8 commits)
+
+No release; npm still has 1.0.6, so `devDependencies` stays at `^1.0.6`.
+The window holds one large architectural commit (`cf51314a`), which moves
+code more than it changes it, and one layout feature (`948e6ac5`). Diffing
+the moved layout code also surfaced four older hunks that had never come
+over; they are listed under *Catch-up* below.
+
+How the pure moves were checked: every PDF the test suite writes (55), plus
+a stress document exercising every particle under 8 option sets, rendered
+from the pre-sync `HEAD` and from the working tree, compared byte for byte
+(`/CreationDate` and `/ID` stripped; output is otherwise deterministic).
+Identical after the `LayoutEngine` move and after the render-layer move.
+
+**Ported**
+
+- `cf51314a` — SVG rendering backend #374, in four parts:
+  - **Layout move** — [src/core/layout/LayoutEngine.ts](src/core/layout/LayoutEngine.ts).
+    `computeRowList` / `computePageList` left `DrawPdf` as they left `Draw`;
+    `DrawPdf.computeRowList` / `_computePageList` are the same thin wrappers
+    (the continuous-mode page resize stays in the latter). Built from the
+    fork's bodies with upstream's accessor rewrites applied, so diffing the
+    two `LayoutEngine.ts` files shows only the fork's standing adaptations.
+    New `DrawPdf` accessors: `isWordLike`, `getTablePaging`.
+    - *Adapted:* `ctx` (a throwaway DOM canvas upstream) is `ctx2d =
+      draw.getCtx2d()`; `getElementFont` stays `getFont`.
+    - *Left out:* the incremental-layout plumbing (`payload.resume`, row
+      snapshots, `isElementListTruncated`, `isMainElementList`,
+      `getIsControlMinWidthPlaceholder`) — `ffa18f9c` was never ported.
+  - **Render layer** — [src/core/render/](src/core/render/). `model/RenderContext.ts`
+    and `model/DisplayList.ts` are copies; `RenderBackend.ts` keeps only
+    `renderPage`; `pdf/PdfBackend.ts` + `pdf/PdfRenderer.ts` stand where
+    `canvas/CanvasBackend.ts` + `CanvasRenderer.ts` are, replaying a page's
+    list onto jsPDF. `_drawPage` records into a `DisplayList` and hands it to
+    the backend, as upstream's does. Every particle, frame and decorator takes
+    `ctx2d: IRenderContext` instead of jsPDF's `Context2d`; `drawRow` now
+    passes its `ctx2d` on instead of reaching for `getCtx2d()`.
+    - *Adapted:* the fork's direct jsPDF calls from particles (`setFont`,
+      `setGState`, `setCharSpace`, `addImage`) and jsPDF's `clearRect` are
+      recorded operations on `IRenderContext` / `DisplayList`, so they replay
+      in order with the drawing around them. `DisplayList` also tracks `font`
+      (TextParticle reads `ctx.font`). `drawImage` accepts a string source.
+      The no-op `ctx2d.createPattern()` in `Watermark` is commented out.
+      `RenderBackend` also keeps `resizeHeight`: the continuous-mode branch
+      of `_computePageList` grows page 0 through it, and `PdfBackend` sets
+      the jsPDF page height. (The pre-sync code still resized a `<canvas>`
+      page that does not exist here, so continuity mode crashed.)
+    - *Left out:* SVG scene keys (`beginGroup`/`endGroup`,
+      `fillTextWithSource`, pattern resource identities, `keyContext` on
+      `IDrawRowPayload`), `BackendFactory`, the canvas/SVG backends and
+      surfaces.
+  - **TextMeasurer** — [src/core/layout/TextMeasurer.ts](src/core/layout/TextMeasurer.ts),
+    and the call sites upstream moved onto it: `TextParticle.measureText` /
+    `measureBasisWord`, the `drawRow` strikeout baseline, `PageNumber`,
+    `Watermark`, `ImageParticle` caption, `ListParticle`, `PageBreak`,
+    `LineNumber`. **Changes output** — see CHANGELOG: list numbers, the
+    page-break label and image captions used to be measured in the
+    measuring canvas's own `10px sans-serif`, and basis metrics always in the
+    default size. Covered by [tests/integration/text-metrics.test.ts](tests/integration/text-metrics.test.ts).
+    - *Adapted:* `setCanvasFont` — a browser canvas ignores an invalid font
+      string, `@napi-rs/canvas` throws. Upstream's callers rely on the
+      browser behaviour (`measureBasisWord(ctx, element.font!)` passes a bare
+      family). And because `ctx2d` can't measure, `TextParticle` carries
+      `ctx2d.font` over to the platform canvas before measuring. The
+      constructor's canvas comes from `platform.createMeasurementCanvas()`.
+      `TextParticle` still measures `\n` as an empty string.
+  - **Type parity** — `BackendType` (`dataset/enum/Editor.ts`),
+    `IEditorOption.backend` and its `BackendType.CANVAS` default. Nothing
+    reads `backend` here.
+  - *Left out:* `ImageParticle`, `LaTexParticle`, `Badge` and `VideoBlock`
+    no longer paint on async load upstream; they record pending loads and
+    call `draw.render()` again. This fork draws images synchronously through
+    jsPDF and must never re-enter `render()` from a particle (see AGENTS.md).
+    Also the `getPagePointer` event helper, `Graffiti`/`Magnifier`/`Ruler`/
+    `ZoneTip`/`HintParticle` pointer changes, `print.ts`, `Command`
+    (`setBackend`, `getSvgPageList`).
+- `948e6ac5` — paragraph indent and tab hanging indent #725 #1190.
+  `indentLeft` / `indentRight` / `indentFirstLine` on `IElementStyle`, the
+  three attribute lists in `dataset/constant/Element.ts`, and every
+  `LayoutEngine` hunk. Covered by [tests/integration/paragraph-indent.test.ts](tests/integration/paragraph-indent.test.ts).
+  - *Left out:* the seed-row branch for a resumed computation
+    (`isSeedParagraphFirst` is always true without `payload.resume`), the
+    `tab` keydown handler, `RangeManager`, `Command`/`CommandAdapt`,
+    `Listener`, toolbar. `EDITOR_ELEMENT_PARAGRAPH_STYLE_ATTR` does not
+    exist here.
+
+**Catch-up** — older upstream hunks, found by diffing the moved code
+
+- `d89c0ade` (v0.9.124) — *layout shift when typing descended characters*
+  #1342. A text element's ascent/descent come from the font's basis metrics,
+  not from its glyphs. `METRICS_BASIS_TEXT` was already `'中'`, and the
+  removed `curRow.ascent === rowMargin` block was already gone. **Changes
+  every text row's height** — see CHANGELOG.
+- `c599d563` (2024) — control `flexDirection` #652. The forced row break
+  before a checkbox/radio option of a `FlexDirection.COLUMN` control. Covered
+  by [tests/integration/control-flex-direction.test.ts](tests/integration/control-flex-direction.test.ts).
+- `0111a98f`, `LineNumber` hunk — *not ported on 2026-09-24* because the
+  fork measured the number unscaled. With `TextMeasurer` it is measured in
+  `${size * scale}px ${font}`, like upstream, so `LineNumber` is now a copy
+  and drops the extra `* scale`. The line-number test still holds.
+- `17794dd7`, `LineNumber` hunk — `row.fragmentPosition ||`, missed when
+  table pagination was ported.
+
+**Not ported**
+
+- `84389f2a` — exclude trace-deleted titles from the catalog #1510. Catalog
+  worker.
+- `8b947721` — hide the table tool in form mode #1511. `TableTool`.
+
+**Ignored** — no bearing on this library
+
+- `86c142bc` (dev-dependency bumps), `9a1c3d80` (upstream Cypress tests),
+  `7cfb52ed`, `09bdb1f3` (README / docs).
+
+**Outside `origin/main`, worth watching:** `origin/feature/pdf` @ `44584893`
+(2026-10-27, one commit ahead of `7cfb52ed`) — upstream's own PDF export:
+`Draw.getDisplayListPageList` records every page through a `CaptureBackend`,
+and `core/export/DisplayListReplayer.ts` + `PdfCanvas.ts` replay the lists
+onto jsPDF (same `^4.2.1`), embedding the msyh fonts. It is the editor
+exporting itself (needs a live editor and DOM), not a DOM-free renderer like
+this one. If it merges, its replayer is the natural counterpart of
+`src/core/render/pdf/PdfRenderer.ts`.
+
+Taken from it already, since they fix jsPDF behaviour this fork hits too
+(each checked against the real output first; see CHANGELOG):
+
+- `PdfCanvas` font setter → `quoteFontFamily` in `PdfRenderer`. jsPDF's
+  context2d resolves a multi-word family only when quoted; unquoted it falls
+  back to Times. Covered by [tests/integration/font-family.test.ts](tests/integration/font-family.test.ts).
+- `DisplayListReplayer` `rect` → moveTo + three lineTo + closePath in
+  `PdfRenderer`; jsPDF's `rect` retraces the top edge and never closes.
+  Covered by [tests/integration/rect-path.test.ts](tests/integration/rect-path.test.ts).
+- `CommandAdapt._warnUnregisteredPdfFonts` → `DrawPdf._warnUnregisteredPdfFonts`,
+  called from `render()`. *Adapted:* `defaultFont` is checked rather than
+  assumed registered (fonts are opt-in here), and each family warns once per
+  instance. Covered by [tests/integration/font-warning.test.ts](tests/integration/font-warning.test.ts).
+
+Not taken: pattern tiling (the watermark is drawn natively here), re-encoding
+every image to PNG (needs DOM, inflates JPEGs), `CaptureBackend` / offscreen
+export (editor-only).
+
+**Catch-up prompted by it:** `bc066f33` (`origin/main`, 2026-02-01) — image
+crop #1327. `_drawImageWithCrop` copied into `ImageParticle`. *Adapted:*
+jsPDF's 9-argument `drawImage` places the cropped region right but paints
+the whole image around it, so the call is wrapped in a clip to the
+destination rectangle (the branch instead pre-crops on a DOM canvas). Covered
+by [tests/integration/image-crop.test.ts](tests/integration/image-crop.test.ts).
 
 ### 2026-10-23 — reviewed `1d7cd1a7..origin/main` (6 commits)
 
@@ -206,7 +354,8 @@ render path, one came over cleanly, one came over as dead code, and two were
   [tests/integration/line-number.test.ts](tests/integration/line-number.test.ts).
   (Side effect of the same divergence, pre-existing and not fixed: the line
   number is measured with `defaultSize`/`defaultFont`, not `lineNumber.size`
-  / `lineNumber.font`.)
+  / `lineNumber.font`.) *Ported on 2026-10-30, once `TextMeasurer` made the
+  measurement scaled — see that block.*
 - `b4bea504`, `ImageParticle` hunk — `{imageNo}` in image captions.
   **Upstream regression; do not port as-is.** The old code counted images
   inside a table cell wrongly (the nested `break` only left the inner loop,
@@ -425,9 +574,16 @@ When done, add a log block for the window and update **Last check**.
 context menus, `index.html`/`main.ts`, or creates DOM elements — that is
 editor chrome and never reaches the PDF.
 
-**Look** when it touches `core/draw/Draw.ts`, `core/draw/particle/`,
-`core/draw/frame/`, `core/position/`, or `utils/element.ts` computing content
-geometry, layout, pagination or measurement.
+**Look** when it touches `core/draw/Draw.ts`, `core/layout/`,
+`core/draw/particle/`, `core/draw/frame/`, `core/position/`, or
+`utils/element.ts` computing content geometry, layout, pagination or
+measurement.
+
+`core/render/model/` (`IRenderContext`, `DisplayList`) is mirrored in
+[src/core/render/model/](src/core/render/model/) — port changes there. The
+canvas/SVG backends, surfaces and the SVG scene compiler are the editor's
+output surfaces; [src/core/render/pdf/](src/core/render/pdf/) stands in for
+them, so skip those unless a change alters *what* a particle asks to draw.
 
 Many commits are **partial**: the layout half is portable while the
 keyboard/menu half is not. Port the half that renders, and record what was
@@ -437,10 +593,17 @@ left out in the log entry.
 
 Copy the upstream code **verbatim**. The only allowed changes are mechanical:
 
-- `Draw` → `DrawPdf`, `ctx` → `ctx2d`, `CanvasRenderingContext2D` → jsPDF's
-  `Context2d`, import paths.
+- `Draw` → `DrawPdf`, `ctx` → `ctx2d`, import paths. Drawing code takes
+  `ctx2d: IRenderContext`, as upstream's takes `ctx: IRenderContext`; only
+  layout/measuring code sees jsPDF's real `Context2d`.
 - Deleting references to modules this fork does not have — matching the form
   the fork already uses for the same expression elsewhere.
+
+One rule specific to this fork: a particle never calls `this.draw.getPdf()`
+while drawing. `_drawPage` records into a `DisplayList` that is replayed
+afterwards, so a direct jsPDF call would run before the drawing it belongs
+to. Go through `ctx2d` (`setFont`, `setGState`, `setCharSpace`, `addImage`),
+adding a recorded operation to `IRenderContext` / `DisplayList` if needed.
 
 Do **not** re-derive an algorithm "the way it should work". A rewritten port
 of the nested-list numbering once shipped broken; faithful copies also stay
@@ -448,8 +611,14 @@ diffable against future upstream versions. If a hunk can't be copied cleanly,
 stop and ask rather than inventing a substitute.
 
 Files mirror upstream paths (`src/editor/core/draw/…` → `src/core/draw/…`), so
-`patch`/`git apply` often works on files the fork hasn't diverged from. The
-`// 中文` comments are a hint that a line came from upstream.
+`patch`/`git apply` often works on files the fork hasn't diverged from.
+That includes layout: since `cf51314a` (October 2026) `computeRowList` and
+the page split live in `core/layout/LayoutEngine.ts` on both sides
+([src/core/layout/LayoutEngine.ts](src/core/layout/LayoutEngine.ts) here),
+reaching back into the draw object through the same accessors. If a hunk
+calls a `draw.getX()` that `DrawPdf` lacks, add the accessor to `DrawPdf`
+rather than rewriting the call. The `// 中文` comments are a hint that a
+line came from upstream.
 
 Validate with a test that asserts on the **real PDF** (via `pdfjs-dist`), not
 just `tsc`. See [tests/integration/](tests/integration/).

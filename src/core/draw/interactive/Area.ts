@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DrawPdf } from '../DrawPdf'
 import { /*deepClone, */getUUID, isNonValue } from '../../../utils'
 import { ElementType } from '../../../dataset/enum/Element'
@@ -103,7 +103,7 @@ export class Area {
     return areaId
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     if (!this.areaInfoMap.size) return
     ctx2d.save()
     const margins = this.draw.getMargins()

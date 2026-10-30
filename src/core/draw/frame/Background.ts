@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import {
   BackgroundRepeat,
   BackgroundSize
@@ -17,7 +17,7 @@ export class Background {
   }
 
   private _renderBackgroundColor(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     color: string,
     width: number,
     height: number
@@ -29,7 +29,7 @@ export class Background {
   }
 
   private _drawImage(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     width: number,
     height: number
   ) {
@@ -72,14 +72,14 @@ export class Background {
   }
 
   private _renderBackgroundImage(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     width: number,
     height: number
   ) {
     this._drawImage(ctx2d, width, height)
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     const {
       background: { image, color, applyPageNumbers }
     } = this.options

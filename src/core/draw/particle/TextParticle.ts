@@ -1,8 +1,8 @@
-import { Context2d } from 'jspdf'
-import {
-  PUNCTUATION_LIST,
-  METRICS_BASIS_TEXT
-} from '../../../dataset/constant/Common'
+import type { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
+import { DisplayList } from '../../render/model/DisplayList'
+import { setCanvasFont, TextMeasurer } from '../../layout/TextMeasurer'
+import { PUNCTUATION_LIST } from '../../../dataset/constant/Common'
 import { IRowElement } from '../../../interface/Row'
 import { ITextMetrics } from '../../../interface/Text'
 import { DrawPdf } from '../DrawPdf'
@@ -21,7 +21,7 @@ export class TextParticle {
   private draw: DrawPdf
   private options: DeepRequired<IEditorOption>
 
-  private ctx2d: Context2d
+  private ctx2d: IRenderContext
   private curX: number
   private curY: number
   private text: string
@@ -30,12 +30,12 @@ export class TextParticle {
   private italic?: boolean
   private curStyle: string
   private curColor?: string
-  public cacheMeasureText: Map<string, TextMetrics>
+  private textMeasurer: TextMeasurer
 
   constructor(draw: DrawPdf) {
     this.draw = draw
     this.options = draw.getOptions()
-    this.ctx2d = draw.getCtx2d()
+    this.ctx2d = new DisplayList()
     this.curX = -1
     this.curY = -1
     this.text = ''
@@ -43,21 +43,18 @@ export class TextParticle {
     // this.size = this.options.defaultSize
     this.italic = false
     this.curStyle = ''
-    this.cacheMeasureText = new Map()
+    this.textMeasurer = draw.getTextMeasurer()
   }
 
-  public measureBasisWord(ctx2d: Context2d, font: string): ITextMetrics {
-    ctx2d.save()
-    ctx2d.font = font
-    const textMetrics = this.measureText(ctx2d, {
-      value: METRICS_BASIS_TEXT
-    })
-    ctx2d.restore()
-    return textMetrics
+  public measureBasisWord(
+    ctx2d: Context2d | IRenderContext,
+    font: string
+  ): ITextMetrics {
+    return this.textMeasurer.measureBasis(font, this._getMeasureCtx(ctx2d))
   }
 
   public measureWord(
-    ctx2d: Context2d,
+    ctx2d: Context2d | IRenderContext,
     elementList: IElement[],
     curIndex: number
   ): IMeasureWordResult {
@@ -83,40 +80,41 @@ export class TextParticle {
     }
   }
 
-  public measurePunctuationWidth(ctx2d: Context2d, element: IElement): number {
+  public measurePunctuationWidth(
+    ctx2d: Context2d | IRenderContext,
+    element: IElement
+  ): number {
     if (!element || !PUNCTUATION_LIST.includes(element.value)) return 0
     ctx2d.font = this.draw.getFont(element)
     return this.measureText(ctx2d, element).width
   }
 
-  public measureText(ctx2d: Context2d, element: IElement): ITextMetrics {
-    // 优先使用自定义字宽设置
-    const font = this.draw.getFont(element)
-    const value = element.value === `\n` ? '' : element.value
-    if (element.width) {
-      const textMetrics = this.draw.measureText(font, element.value)
-      // TextMetrics是类无法解构
-      return {
-        width: element.width,
-        actualBoundingBoxAscent: textMetrics.actualBoundingBoxAscent,
-        actualBoundingBoxDescent: textMetrics.actualBoundingBoxDescent,
-        actualBoundingBoxLeft: textMetrics.actualBoundingBoxLeft,
-        actualBoundingBoxRight: textMetrics.actualBoundingBoxRight,
-        fontBoundingBoxAscent: textMetrics.fontBoundingBoxAscent,
-        fontBoundingBoxDescent: textMetrics.fontBoundingBoxDescent
-      }
-    }
-    const id = `${element.value}${ctx2d.font}`
-    const cacheTextMetrics = this.cacheMeasureText.get(id)
-    if (cacheTextMetrics) {
-      return cacheTextMetrics
-    }
-    const textMetrics = this.draw.measureText(font, value)
-    this.cacheMeasureText.set(id, textMetrics)
-    return textMetrics
+  public measureText(
+    ctx2d: Context2d | IRenderContext,
+    element: IElement
+  ): ITextMetrics {
+    return this.textMeasurer.measure(
+      element.value === `\n` ? { ...element, value: '' } : element,
+      ctx2d.font,
+      this._getMeasureCtx(ctx2d)
+    )
   }
 
-  public getBasisWordBoundingBoxAscent(ctx2d: Context2d, font: string): number {
+  // canvas-editor-pdf: upstream measures on the very canvas its caller just
+  // set the font on. ctx2d here is jsPDF's Context2d (or a DisplayList), which
+  // can't measure, so carry its font over to the platform measuring canvas.
+  private _getMeasureCtx(
+    ctx2d: Context2d | IRenderContext
+  ): CanvasRenderingContext2D {
+    const measureCtx = this.draw.getFakeCtx()
+    setCanvasFont(measureCtx, ctx2d.font)
+    return measureCtx
+  }
+
+  public getBasisWordBoundingBoxAscent(
+    ctx2d: Context2d | IRenderContext,
+    font: string
+  ): number {
     return this.measureBasisWord(ctx2d, font).actualBoundingBoxAscent
   }
 
@@ -125,7 +123,12 @@ export class TextParticle {
     this.text = ''
   }
 
-  public record(ctx2d: Context2d, element: IRowElement, x: number, y: number) {
+  public record(
+    ctx2d: IRenderContext,
+    element: IRowElement,
+    x: number,
+    y: number
+  ) {
     this.ctx2d = ctx2d
     // 兼容模式立即绘制
     if (this.options.renderMode === RenderMode.COMPATIBILITY) {
@@ -173,10 +176,8 @@ export class TextParticle {
     const fontWeight = this.bold ? 'bold' : 'normal'
     const fontItalic = this.italic ? 'italic' : ''
     // this.draw.getPdf().setFontSize(this.size)
-    this.draw
-      .getPdf()
-      .setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
-    this.draw.getPdf().setCharSpace(0.1) // https://jsfiddle.net/pg7byu80/5/
+    this.ctx2d.setFont(this.curStyle.split('px ')[1], fontItalic, fontWeight)
+    this.ctx2d.setCharSpace(0.1) // https://jsfiddle.net/pg7byu80/5/
     // this.draw.getPdf().internal.write(0, "Tw")
     // this.draw.getPdf().text(this.text, this.curX, this.curY) // attempt to apply the font globally every time you add some text - currently unsuccessful
     this.ctx2d.save()

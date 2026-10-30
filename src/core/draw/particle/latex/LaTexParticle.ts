@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../../render/model/RenderContext'
 import { IElement } from '../../../../interface/Element'
 import { ImageParticle } from '../ImageParticle'
 import { ExportOpt, LaTexSVG, LaTexUtils } from './utils/LaTexUtils'
@@ -36,7 +36,12 @@ export class LaTexParticle extends ImageParticle {
     }
   }
 
-  public render(ctx2d: Context2d, element: IElement, x: number, y: number) {
+  public render(
+    ctx2d: IRenderContext,
+    element: IElement,
+    x: number,
+    y: number
+  ) {
     const { scale } = this.options
     const width = element.width! * scale
     const height = element.height! * scale

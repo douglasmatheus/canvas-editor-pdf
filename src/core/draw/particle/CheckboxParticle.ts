@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { NBSP, ZERO } from '../../../dataset/constant/Common'
 import { CheckboxMarkType } from '../../../dataset/enum/Common'
 import { VerticalAlign } from '../../../dataset/enum/VerticalAlign'
@@ -9,7 +9,7 @@ import { IRow, IRowElement } from '../../../interface/Row'
 import { DrawPdf } from '../DrawPdf'
 
 interface ICheckboxRenderOption {
-  ctx2d: Context2d
+  ctx2d: IRenderContext
   x: number
   y: number
   row: IRow

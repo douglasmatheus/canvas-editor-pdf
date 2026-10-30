@@ -1,7 +1,7 @@
 import { AbstractRichText } from './AbstractRichText'
 import { IEditorOption } from '../../../interface/Editor'
 import { DrawPdf } from '../DrawPdf'
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 
 export class Strikeout extends AbstractRichText {
   private options: Required<IEditorOption>
@@ -11,7 +11,7 @@ export class Strikeout extends AbstractRichText {
     this.options = draw.getOptions()
   }
 
-  public render(ctx2d: Context2d) {
+  public render(ctx2d: IRenderContext) {
     if (!this.fillRect.width) return
     const { scale, strikeoutColor } = this.options
     const { x, y, width } = this.fillRect

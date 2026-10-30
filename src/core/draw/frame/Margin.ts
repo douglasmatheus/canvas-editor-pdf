@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { PageMode } from '../../../dataset/enum/Editor'
 import { IEditorOption } from '../../../interface/Editor'
 import { DrawPdf } from '../DrawPdf'
@@ -12,7 +12,7 @@ export class Margin {
     this.options = draw.getOptions()
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     const { marginIndicatorColor, pageMode } = this.options
     const { width, height: pageHeight, margins } = this.draw.getPageSize(pageNo)
     const height =

@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { IRowElement } from '../../../interface/Row'
@@ -15,7 +15,7 @@ export class LineBreakParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IRowElement,
     x: number,
     y: number

@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { maxHeightRadioMapping } from '../../../dataset/constant/Common'
 import { EditorZone, PaperDirection } from '../../../dataset/enum/Editor'
 import { DeepRequired } from '../../../interface/Common'
@@ -169,7 +169,7 @@ export class Header {
     return false
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     if (this.options.header.disabledPages.includes(pageNo)) return
     ctx2d.globalAlpha = 1
     const direction = this.draw.getPageDirection(pageNo)

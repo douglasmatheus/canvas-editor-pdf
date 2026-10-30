@@ -1,4 +1,5 @@
 import {
+  BackendType,
   EditorMode,
   PageMode,
   PaperDirection,
@@ -77,6 +78,7 @@ export interface IEditorOption {
   margins?: IMargin
   pageMode?: PageMode
   renderMode?: RenderMode
+  backend?: BackendType
   defaultHyperlinkColor?: string
   paperDirection?: PaperDirection
   inactiveAlpha?: number

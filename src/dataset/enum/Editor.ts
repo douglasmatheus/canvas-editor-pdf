@@ -48,6 +48,11 @@ export enum RenderMode {
   COMPATIBILITY = 'compatibility'
 }
 
+export enum BackendType {
+  CANVAS = 'canvas',
+  SVG = 'svg'
+}
+
 // EditorContext não está nas exports públicas do @hufe921/canvas-editor, mantido local.
 export enum EditorContext {
   PAGE = 'page',

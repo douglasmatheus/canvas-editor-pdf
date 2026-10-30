@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { IGraffitiData/*, IGraffitiStroke*/ } from '../../../interface/Graffiti'
@@ -102,7 +102,7 @@ export class Graffiti {
     this.data = []
   }
 
-  public render(ctx: Context2d, pageNo: number) {
+  public render(ctx: IRenderContext, pageNo: number) {
     const strokes = this.data.find(item => item.pageNo === pageNo)?.strokes
     if (!strokes?.length) return
     const {

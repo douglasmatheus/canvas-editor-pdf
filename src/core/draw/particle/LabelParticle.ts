@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { IRowElement } from '../../../interface/Row'
@@ -6,15 +6,13 @@ import { DrawPdf } from '../DrawPdf'
 
 export class LabelParticle {
   private options: DeepRequired<IEditorOption>
-  private draw: DrawPdf
 
   constructor(draw: DrawPdf) {
     this.options = draw.getOptions()
-    this.draw = draw
   }
 
   public render(
-    ctx: Context2d,
+    ctx: IRenderContext,
     element: IRowElement,
     x: number,
     y: number
@@ -43,7 +41,7 @@ export class LabelParticle {
     const curStyle = element.style.toLowerCase()
     const fontWeight = element.bold ? 'bold' : 'normal'
     const fontItalic = element.italic ? 'italic' : ''
-    this.draw.getPdf().setFont(curStyle.split('px ')[1], fontItalic, fontWeight)
+    ctx.setFont(curStyle.split('px ')[1], fontItalic, fontWeight)
     const { width, height, boundingBoxAscent } = element.metrics
 
     // 绘制圆角矩形背景
@@ -65,7 +63,7 @@ export class LabelParticle {
   }
 
   private _drawRoundedRect(
-    ctx: Context2d,
+    ctx: IRenderContext,
     x: number,
     y: number,
     width: number,

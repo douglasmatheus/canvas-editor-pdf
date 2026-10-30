@@ -1,4 +1,5 @@
-import { Context2d, GState } from 'jspdf'
+import { GState } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 // import { EditorZone } from '../../../dataset/enum/Editor'
 import { ElementType } from '../../../dataset/enum/Element'
 // import { DeepRequired } from '../../../interface/Common'
@@ -174,7 +175,7 @@ export class Group {
     }
   }
 
-  public render(ctx2d: Context2d) {
+  public render(ctx2d: IRenderContext) {
     if (!this.fillRectMap.size) return
     const {
       group: { backgroundColor, opacity, activeOpacity, activeBackgroundColor }
@@ -188,7 +189,7 @@ export class Group {
       return accum
     }, [])
     ctx2d.save()
-    this.draw.getPdf().setGState(new GState({
+    ctx2d.setGState(new GState({
       opacity: opacity
     }))
     this.fillRectMap.forEach((fillRect, groupId) => {
@@ -202,7 +203,7 @@ export class Group {
       }
       ctx2d.fillRect(x, y, width, height)
     })
-    this.draw.getPdf().setGState(new GState({
+    ctx2d.setGState(new GState({
       opacity: 1
     }))
     ctx2d.restore()

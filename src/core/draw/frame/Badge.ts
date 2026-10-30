@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { IAreaBadge, IBadge } from '../../../interface/Badge'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
@@ -32,7 +32,7 @@ export class Badge {
   }
 
   private _drawImage(
-    ctx: Context2d,
+    ctx: IRenderContext,
     element: IElement,
     x: number,
     y: number,
@@ -55,7 +55,7 @@ export class Badge {
   }
 
   public render(
-    ctx: Context2d,
+    ctx: IRenderContext,
     element: IElement,
     pageNo: number
   ) {

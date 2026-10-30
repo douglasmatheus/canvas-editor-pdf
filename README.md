@@ -152,6 +152,10 @@ new DrawPdf(options, data, { loadDefaultFonts: true })
 await instance.loadDefaultFonts()
 ```
 
+Text in a family that isn't registered (including `defaultFont`) falls back to
+a standard PDF font, which garbles CJK. When that happens `render()` logs a
+`console.warn` naming the family, once per family.
+
 ### Bundled font set
 
 - **Arial** (regular, bold, italic, bold-italic)
@@ -278,3 +282,7 @@ impose input limits or timeouts, so if you accept editor data from end users,
 add your own guardrails (max payload size, a render timeout, and ideally a
 worker/child process for untrusted multi-tenant input). Keep `@napi-rs/canvas`
 and `@resvg/resvg-js` up to date since they're native modules.
+
+Text is measured with `@napi-rs/canvas` in Node and with the browser's canvas
+in the browser. The two can differ slightly, so the same document may wrap a
+line or break a page in a different spot on the server than in the browser.

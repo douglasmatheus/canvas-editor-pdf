@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 // import { IEditorOption, IElement } from '@hufe921/canvas-editor'
 import { IEditorOption } from '../../../interface/Editor'
 import { DeepRequired } from '../../../interface/Common'
@@ -77,7 +77,7 @@ export class Placeholder {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     options?: IPlaceholderRenderOption
   ) {
     const { placeholder = this.options.placeholder } = options || {}

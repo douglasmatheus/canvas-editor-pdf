@@ -143,6 +143,8 @@ instance.getPdf().save('x.pdf')  // download
 - **Particles** ([src/core/draw/particle/](src/core/draw/particle/)) — individual element renderers: `TextParticle`, `ImageParticle`, `Checkbox`, `Radio`, `Hyperlink`, `ListParticle`, `Separator`, `Subscript`, `Superscript`, `LineBreak`, plus subfolders for `block/`, `date/`, `latex/`, `previewer/`, `table/`.
 - **Rich text decorators** ([src/core/draw/richtext/](src/core/draw/richtext/)) — `Highlight`, `Underline`, `Strikeout` (extend `AbstractRichText`).
 - **Position** ([src/core/position/Position.ts](src/core/position/Position.ts)) — computes element/row coordinates.
+- **Render layer** ([src/core/render/](src/core/render/)) — `IRenderContext` / `DisplayList` (copied from upstream) and `PdfBackend` / `PdfRenderer`, which replay each page's display list onto jsPDF.
+- **LayoutEngine** ([src/core/layout/LayoutEngine.ts](src/core/layout/LayoutEngine.ts)) — line breaking (`computeRowList`) and page split (`computePageList`), mirroring upstream's `core/layout/`.
 
 ### Render pipeline (per page)
 
@@ -157,6 +159,8 @@ instance.getPdf().save('x.pdf')  // download
 7. Watermark, placeholder (if empty), line numbers, page border
 
 The order is what guarantees correct layering. **A particle's `render()` should NOT call back into `this.draw.render()`** — that causes infinite recursion (this was bug fixed in 2026-05 for `FLOAT_BOTTOM` images).
+
+Drawing goes through the render layer mirrored from upstream ([src/core/render/](src/core/render/)): `_drawPage` records every page into a `DisplayList` (an `IRenderContext`), then `PdfBackend.renderPage` replays it onto jsPDF's `Context2d`. Particles therefore take `ctx2d: IRenderContext` and **must not call `this.draw.getPdf()` while drawing** — a direct jsPDF call would run before the recorded drawing it belongs to. jsPDF document calls (`setFont`, `setGState`, `setCharSpace`, `addImage`) are recorded operations on `ctx2d`. Layout and measuring code still uses the real `Context2d` (`draw.getCtx2d()`); text is measured by `TextMeasurer` ([src/core/layout/TextMeasurer.ts](src/core/layout/TextMeasurer.ts)) on the platform canvas.
 
 ### Platform shim (browser vs Node)
 
@@ -204,5 +208,5 @@ Pre-0.4.0, three enum files ([Common.ts](src/dataset/enum/Common.ts), [Editor.ts
 
 - **Bug in PDF output for a specific element type** → find the matching `*Particle.ts` under [src/core/draw/particle/](src/core/draw/particle/) and check its `render()`.
 - **Page chrome bug (header/footer/margin/etc.)** → [src/core/draw/frame/](src/core/draw/frame/).
-- **Wrong layout / element positioning** → [src/core/position/Position.ts](src/core/position/Position.ts) + `computeRowList` / `_computePageList` in `DrawPdf`.
+- **Wrong layout / element positioning** → [src/core/position/Position.ts](src/core/position/Position.ts) + `computeRowList` / `computePageList` in [src/core/layout/LayoutEngine.ts](src/core/layout/LayoutEngine.ts) (`DrawPdf` only wraps them, as upstream's `Draw` does).
 - **Adding a feature that upstream canvas-editor already has** → read [UPSTREAM.md](UPSTREAM.md) first. It records how far the fork is aligned, how to list what's new, the rule for deciding whether a commit affects the PDF at all, and which upstream features were already reviewed and deliberately skipped. Then diff against the upstream file (paths mirror exactly) and port the changes **verbatim**; the `// 中文` comments are a hint that the line came from upstream.

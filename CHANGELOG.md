@@ -23,8 +23,34 @@
   for the fill, border and mark of a **checked** box (ported from
   canvas-editor #1367). Defaults: `#5175f4`, `#5175f4`, `#ffffff` — the
   colours a checked box already had.
+- `options.backend` (`'canvas'` | `'svg'`) is accepted in the options type,
+  for parity with canvas-editor's new SVG rendering backend (#374), so an
+  options object written for the editor type-checks here too. It has no
+  effect on the PDF.
+- Paragraph indent: `indentLeft`, `indentRight` and `indentFirstLine` on
+  elements (ported from canvas-editor #725 #1190; editor pixels, follow
+  `scale`). `indentLeft` moves every line of the paragraph, `indentRight`
+  narrows it, and `indentFirstLine` moves only the first line — a negative
+  value makes a hanging indent. A paragraph that opens with tabs hangs its
+  wrapped lines under the text that follows the tabs.
+- `control.flexDirection: 'column'` on checkbox and radio controls puts each
+  option on its own line (ported from canvas-editor #652).
+- Image crop: `imgCrop` (`{ x, y, width, height }` in the source image's
+  pixels) draws only that region of the image, stretched over the element's
+  box (ported from canvas-editor #1327). Images cropped in the editor used to
+  come out whole in the PDF. The image is embedded as is (a JPEG stays a
+  JPEG) and clipped, so it works in Node too.
+- A `console.warn` when the document uses a font family that is not
+  registered with jsPDF — `defaultFont` included — naming the family and how
+  to load it. jsPDF falls back to a standard font silently, which is how CJK
+  text ends up garbled. Each family is reported once per instance.
 
 ### Changed
+- A text row's height no longer depends on the glyphs it holds (canvas-editor
+  #1342, in the editor since 0.9.124): ascent and descent come from the
+  font's own metrics. Rows with descenders, brackets or accented capitals used
+  to be taller than plain rows; now every row in a given font has the same
+  height, as in the editor.
 - `options.checkbox.fillStyle` / `strokeStyle` now style the **unchecked**
   box (fill and border; defaults `#ffffff` / `#000000`), as they have in
   canvas-editor since 0.9.128. Before, this library still used the older
@@ -34,6 +60,33 @@
   that an unchecked box now gets a white fill instead of none. If you set
   these options for the PDF only, move the values to `checkFillStyle` /
   `checkMarkColor`.
+
+### Fixed
+- Text measured in the wrong font in several places. List numbers are now
+  measured in the list font, so an item's text starts the full gap after its
+  number instead of crowding it. The page-break label and image-caption
+  truncation are measured in their own fonts. The font's reference metrics,
+  used for empty lines, tabs and the strikeout line, are measured in the
+  element's font: they used to come out in the default size, so an empty
+  paragraph in a large font was no taller than one in the default size.
+- Line numbers are measured in `lineNumber.font` / `lineNumber.size` (they
+  used the document's default font), and follow table rows that continue on
+  the next page.
+- `pageMode: 'continuity'` crashed `render()` (`Cannot read properties of
+  undefined (reading 'style')`). The document now renders on a single page,
+  at least paper-high, that grows to fit the content — like the editor's
+  continuous mode. Note that some viewers (Acrobat among them) cap a page at
+  200 inches, about 19 200 editor pixels, so a very long document can be cut
+  off there.
+- Text in a font family with a space in its name — the default
+  `Microsoft YaHei`, `Segoe UI`, `Ink Free`… — came out in a standard PDF
+  font in text watermarks, superscript and subscript and image captions,
+  which garbled CJK text there; list and line numbers were in the wrong font
+  too. jsPDF only resolves such a family when it is quoted; it now is. (Body
+  text, hyperlinks, labels and page numbers set the font explicitly and were
+  not affected.)
+- Rectangles (page border, checkbox box, table outlines) are drawn as closed
+  paths, so the corner where the outline starts is joined like the others.
 
 ## 0.7.2 (2026-10-15)
 

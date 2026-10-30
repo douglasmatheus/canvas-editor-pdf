@@ -26,11 +26,10 @@ async function unscaledLineNumberX(scale: number): Promise<number> {
 }
 
 describe('line numbers', () => {
-  // Guards the reason canvas-editor 0111a98f's LineNumber hunk was NOT ported.
-  // Upstream measures with ctx.font (already scaled), so it dropped the
-  // `* scale` on the width. This fork's TextParticle.measureText ignores
-  // ctx2d.font and measures via getFont(element) at scale 1, so the width
-  // arrives unscaled and `(width + right) * scale` is the correct form here.
+  // The number is measured in the scaled line-number font (TextMeasurer), so
+  // the width already includes scale and only `right` is multiplied by it
+  // (canvas-editor 0111a98f). Measuring unscaled with that formula, or scaled
+  // with `(width + right) * scale`, makes the numbers drift as scale grows.
   it('sit at the same place relative to the page at any scale', async () => {
     const atOne = await unscaledLineNumberX(1)
     expect(await unscaledLineNumberX(2)).toBeCloseTo(atOne, 1)

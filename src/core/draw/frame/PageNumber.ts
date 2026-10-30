@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { FORMAT_PLACEHOLDER } from '../../../dataset/constant/PageNumber'
 import { NumberType } from '../../../dataset/enum/Common'
 import { RowFlex } from '../../../dataset/enum/Row'
@@ -29,7 +29,7 @@ export class PageNumber {
     return text.replace(replaceReg, pageNoText)
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     const {
       scale,
       pageNumber: {
@@ -79,12 +79,12 @@ export class PageNumber {
     const family = font.toLowerCase()
     const fontString = `${size * scale}px ${family}`
     ctx2d.font = fontString
-    this.draw.getPdf().setFont(family, '', 'normal')
+    ctx2d.setFont(family, '', 'normal')
     // 计算x位置-居左、居中、居右
     let x = 0
-    // Measure with the same font we draw in (fakeCtx would otherwise measure
-    // against whatever font it last held), so centered/right flex is accurate.
-    const { width: textWidth } = this.draw.measureText(fontString, text)
+    const { width: textWidth } = this.draw
+      .getTextMeasurer()
+      .measureText(text, fontString)
     if (rowFlex === RowFlex.CENTER) {
       x = (width - textWidth) / 2
     } else if (rowFlex === RowFlex.RIGHT) {

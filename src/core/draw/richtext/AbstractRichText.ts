@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { TextDecorationStyle } from '../../../dataset/enum/Text'
 import { IElementFillRect } from '../../../interface/Element'
 
@@ -24,7 +24,7 @@ export abstract class AbstractRichText {
   }
 
   public recordFillInfo(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     x: number,
     y: number,
     width: number,
@@ -56,5 +56,5 @@ export abstract class AbstractRichText {
     this.fillDecorationStyle = decorationStyle
   }
 
-  public abstract render(ctx2d: Context2d): void
+  public abstract render(ctx2d: IRenderContext): void
 }

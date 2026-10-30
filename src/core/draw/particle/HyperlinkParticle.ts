@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 // import { IElement } from '@hufe921/canvas-editor'
 import { EDITOR_PREFIX } from '../../../dataset/constant/Editor'
 import { IEditorOption } from '../../../interface/Editor'
@@ -79,7 +79,7 @@ export class HyperlinkParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IRowElement,
     x: number,
     y: number
@@ -89,7 +89,7 @@ export class HyperlinkParticle {
     const curStyle = element.style.toLowerCase()
     const fontWeight = element.bold ? 'bold' : 'normal'
     const fontItalic = element.italic ? 'italic' : ''
-    this.draw.getPdf().setFont(curStyle.split('px ')[1], fontItalic, fontWeight)
+    ctx2d.setFont(curStyle.split('px ')[1], fontItalic, fontWeight)
     // if (ctx2d.font.includes('Microsoft YaHei')) {
     //   ctx2d.font = ctx2d.font.replace('Microsoft YaHei', 'Yahei')
     // }

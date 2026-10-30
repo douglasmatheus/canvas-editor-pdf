@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../../render/model/RenderContext'
 // import { /*ElementType,*/ IElement, TableBorder } from '@hufe921/canvas-editor'
 import { TableBorder, TdBorder, TdSlash } from '../../../../dataset/enum/table/Table'
 import { DeepRequired } from '../../../../interface/Common'
@@ -14,7 +14,7 @@ import { IElement } from '../../../../interface/Element'
 // import { ITr } from '@hufe921/canvas-editor/dist/src/editor/interface/table/Tr'
 // import { IRowElement } from '@hufe921/canvas-editor/dist/src/editor/interface/Row'
 interface IDrawTableBorderOption {
-  ctx2d: Context2d
+  ctx2d: IRenderContext
   startX: number
   startY: number
   width: number
@@ -186,7 +186,7 @@ export class TableParticle {
   }
 
   private _drawSlash(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     drawTd: IFragmentDrawTd,
     startX: number,
     startY: number
@@ -213,7 +213,7 @@ export class TableParticle {
   }
 
   private _drawBorder(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IElement,
     startX: number,
     startY: number,
@@ -409,7 +409,7 @@ export class TableParticle {
   }
 
   private _drawBackgroundColor(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     startX: number,
     startY: number,
     drawTdList: IFragmentDrawTd[]
@@ -726,7 +726,7 @@ export class TableParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IRowElement,
     startX: number,
     startY: number,

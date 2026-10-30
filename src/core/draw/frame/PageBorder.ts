@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { DrawPdf } from '../DrawPdf'
@@ -18,7 +18,7 @@ export class PageBorder {
     this.options = draw.getOptions()
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     const {
       scale,
       pageBorder: { color, lineWidth, padding }

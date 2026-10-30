@@ -1,4 +1,5 @@
-import { Context2d, GState } from 'jspdf'
+import { GState } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 // import { IEditorOption } from '@hufe921/canvas-editor'
 import { DeepRequired } from '../../../interface/Common'
 import { DrawPdf } from '../DrawPdf'
@@ -19,7 +20,7 @@ export class Watermark {
     this.imageCache = new Map()
   }
 
-  public renderText(ctx2d: Context2d, pageNo: number) {
+  public renderText(ctx2d: IRenderContext, pageNo: number) {
     const {
       watermark: { data, opacity, font, size, color, repeat, gap, numberType },
       scale
@@ -28,7 +29,7 @@ export class Watermark {
     const fontString = `${size * scale}px ${font}`
     // 开始绘制
     ctx2d.save()
-    this.draw.getPdf().setGState(new GState({
+    ctx2d.setGState(new GState({
       opacity
     }))
     ctx2d.globalAlpha = opacity
@@ -54,9 +55,7 @@ export class Watermark {
         numberType
       )
     }
-    // Measure with the same font the watermark draws in (fakeCtx would
-    // otherwise measure against whatever font it last held).
-    const metrics = this.draw.measureText(fontString, text)
+    const metrics = this.draw.getTextMeasurer().measureText(text, fontString)
     const textWidth = metrics.width
     const textHeight =
       metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
@@ -91,13 +90,13 @@ export class Watermark {
       // Single watermark centered on the page.
       drawRotated(width / 2, height / 2)
     }
-    this.draw.getPdf().setGState(new GState({
+    ctx2d.setGState(new GState({
       opacity: 1
     }))
     ctx2d.restore()
   }
 
-  public renderImage(ctx2d: Context2d, pageNo: number) {
+  public renderImage(ctx2d: IRenderContext, pageNo: number) {
     const {
       watermark: { width, height, data, opacity, repeat, gap },
       scale
@@ -160,7 +159,7 @@ export class Watermark {
       )
       // 创建平铺模式
       // const pattern = ctx2d.createPattern(temporaryCanvas, 'repeat')
-      ctx2d.createPattern()
+      // ctx2d.createPattern()
       // if (pattern) {
       //   ctx2d.fillStyle = pattern
       ctx2d.fillRect(0, 0, docWidth, docHeight)
@@ -177,7 +176,7 @@ export class Watermark {
       // Para rotacionar pelo centro, ajuste x e y:
       // const x = centerX + (imageWidth / 2)
       // const y = centerY + (imageHeight / 2)
-      this.draw.getPdf().addImage(
+      ctx2d.addImage(
         data,
         'PNG', // ou outro formato
         ((docWidth * 45) / 100),
@@ -192,7 +191,7 @@ export class Watermark {
     ctx2d.restore()
   }
 
-  public render(ctx2d: Context2d, pageNo: number) {
+  public render(ctx2d: IRenderContext, pageNo: number) {
     if (this.options.watermark.type === WatermarkType.IMAGE) {
       this.renderImage(ctx2d, pageNo)
     } else {

@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { DeepRequired } from '../../../interface/Common'
 import { IEditorOption } from '../../../interface/Editor'
 import { IRowElement } from '../../../interface/Row'
@@ -17,7 +17,7 @@ export class PageBreakParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IRowElement,
     x: number,
     y: number
@@ -31,9 +31,12 @@ export class PageBreakParticle {
     const elementWidth = element.width! * scale
     const offsetY =
       this.draw.getDefaultBasicRowMarginHeight() * defaultRowMargin
+    const fontStyle = `${size}px ${font}`
     ctx2d.save()
-    ctx2d.font = `${size}px ${font}`
-    const textMeasure = this.draw.getFakeCtx().measureText(displayName)
+    ctx2d.font = fontStyle
+    const textMeasure = this.draw
+      .getTextMeasurer()
+      .measureText(displayName, fontStyle)
     const halfX = (elementWidth - textMeasure.width) / 2
     // 线段
     // ctx2d.setLineDash(lineDash)

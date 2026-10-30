@@ -2,7 +2,7 @@ import { AbstractRichText } from './AbstractRichText'
 import { IEditorOption } from '../../../interface/Editor'
 import { DrawPdf } from '../DrawPdf'
 import { DashType, TextDecorationStyle } from '../../../dataset/enum/Text'
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 
 export class Underline extends AbstractRichText {
   private options: Required<IEditorOption>
@@ -14,7 +14,7 @@ export class Underline extends AbstractRichText {
 
   // 下划线
   private _drawLine(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     startX: number,
     startY: number,
     width: number,
@@ -39,7 +39,7 @@ export class Underline extends AbstractRichText {
 
   // 双实线
   private _drawDouble(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     startX: number,
     startY: number,
     width: number
@@ -59,7 +59,7 @@ export class Underline extends AbstractRichText {
 
   // 波浪线
   private _drawWave(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     startX: number,
     startY: number,
     width: number
@@ -76,7 +76,7 @@ export class Underline extends AbstractRichText {
     ctx2d.stroke()
   }
 
-  public render(ctx2d: Context2d) {
+  public render(ctx2d: IRenderContext) {
     if (!this.fillRect.width) return
     const { underlineColor, scale } = this.options
     const { x, y, width } = this.fillRect

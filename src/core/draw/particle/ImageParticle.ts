@@ -1,4 +1,4 @@
-import { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { EDITOR_PREFIX } from '../../../dataset/constant/Editor'
 import { IEditorOption } from '../../../interface/Editor'
 import { ElementType } from '../../../dataset/enum/Element'
@@ -139,8 +139,47 @@ export class ImageParticle {
     return fallbackImage
   }
 
+  private _drawImageWithCrop(
+    ctx2d: IRenderContext,
+    img: string,
+    element: IElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ) {
+    if (element.imgCrop) {
+      const {
+        x: cropX,
+        y: cropY,
+        width: cropWidth,
+        height: cropHeight
+      } = element.imgCrop
+      // canvas-editor-pdf: jsPDF places the cropped region correctly but
+      // draws the whole image around it; clip to the destination rectangle
+      ctx2d.save()
+      ctx2d.beginPath()
+      ctx2d.rect(x, y, width, height)
+      ctx2d.clip()
+      ctx2d.drawImage(
+        img,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        x,
+        y,
+        width,
+        height
+      )
+      ctx2d.restore()
+    } else {
+      ctx2d.drawImage(img, x, y, width, height)
+    }
+  }
+
   private _renderCaption(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IElement,
     x: number,
     y: number,
@@ -159,20 +198,26 @@ export class ImageParticle {
     const fontSize = (element.imgCaption.size || imgCaption.size) * scale
     const fontFamily = element.imgCaption.font || imgCaption.font
     const color = element.imgCaption.color || imgCaption.color
+    const font = `${fontSize}px ${fontFamily}`
     ctx2d.save()
-    ctx2d.font = `${fontSize}px ${fontFamily}`
+    ctx2d.font = font
     ctx2d.fillStyle = color
     ctx2d.textAlign = 'center'
     // 超出图片宽度后省略
     let displayText = captionText
-    const textMetrics = this.draw.getFakeCtx().measureText(captionText)
+    const textMetrics = this.draw
+      .getTextMeasurer()
+      .measureText(captionText, font)
     if (textMetrics.width > width) {
       let left = 0
       let right = captionText.length
       while (left < right) {
         const mid = Math.ceil((left + right) / 2)
         const truncated = captionText.substring(0, mid)
-        if (this.draw.getFakeCtx().measureText(truncated + '...').width <= width) {
+        if (
+          this.draw.getTextMeasurer().measureText(truncated + '...', font)
+            .width <= width
+        ) {
           left = mid
         } else {
           right = mid - 1
@@ -189,7 +234,7 @@ export class ImageParticle {
   }
 
   public render(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     element: IElement,
     x: number,
     y: number
@@ -198,7 +243,7 @@ export class ImageParticle {
     const { scale } = this.options
     const width = element.width! * scale
     const height = element.height! * scale
-    ctx2d.drawImage(element.value, x, y, width, height)
+    this._drawImageWithCrop(ctx2d, element.value, element, x, y, width, height)
     this._renderCaption(ctx2d, element, x, y, width, height)
   }
 }

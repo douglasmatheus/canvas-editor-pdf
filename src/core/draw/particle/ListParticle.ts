@@ -1,4 +1,5 @@
-import { Context2d } from 'jspdf'
+import type { Context2d } from 'jspdf'
+import type { IRenderContext } from '../../render/model/RenderContext'
 import { ZERO } from '../../../dataset/constant/Common'
 import { ulStyleMapping } from '../../../dataset/constant/List'
 import { ElementType } from '../../../dataset/enum/Element'
@@ -101,7 +102,7 @@ export class ListParticle {
   // }
 
   public computeListStyle(
-    ctx2d: Context2d,
+    ctx2d: Context2d | IRenderContext,
     elementList: IElement[]
   ): Map<string, number> {
     const listStyleMap = new Map<string, number>()
@@ -157,7 +158,7 @@ export class ListParticle {
   }
 
    public getListStyleWidth(
-    ctx2d: Context2d,
+    ctx2d: Context2d | IRenderContext,
     listElementList: IElement[]
   ): number {
     const { scale, checkbox } = this.options
@@ -186,13 +187,15 @@ export class ListParticle {
     const text = `${this.MEASURE_BASE_TEXT.repeat(String(count).length - 1 || 1)}${
       KeyMap.PERIOD
     }`
-    const textMetrics = this.draw.getFakeCtx().measureText(text)
+    const textMetrics = this.draw
+      .getTextMeasurer()
+      .measureText(text, ctx2d.font)
     ctx2d.restore()
     return Math.ceil((textMetrics.width + this.LIST_GAP) * scale)
   }
 
   public drawListStyle(
-    ctx2d: Context2d,
+    ctx2d: IRenderContext,
     row: IRow,
     position: IElementPosition
   ) {
