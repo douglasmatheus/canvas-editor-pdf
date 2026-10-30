@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 (2026-10-30)
 
 ### Added
 - Area minimum height: `area.minHeight` (ported from canvas-editor 1.0.6
