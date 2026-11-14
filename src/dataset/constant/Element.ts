@@ -22,7 +22,8 @@ export const EDITOR_ROW_ATTR: Array<keyof IElement> = [
   'spacingAfter',
   'indentLeft',
   'indentRight',
-  'indentFirstLine'
+  'indentFirstLine',
+  'tabStops'
 ]
 
 export const EDITOR_ELEMENT_COPY_ATTR: Array<keyof IElement> = [
@@ -48,6 +49,7 @@ export const EDITOR_ELEMENT_COPY_ATTR: Array<keyof IElement> = [
   'indentLeft',
   'indentRight',
   'indentFirstLine',
+  'tabStops',
   'textDecoration'
 ]
 
@@ -68,6 +70,7 @@ export const EDITOR_ELEMENT_ZIP_ATTR: Array<keyof IElement> = [
   'indentLeft',
   'indentRight',
   'indentFirstLine',
+  'tabStops',
   'dashArray',
   'trList',
   'tableToolDisabled',
@@ -104,7 +107,8 @@ export const EDITOR_ELEMENT_ZIP_ATTR: Array<keyof IElement> = [
   'label',
   'labelId',
   'lineWidth',
-  'paperDirection'
+  'paperDirection',
+  'footnoteId'
 ]
 
 export const TABLE_TD_ZIP_ATTR: Array<keyof ITd> = [

@@ -154,7 +154,7 @@ instance.getPdf().save('x.pdf')  // download
 2. `margin.render` — visible margin (skipped in `PRINT` mode)
 3. `_drawFloat({ imgDisplays: [FLOAT_BOTTOM] })` — float images behind text
 4. `drawRow(...)` — main content (text + inline particles + tables + etc.)
-5. Paging mode only: header, page number, footer
+5. Paging mode only: footnotes, header, page number, footer
 6. `_drawFloat({ imgDisplays: [FLOAT_TOP, SURROUND] })` — float images in front of text
 7. Watermark, placeholder (if empty), line numbers, page border
 

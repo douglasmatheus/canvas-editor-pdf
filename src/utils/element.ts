@@ -233,6 +233,23 @@ export function formatElementList(
         }
       }
       i--
+    } else if (el.type === ElementType.FOOTNOTE) {
+      el.footnoteId = el.footnoteId || getUUID()
+      const valueList = el.valueList || []
+      formatElementList(valueList, {
+        ...options,
+        isHandleFirstElement: true,
+        isForceCompensation: true
+      })
+      for (const value of valueList) {
+        if (
+          (!value.type || TEXTLIKE_ELEMENT_TYPE.includes(value.type)) &&
+          value.size === undefined
+        ) {
+          value.size = editorOptions.footnote.size
+        }
+      }
+      el.valueList = valueList
     } else if (el.type === ElementType.TABLE) {
       const tableId = getUUID()
       el.id = tableId
@@ -776,6 +793,8 @@ export function zipElementList(
         listElement.valueList = zipElementList(valueList, options)
         element = listElement
       }
+    } else if (element.type === ElementType.FOOTNOTE) {
+      element.valueList = zipElementList(element.valueList || [], options)
     } else if (element.type === ElementType.TABLE) {
       if (element.trList) {
         for (let t = 0; t < element.trList.length; t++) {
@@ -1770,4 +1789,15 @@ export function getNonHideElementIndex(
     }
   }
   return i
+}
+
+// 段首换行符可能携带上一段落属性（尾随\n风格数据/格式克隆），
+// 段落首行缩进属性优先读段内第一个内容元素，空段落退回换行符自身
+export function getFirstLineIndentElement(
+  elementList: IElement[],
+  zeroIndex: number
+): IElement | undefined {
+  const next = elementList[zeroIndex + 1]
+  if (next && next.value !== ZERO && !next.listWrap) return next
+  return elementList[zeroIndex]
 }

@@ -32,15 +32,131 @@ ported.
 
 | | |
 |---|---|
-| Date | 2026-10-30 |
-| Reviewed through | `948e6ac5` — *feat: add paragraph indent and tab hanging indent* (`origin/main`) |
-| Upstream version | 1.0.6 (+ unreleased commits) |
+| Date | 2026-11-14 |
+| Reviewed through | `5a1810ed` — *fix(search): preserve regex semantics when ignoring case #1519* (`origin/main`) |
+| Upstream version | 1.2.0 (+ unreleased commits) |
 
 ## Review log
 
 Newest first. The window in each heading is exhaustive — run
 `git -C <upstream> log --oneline <window>` to check every commit is accounted
 for below.
+
+### 2026-11-14 — reviewed `9c4cfae7..origin/main` (3 commits)
+
+No release; npm still has 1.2.0, so `devDependencies` stays at `^1.2.0`.
+
+**Ported**
+
+- `c356503c` — keep footnote rows that exactly fit the page bottom #1521.
+  Our fix, already carried since the 2026-11-13 sync (see below); the merged
+  `Footnote.ts` hunk is identical to the fork's, so nothing changed here.
+
+**Not ported**
+
+- `5a1810ed` — search regex semantics when ignoring case #1519. `Search`.
+
+**Ignored** — no bearing on this library
+
+- `3b65fc5c` (dev-dependency bumps).
+
+### 2026-11-13 — reviewed `948e6ac5..9c4cfae7` (18 commits)
+
+Upstream released **1.1.0** and **1.2.0** in this window. `devDependencies`
+bumped to `@hufe921/canvas-editor@^1.2.0`; the consumer-boundary check passes
+with the new `ElementType.FOOTNOTE`.
+
+Each commit was ported on its own and checked against every PDF the suite
+already wrote (77, `/CreationDate` and `/ID` stripped): all byte-identical
+after every step, so none of the existing fixtures exercises the changed
+paths. The new behaviour is covered by the tests named below, each confirmed
+to fail on the pre-sync code.
+
+**Ported**
+
+- `4be9e292` — paragraph indent rework #725 #1190 #1459. The
+  `getFirstLineIndentElement` move to `utils/element.ts`, the `LayoutEngine`
+  hunk, and the `Position` hunk that counts `indentRight` in centre/right
+  alignment. Covered by the alignment case in
+  [tests/integration/paragraph-indent.test.ts](tests/integration/paragraph-indent.test.ts).
+  - *Left out:* `Ruler` indent markers, the `tab` keydown handler, the
+    `ruler.render()` call.
+- `1865c9b0` — paragraph tab stops with leaders #256. `dataset/enum/TabStop.ts`,
+  `ITabStop` / `IElementStyle.tabStops`, `IRowElement.tabLeader`, the
+  attribute lists, the `LayoutEngine` tab width with `_getHitTabStop` /
+  `_getTabRunWidth`, `TextParticle.renderTabLeader` and its `drawRow` call.
+  **Changes output**: a tab with no stop now steps to the default grid
+  instead of always being `defaultTabWidth` wide — see CHANGELOG. Covered by
+  [tests/integration/tab-stop.test.ts](tests/integration/tab-stop.test.ts).
+  - *Adapted:* `_getTabRunWidth` takes jsPDF's `Context2d` (the layout
+    context here) instead of a `CanvasRenderingContext2D`.
+  - *Left out:* `Ruler` tab marks, `Command`/`CommandAdapt`, `RangeManager`,
+    `IRangeStyle`, `src/editor/index.ts` exports.
+- `68f1a417` — line-end punctuation hanging #692. `HANG_PUNCTUATION_LIST`,
+  `options.hangPunctuation` (default `false`), `IRowElement.hang`, the
+  `LayoutEngine` hunks. Covered by
+  [tests/integration/hang-punctuation.test.ts](tests/integration/hang-punctuation.test.ts).
+  - *Left out:* the `IncrementalRowComputer` line.
+- `7c4e8e66` — no word splitting around surround images #1200. `curWordWidth`
+  in `LayoutEngine` and the `Position` width check. Covered by
+  [tests/integration/surround-word-wrap.test.ts](tests/integration/surround-word-wrap.test.ts)
+  (its own layout: upstream's test relies on mocked text metrics).
+- `1724daad` — large-document rendering, layout parts only:
+  `getInnerWidth` / `getPageSize` keep the unrounded width, `WIDTH_EPSILON`
+  in the wrap test, `getInnerWidth(direction)` on a section change, and the
+  `scale` parameter on `ListParticle.computeListStyle` / `getListStyleWidth`
+  (nothing passes it here; kept for diffability).
+  - *Left out:* `ScaledRowComputer`, the incremental-layout changes, the
+    per-page position reuse in `Position.computePositionList`,
+    `ElementListSnapshot` / history, lazy rendering and deferred canvas
+    resizing.
+- `6042a141` — footnotes #747. `ElementType.FOOTNOTE`, `IFootnoteElement`,
+  `interface/Footnote.ts`, `dataset/constant/Footnote.ts`, `options.footnote`,
+  `footnoteId` in the zip attributes, the `formatElementList` /
+  `zipElementList` branches, every `LayoutEngine` hunk (reference numbering,
+  superscript metrics, the reserved height in both page splits), and in
+  `DrawPdf`: `getFootnote`, `isMainElementList`, the second layout pass when
+  a page holds notes, the reference drawn as a superscript, and
+  `footnote.render` in `_drawPage`. [src/core/draw/interactive/Footnote.ts](src/core/draw/interactive/Footnote.ts)
+  is the layout and painting half of upstream's file. Covered by
+  [tests/integration/footnote.test.ts](tests/integration/footnote.test.ts).
+  - *Adapted:* the number is measured on `draw.getCtx2d()` (upstream makes a
+    throwaway DOM canvas); `getElementFont` is `getFont`; the trace-hidden
+    check in `computeReference` is dropped, like the other trace checks in
+    `LayoutEngine`; `drawRow` gets no `keyContext` / `isDrawRange`.
+  - *Also taken:* our fix #1521 (*fix: keep footnote rows that exactly fit
+    the page bottom*), found while porting and sent upstream; merged as
+    `c356503c` on 2026-11-14. `compute()` cut a
+    note's visible rows with `visibleHeight + rowHeight > remainingHeight`,
+    and the running difference of fractional row heights made a note that
+    exactly fits compare a hair taller (22.333…6 against 22.333…3 with the
+    default fonts), so the page's last note vanished. `HEIGHT_EPSILON` is
+    copied from the PR; the exact-fit case in the test fails without it.
+  - *Left out:* the editing half of `Footnote` (`insertFootnote`,
+    `setFootnoteValue`, `getFootnoteValue`, `locationFootnote`, the
+    position-context getters) and every caller of it: `Command` /
+    `CommandAdapt`, events, `Position` hit-testing, the footnote branches of
+    `getRowList` / `getElementList` / `getMainElementList`, the catalog
+    worker, `IncrementalRowComputer`.
+
+**Not ported**
+
+- `516f1a43` — incremental layout promoted and on by default
+  (`options.incrementalCompute`). The fork has no incremental layout
+  (`ffa18f9c`); the option was not added.
+- `8c3ac291` — paragraph drag #621. A hover handle and drag-to-move; see the
+  subsystem list.
+- `bcb0ecc3` — multi-page view layout #1270 (`pageLayout`,
+  `PageLayoutManager`). Arranges page canvases side by side on screen; see
+  the subsystem list. `PageLayout` and the option were not copied.
+- `bda7144d` — `getRangeRects` command. Selection geometry for overlays.
+- `7cfc3f4e` — print blocked by browser extensions. `utils/print.ts`.
+- `73ad2fa8` — context menu placement #1514.
+
+**Ignored** — no bearing on this library
+
+- `2c6aa439`, `9c4cfae7` (releases), `47f6f297`, `5e9f6e49` (dev-dependency
+  bumps), `d2aaf574` (upstream lint/tests), `38ace638` (README).
 
 ### 2026-10-30 — reviewed `d41e03ef..origin/main` (8 commits)
 
@@ -537,6 +653,9 @@ for one of these reasons needs no explanation beyond naming it in the log.
 | Macro recording / playback | Editor command plumbing. |
 | Accessibility (ARIA, screen readers) | DOM-only. |
 | Screen overlays — magnifier, ruler | Draw on their own canvases/elements outside the page container. |
+| Paragraph drag (`ParagraphDragParticle`, `options.paragraphDrag`) | A handle shown on hover and a drag-to-move gesture; off by default and driven by mouse events. |
+| Multi-page view (`PageLayoutManager`, `options.pageLayout`) | Places page canvases side by side in the scroll container. The PDF has no view. |
+| Incremental / scale-reuse layout (`IncrementalRowComputer`, `ScaledRowComputer`, page position cache, `ElementListSnapshot`) | Reuses the previous layout after an edit or zoom. An export lays out once. |
 | Spellcheck (`core/draw/interactive/Spellcheck.ts`) | Squiggles under misspelled words, gated on `!isPrintMode`. Fed by a plugin's dictionary lookups through a command API. |
 | Context menu, toolbar, CSS, demo app chrome | Not document content. (`I18n` *is* still present and instantiated by `DrawPdf` — don't assume it's gone.) |
 | Zone switching (header/footer active zone) | Editor focus concept; export always renders all zones. |

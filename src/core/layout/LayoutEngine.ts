@@ -1,4 +1,4 @@
-import { ZERO } from '../../dataset/constant/Common'
+import { HANG_PUNCTUATION_LIST, ZERO } from '../../dataset/constant/Common'
 import { FlexDirection, ImageDisplay } from '../../dataset/enum/Common'
 import {
   ControlComponent,
@@ -7,26 +7,22 @@ import {
 import { ElementType } from '../../dataset/enum/Element'
 import { PageMode, PaperDirection, WordBreak } from '../../dataset/enum/Editor'
 import { RowFlex } from '../../dataset/enum/Row'
+import { TabStopType } from '../../dataset/enum/TabStop'
 import { IComputeRowListPayload } from '../../interface/Draw'
-import { IElement, IElementMetrics } from '../../interface/Element'
+import { IElement, IElementMetrics, ITabStop } from '../../interface/Element'
 import { IRow, IRowElement } from '../../interface/Row'
 import {
   deleteSurroundElementList,
+  getFirstLineIndentElement,
   getIsBlockElement
 } from '../../utils/element'
 import { shrinkColgroupToWidth } from '../../utils/table'
+import type { Context2d } from 'jspdf'
 import type { DrawPdf } from '../draw/DrawPdf'
+import type { TextParticle } from '../draw/particle/TextParticle'
 
-// 段首换行符可能携带上一段落属性（尾随\n风格数据/格式克隆），
-// 段落首行缩进属性优先读段内第一个内容元素，空段落退回换行符自身
-function getFirstLineIndentElement(
-  elementList: IElement[],
-  zeroIndex: number
-): IElement | undefined {
-  const next = elementList[zeroIndex + 1]
-  if (next && next.value !== ZERO && !next.listWrap) return next
-  return elementList[zeroIndex]
-}
+// 多次文本测量与宽度累加存在浮点误差，不能据此拆出额外一行
+const WIDTH_EPSILON = 1e-8
 
 export interface IComputePageListPayload {
   rowList: IRow[]
@@ -82,7 +78,8 @@ export class LayoutEngine {
       scale,
       imgCaption,
       table: { tdPadding, defaultColMinWidth, overflow },
-      defaultTabWidth
+      defaultTabWidth,
+      hangPunctuation
     } = options
     const defaultBasicRowMarginHeight = draw.getDefaultBasicRowMarginHeight()
     const ctx2d = draw.getCtx2d()
@@ -143,11 +140,19 @@ export class LayoutEngine {
     const listIndexMap: Map<string, number> = new Map()
     // 控件最小宽度
     let controlRealWidth = 0
+    // 悬挂标点累计宽度（不计入行宽）
+    let curRowHangWidth = 0
     // 分栏游标
     let currentColumn = 0
+    const isMainElementList = draw.isMainElementList(elementList)
+    const isFootnoteExist =
+      isMainElementList && draw.getFootnote().isReferenceExist()
     for (let i = 0; i < elementList.length; i++) {
       const curRow: IRow = rowList[rowList.length - 1]
       const element = elementList[i]
+      if (isMainElementList && element.type === ElementType.FOOTNOTE) {
+        draw.getFootnote().computeReference(element, i)
+      }
       // 段首tab悬挂累计：换行符开启新段落累计窗口，首个内容元素后关闭
       if (isLeadingTabRunOpen) {
         if (element.type === ElementType.TAB) {
@@ -376,7 +381,32 @@ export class LayoutEngine {
         metrics.width = elementWidth * scale
         metrics.height = height * scale
       } else if (element.type === ElementType.TAB) {
-        metrics.width = defaultTabWidth * scale
+        // 制表位步进：跳至段落位点上当前行内x右侧最近者，无则自版心左缘按默认网格步进
+        const columnOffset =
+          isColumnEnabled && layout ? layout.offsets[currentColumn] || 0 : 0
+        const textX = x - currentStartX - columnOffset
+        const hitTabStop = this._getHitTabStop(elementList, i, textX, scale)
+        ;(element as IRowElement).tabLeader = hitTabStop?.leader
+        if (hitTabStop && hitTabStop.type !== TabStopType.LEFT) {
+          // 居中/居右位点：后续文本run的中点/右缘压位点，需提前量run宽度反推推进量
+          const runWidth = this._getTabRunWidth(
+            elementList,
+            i + 1,
+            ctx2d,
+            textParticle,
+            scale
+          )
+          const offset =
+            hitTabStop.type === TabStopType.CENTER ? runWidth / 2 : runWidth
+          metrics.width = Math.max(
+            hitTabStop.position * scale - textX - offset,
+            0
+          )
+        } else {
+          metrics.width = hitTabStop
+            ? hitTabStop.position * scale - textX
+            : tabWidth - (textX % tabWidth)
+        }
         metrics.height = defaultSize * scale
         metrics.boundingBoxDescent = 0
         metrics.boundingBoxAscent = textParticle.getBasisWordBoundingBoxAscent(
@@ -419,7 +449,8 @@ export class LayoutEngine {
         const size = element.size || defaultSize
         if (
           element.type === ElementType.SUPERSCRIPT ||
-          element.type === ElementType.SUBSCRIPT
+          element.type === ElementType.SUBSCRIPT ||
+          element.type === ElementType.FOOTNOTE
         ) {
           element.actualSize = Math.ceil(size * 0.6)
         }
@@ -435,7 +466,10 @@ export class LayoutEngine {
         metrics.boundingBoxAscent = basisMetrics.actualBoundingBoxAscent * scale
         metrics.boundingBoxDescent =
           basisMetrics.actualBoundingBoxDescent * scale
-        if (element.type === ElementType.SUPERSCRIPT) {
+        if (
+          element.type === ElementType.SUPERSCRIPT ||
+          element.type === ElementType.FOOTNOTE
+        ) {
           metrics.boundingBoxAscent += metrics.height / 2
         } else if (element.type === ElementType.SUBSCRIPT) {
           metrics.boundingBoxDescent += metrics.height / 2
@@ -456,7 +490,8 @@ export class LayoutEngine {
       const rowElement: IRowElement = Object.assign(element, {
         metrics,
         left: 0,
-        style: draw.getFont(element, scale)
+        style: draw.getFont(element, scale),
+        hang: false
       })
       // 控件开始时统计宽度，结束时消费最小宽度并补充跨行占位
       if (
@@ -504,7 +539,8 @@ export class LayoutEngine {
       const preElement = elementList[i - 1]
       let nextElement = elementList[i + 1]
       // 累计行宽 + 当前元素宽度 + 排版宽度(英文单词整体宽度 + 后面标点符号宽度)
-      let curRowWidth = curRow.width + metrics.width
+      let curRowWidth = curRow.width + metrics.width + curRowHangWidth
+      let curWordWidth = 0
       if (options.wordBreak === WordBreak.BREAK_WORD) {
         if (
           (!preElement?.type || preElement?.type === ElementType.TEXT) &&
@@ -521,15 +557,16 @@ export class LayoutEngine {
             // 后面存在元素 && 单词宽度大于行可用宽度，无需折行
             const wordWidth = width * scale
             if (endElement && wordWidth <= availableWidth) {
+              curWordWidth = wordWidth
               curRowWidth += wordWidth
               nextElement = endElement
             }
           }
-          // 标点符号
-          const punctuationWidth = textParticle.measurePunctuationWidth(
-            ctx2d,
-            nextElement
-          )
+          // 标点符号（开启悬挂时避头标点不预占宽度）
+          const punctuationWidth =
+            hangPunctuation && this._isHangPunctuation(nextElement)
+              ? 0
+              : textParticle.measurePunctuationWidth(ctx2d, nextElement)
           curRowWidth += punctuationWidth * scale
         }
       }
@@ -553,7 +590,7 @@ export class LayoutEngine {
           x,
           y,
           height,
-          width: metrics.width
+          width: curWordWidth || metrics.width
         },
         availableWidth,
         surroundElementList
@@ -579,10 +616,26 @@ export class LayoutEngine {
           preElement?.controlComponent === ControlComponent.VALUE) ||
         (i !== 0 && element.value === ZERO && !element.area?.hide)
       // 是否宽度不足导致换行
-      const isWidthNotEnough = curRowWidth > availableWidth
+      const isWidthNotEnough = curRowWidth - availableWidth > WIDTH_EPSILON
       const isWrap = isForceBreak || isWidthNotEnough
+      // 避头标点悬挂行尾，不占行宽
+      const isHang =
+        hangPunctuation &&
+        isWidthNotEnough &&
+        !isForceBreak &&
+        curRow.width > 0 &&
+        this._isHangPunctuation(element)
       // 新行数据处理
-      if (isWrap) {
+      if (isHang) {
+        curRow.elementList.push(rowElement)
+        rowElement.hang = true
+        curRowHangWidth += metrics.width
+        if (curRow.height < height) {
+          curRow.height = height
+          curRow.ascent = ascent
+        }
+      } else if (isWrap) {
+        curRowHangWidth = 0
         const row: IRow = {
           width: metrics.width,
           height,
@@ -642,10 +695,10 @@ export class LayoutEngine {
         }
         // 控件缩进为绝对坐标，不与段落缩进叠加
         if (!isControlIndentation) {
-          const firstLineElement = getFirstLineIndentElement(elementList, i)
-          const indentLeft = isNewParagraph
-            ? firstLineElement?.indentLeft
-            : element.indentLeft
+          const firstLineElement = isNewParagraph
+            ? getFirstLineIndentElement(elementList, i)
+            : element
+          const indentLeft = firstLineElement?.indentLeft
           const firstLineIndent = isNewParagraph
             ? firstLineElement?.indentFirstLine
             : 0
@@ -727,10 +780,11 @@ export class LayoutEngine {
               curRow.isWidthNotEnough))
         ) {
           // 忽略换行符及尾部元素间隔设置
-          const rowElementList =
+          const rowElementList = (
             curRow.elementList[0]?.value === ZERO
               ? curRow.elementList.slice(1)
               : curRow.elementList
+          ).filter(el => !el.hang)
           const gap =
             (availableWidth - curRow.width) / (rowElementList.length - 1)
           for (let e = 0; e < rowElementList.length - 1; e++) {
@@ -752,10 +806,7 @@ export class LayoutEngine {
             // 分页符切换后续节方向，未指定时回到全局方向
             currentDirection = nextDirection
             currentMargins = draw.getMargins(currentDirection)
-            currentInnerWidth =
-              draw.getWidth(currentDirection) -
-              currentMargins[1] -
-              currentMargins[3]
+            currentInnerWidth = draw.getInnerWidth(currentDirection)
             currentStartX = currentMargins[3]
             currentPageHeight = draw.getHeight(currentDirection)
             // 分栏布局随节方向切换
@@ -766,8 +817,12 @@ export class LayoutEngine {
             pageNo,
             currentDirection
           )
+          const footnoteHeight = isFootnoteExist
+            ? draw.getFootnote().getReservedHeight(pageNo, currentDirection)
+            : 0
           const isOverflow =
-            y - pageStartY + curMainOuterHeight + height > currentPageHeight
+            y - pageStartY + curMainOuterHeight + height + footnoteHeight >
+            currentPageHeight
           if (isOverflow || isPageBreakElement) {
             if (
               !isPageBreakElement &&
@@ -805,7 +860,7 @@ export class LayoutEngine {
             x,
             y,
             height,
-            width: metrics.width
+            width: curWordWidth || metrics.width
           },
           availableWidth,
           surroundElementList
@@ -838,29 +893,49 @@ export class LayoutEngine {
     let direction = paperDirection
     let pageLimit = this.draw.getHeight(direction)
     let pageHeight = this.draw.getMainOuterHeight(0, direction)
+    let pageFootnoteHeight = 0
     let prevColumnIndex: number | undefined = undefined
+    const footnote = this.draw.getFootnote()
+    const isFootnoteExist = footnote.isReferenceExist()
     for (let i = 0; i < rowList.length; i++) {
       const row = rowList[i]
       const rowOffsetY = row.offsetY || 0
+      const rowFootnoteHeight = isFootnoteExist
+        ? footnote.getRowHeight(row, direction)
+        : 0
+      const separatorHeight = rowFootnoteHeight
+        ? footnote.getSeparatorHeight()
+        : 0
+      const nextPageFootnoteHeight = Math.min(
+        pageFootnoteHeight +
+          rowFootnoteHeight +
+          (pageFootnoteHeight ? 0 : separatorHeight),
+        isFootnoteExist ? footnote.getMaxPageHeight(direction) : 0
+      )
+      const addedFootnoteHeight = nextPageFootnoteHeight - pageFootnoteHeight
       const columnChanged =
         prevColumnIndex !== undefined &&
         row.columnIndex !== undefined &&
         row.columnIndex > 0 &&
         row.columnIndex !== prevColumnIndex
       if (columnChanged) {
+        pageFootnoteHeight = nextPageFootnoteHeight
         pageHeight =
           this.draw.getMainOuterHeight(pageNo, direction) +
           row.height +
-          rowOffsetY
+          rowOffsetY +
+          pageFootnoteHeight
         pageRowList[pageNo].push(row)
       } else if (
-        row.height + rowOffsetY + pageHeight > pageLimit ||
+        row.height + rowOffsetY + pageHeight + addedFootnoteHeight >
+          pageLimit ||
         rowList[i - 1]?.isPageBreak
       ) {
         const areaPadding = row.areaPadding
         if (areaPadding && !rowList[i - 1]?.isPageBreak) {
           const contentHeight = row.height - areaPadding.height
-          const remainHeight = pageLimit - pageHeight - rowOffsetY
+          const remainHeight =
+            pageLimit - pageHeight - rowOffsetY - addedFootnoteHeight
           if (contentHeight <= remainHeight) {
             const carryHeight = row.height - remainHeight
             const nextRow = rowList[i + 1]
@@ -886,6 +961,7 @@ export class LayoutEngine {
               ? { areaId: areaPadding.areaId, height: inPagePadding }
               : undefined
             pageHeight = pageLimit
+            pageFootnoteHeight = nextPageFootnoteHeight
             pageRowList[pageNo].push(row)
             prevColumnIndex = row.columnIndex
             continue
@@ -914,13 +990,23 @@ export class LayoutEngine {
           pageLimit = this.draw.getHeight(direction)
         }
         pageDirectionList[pageNo] = direction
+        const nextRowFootnoteHeight = isFootnoteExist
+          ? footnote.getRowHeight(row, direction)
+          : 0
+        pageFootnoteHeight = Math.min(
+          nextRowFootnoteHeight +
+            (nextRowFootnoteHeight ? footnote.getSeparatorHeight() : 0),
+          isFootnoteExist ? footnote.getMaxPageHeight(direction) : 0
+        )
         pageHeight =
           this.draw.getMainOuterHeight(pageNo, direction) +
           row.height +
-          rowOffsetY
+          rowOffsetY +
+          pageFootnoteHeight
         pageRowList.push([row])
       } else {
-        pageHeight += row.height + rowOffsetY
+        pageHeight += row.height + rowOffsetY + addedFootnoteHeight
+        pageFootnoteHeight = nextPageFootnoteHeight
         pageRowList[pageNo].push(row)
       }
       prevColumnIndex = row.columnIndex
@@ -930,5 +1016,74 @@ export class LayoutEngine {
       pageDirectionList,
       elementList
     }
+  }
+
+  // 段落制表位命中：TAB 元素可能未携带段落属性（插入路径仅拷样式），向段首回扫最近携带者；
+  // 返回位点 x 在当前行内 x 右侧最近者（无则走默认网格）
+  private _getHitTabStop(
+    elementList: IElement[],
+    i: number,
+    textX: number,
+    scale: number
+  ): ITabStop | undefined {
+    let tabStops: ITabStop[] | undefined
+    for (let p = i; p >= 0; p--) {
+      const el = elementList[p]
+      if (el.tabStops) {
+        tabStops = el.tabStops
+        break
+      }
+      if (p !== i && el.value === ZERO && !el.listWrap) break
+    }
+    if (!tabStops?.length) return undefined
+    let hit: ITabStop | undefined
+    for (const stop of tabStops) {
+      const stopX = stop.position * scale
+      if (stopX > textX + 0.5 && (!hit || stop.position < hit.position)) {
+        hit = stop
+      }
+    }
+    return hit
+  }
+
+  // 避头标点：仅正文文本类元素参与悬挂
+  private _isHangPunctuation(element?: IElement): boolean {
+    return (
+      !!element &&
+      HANG_PUNCTUATION_LIST.includes(element.value) &&
+      (!element.type || element.type === ElementType.TEXT) &&
+      !element.controlId &&
+      !element.controlComponent
+    )
+  }
+
+  // TAB 对齐 run 测量：TAB 之后到下一个 TAB/段落边界前的连续文本宽度，
+  // 供居中/居右位点反推推进量（隐藏元素宽度记 0，与行布局口径一致）
+  private _getTabRunWidth(
+    elementList: IElement[],
+    from: number,
+    ctx2d: Context2d,
+    textParticle: TextParticle,
+    scale: number
+  ): number {
+    let width = 0
+    for (let p = from; p < elementList.length; p++) {
+      const el = elementList[p]
+      const isHidden = !!el.hide || !!el.control?.hide
+      if (
+        el.value === ZERO ||
+        el.type === ElementType.TAB ||
+        (el.type && el.type !== ElementType.TEXT) ||
+        el.control ||
+        el.controlComponent
+      ) {
+        break
+      }
+      if (isHidden) continue
+      const fontMetrics = textParticle.measureText(ctx2d, el)
+      width += fontMetrics.width * scale
+      if (el.letterSpacing) width += el.letterSpacing * scale
+    }
+    return width
   }
 }

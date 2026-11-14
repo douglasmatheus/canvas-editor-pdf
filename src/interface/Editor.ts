@@ -34,6 +34,7 @@ import { IElement } from './Element'
 import { LocationPosition } from '../dataset/enum/Common'
 import { IRange } from './Range'
 import { IGraffitiData, IGraffitiOption } from './Graffiti'
+import { IFootnoteOption } from './Footnote'
 // import { IWhiteSpaceOption } from './WhiteSpace'
 // import { IMagnifierOption } from './Magnifier'
 // import { IAccessibilityOption } from './Accessibility'
@@ -91,6 +92,7 @@ export interface IEditorOption {
   scrollContainerSelector?: string
   pageOuterSelectionDisable?: boolean
   wordBreak?: WordBreak
+  hangPunctuation?: boolean
   table?: ITableOption
   header?: IHeader
   footer?: IFooter
@@ -120,6 +122,7 @@ export interface IEditorOption {
   // magnifier?: IMagnifierOption
   // accessibility?: IAccessibilityOption
   column?: IColumnOption
+  footnote?: IFootnoteOption
 }
 
 export interface IEditorResult {

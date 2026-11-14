@@ -3,6 +3,7 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { DrawPdf } from '../../src/core/draw/DrawPdf'
 import { ZERO } from '../../src/dataset/constant/Common'
 import { ElementType } from '../../src/dataset/enum/Element'
+import { RowFlex } from '../../src/dataset/enum/Row'
 import type { IElement } from '../../src/interface/Element'
 
 // Default left margin, in editor pixels.
@@ -64,6 +65,21 @@ describe('paragraph indent', () => {
     const narrowed = await lineStarts(paragraph({ indentRight: 200 }))
     expect(narrowed.length).toBeGreaterThan(plain.length)
     for (const x of narrowed) expect(x).toBeCloseTo(MARGIN_LEFT, 0)
+  })
+
+  // canvas-editor 4be9e292 (#1459)
+  it('aligns a centred or right-aligned line within indentRight', async () => {
+    const line = (rowFlex: RowFlex, indentRight?: number) =>
+      lineStarts([
+        { value: ZERO, rowFlex, indentRight },
+        { value: 'Hello', rowFlex, indentRight }
+      ])
+    const [centred] = await line(RowFlex.CENTER)
+    const [centredIndented] = await line(RowFlex.CENTER, 200)
+    expect(centred - centredIndented).toBeCloseTo(100, 0)
+    const [right] = await line(RowFlex.RIGHT)
+    const [rightIndented] = await line(RowFlex.RIGHT, 200)
+    expect(right - rightIndented).toBeCloseTo(200, 0)
   })
 
   it('hangs wrapped lines under the text after leading tabs', async () => {

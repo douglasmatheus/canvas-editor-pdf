@@ -67,6 +67,7 @@ import { ColumnManager } from './column/ColumnManager'
 import { ITd } from '../../interface/table/Td'
 import { mergeOption } from '../../utils/option'
 import { Area } from './interactive/Area'
+import { Footnote } from './interactive/Footnote'
 import { Graffiti } from './graffiti/Graffiti'
 import { Badge } from './frame/Badge'
 import { platform } from '../../platform/current'
@@ -157,6 +158,7 @@ export class DrawPdf {
   private pageBorder: PageBorder
   private imageObserver: ImageObserver
   private graffiti: Graffiti
+  private footnote: Footnote
 
   private LETTER_REG: RegExp
   private WORD_LIKE_REG: RegExp
@@ -277,6 +279,7 @@ export class DrawPdf {
     this.columnManager = new ColumnManager(this)
     this.layoutEngine = new LayoutEngine(this)
     this.backend = new PdfBackend(this)
+    this.footnote = new Footnote(this)
 
     this.imageObserver = new ImageObserver()
 
@@ -464,6 +467,10 @@ export class DrawPdf {
     return this.area
   }
 
+  public getFootnote(): Footnote {
+    return this.footnote
+  }
+
   public getBadge(): Badge {
     return this.badge
   }
@@ -604,7 +611,9 @@ export class DrawPdf {
   }
 
   public getInnerWidth(direction = this.options.paperDirection): number {
-    const width = this.getWidth(direction)
+    // Canvas 像素尺寸需要取整，断行版心必须保留连续宽度。
+    // 否则缩放复用与完整重排在恰好贴齐行尾时可能得到不同行数。
+    const width = this.getOriginalWidth(direction) * this.options.scale
     const margins = this.getMargins(direction)
     return width - margins[1] - margins[3]
   }
@@ -671,7 +680,7 @@ export class DrawPdf {
       width,
       height: this.getHeight(direction),
       margins,
-      innerWidth: width - margins[1] - margins[3]
+      innerWidth: this.getInnerWidth(direction)
     }
   }
 
@@ -763,6 +772,10 @@ export class DrawPdf {
 
   public getPageRowList(): IRow[][] {
     return this.pageRowList
+  }
+
+  public isMainElementList(elementList: IElement[]): boolean {
+    return elementList === this.elementList
   }
 
   public getMainRowList(): IRow[] {
@@ -1355,7 +1368,10 @@ export class DrawPdf {
             // 手动触发渲染
             this.textParticle.complete()
           }
-        } else if (element.type === ElementType.SUPERSCRIPT) {
+        } else if (
+          element.type === ElementType.SUPERSCRIPT ||
+          element.type === ElementType.FOOTNOTE
+        ) {
           this.textParticle.complete()
           this.superscriptParticle.render(
             ctx2d,
@@ -1404,6 +1420,8 @@ export class DrawPdf {
           })
         } else if (element.type === ElementType.TAB) {
           this.textParticle.complete()
+          // 制表位命中位点时的前导符填充
+          this.textParticle.renderTabLeader(ctx2d, element, x, y + offsetY)
         } else if (
           element.rowFlex === RowFlex.ALIGNMENT ||
           element.rowFlex === RowFlex.JUSTIFY
@@ -1796,6 +1814,7 @@ export class DrawPdf {
     })
     // if (this.getIsPagingMode()) {
     if (this.getOptions().pageMode === PageMode.PAGING) {
+      this.footnote.render(ctx2d, pageNo)
       // 绘制页眉
       if (!header.disabled) {
         this.header.render(ctx2d, pageNo)
@@ -1920,21 +1939,32 @@ export class DrawPdf {
       const startX = margins[3]
       const startY = margins[0] + extraHeight
       const surroundElementList = pickSurroundElementList(this.elementList)
-      this.rowList = this.computeRowList({
-        startX,
-        startY,
-        pageHeight,
-        isPagingMode,
-        innerWidth,
-        surroundElementList,
-        elementList: this.elementList
-      })!
-      // 分页模式下跨页表格在渲染层拆分为按页片段行
-      if (isPagingMode) {
-        this.rowList = this.tablePaging.splitTableRowAcrossPages(this.rowList)
+      this.footnote.recovery()
+      const computeMainLayout = () => {
+        this.rowList = this.computeRowList({
+          startX,
+          startY,
+          pageHeight,
+          isPagingMode,
+          innerWidth,
+          surroundElementList,
+          elementList: this.elementList
+        })!
+        // 分页模式下跨页表格在渲染层拆分为按页片段行
+        if (isPagingMode) {
+          this.rowList = this.tablePaging.splitTableRowAcrossPages(
+            this.rowList
+          )
+        }
+        // 页面信息
+        this.pageRowList = this._computePageList() //this.draw.getPageRowList()
+        this.footnote.compute()
       }
-      // 页面信息
-      this.pageRowList = this._computePageList() //this.draw.getPageRowList()
+      computeMainLayout()
+      // 脚注高度会反向影响正文分页，含脚注时再进行一次高度回流
+      if (isPagingMode && this.footnote.isReferenceExist()) {
+        computeMainLayout()
+      }
       // 位置信息
       this.position.computePositionList()
       // 区域信息

@@ -2,7 +2,7 @@
   "name": "canvas-editor-pdf",
   "author": "Douglas",
   "license": "MIT",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "pdf exporter to canvas-editor",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -83,7 +83,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@hufe921/canvas-editor": "^1.0.6",
+    "@hufe921/canvas-editor": "^1.2.0",
     "@napi-rs/canvas": "^1.0.0",
     "@resvg/resvg-js": "^2.0.0",
     "@rollup/plugin-typescript": "^11.1.6",

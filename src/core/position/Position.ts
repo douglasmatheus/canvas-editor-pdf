@@ -24,7 +24,10 @@ import { ImageDisplay } from '../../dataset/enum/Common'
 import { DeepRequired } from '../../interface/Common'
 // import { EventBus } from '../event/eventbus/EventBus'
 // import { EventBusMap } from '../../interface/EventBus'
-import { getIsBlockElement } from '../../utils/element'
+import {
+  getFirstLineIndentElement,
+  getIsBlockElement
+} from '../../utils/element'
 import { RowFlex } from '../../dataset/enum/Row'
 import { ElementType } from '../../dataset/enum/Element'
 import { VerticalAlign } from '../../dataset/enum/VerticalAlign'
@@ -403,7 +406,14 @@ export class Position {
       // 行存在环绕的可能性均不设置行布局
       if (!curRow.isSurround) {
         // 计算行偏移量（行居中、居右）
-        const curRowWidth = curRow.width + (curRow.offsetX || 0)
+        // 右缩进与换行扣减取同一值（行首元素的段落右缩进），对齐时计入行占位宽度
+        const indentRightElement = getFirstLineIndentElement(
+          curRow.elementList,
+          0
+        )
+        const offsetRight =
+          (indentRightElement?.indentRight || 0) * this.options.scale
+        const curRowWidth = curRow.width + (curRow.offsetX || 0) + offsetRight
         if (curRow.rowFlex === RowFlex.CENTER) {
           x += (effectiveInnerWidth - curRowWidth) / 2
         } else if (curRow.rowFlex === RowFlex.RIGHT) {
@@ -1382,7 +1392,7 @@ export class Position {
           // 下个元素起始位置：浮动元素右坐标 - 元素宽度
           x = surroundRect.x + surroundRect.width
           // 检测宽度是否足够，不够则移动到下一行，并还原状态
-          if (row.width + rowElement.metrics.width > availableWidth) {
+          if (row.width + rowElementRect.width > availableWidth) {
             rowElement.left = 0
             row.width -= rowIncreaseWidth
             break

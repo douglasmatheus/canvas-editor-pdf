@@ -59,6 +59,8 @@ import { IBadgeOption } from '../interface/Badge'
 import { defaultModeRuleOption } from '../dataset/constant/Editor'
 import { IGraffitiOption } from '../interface/Graffiti'
 import { defaultGraffitiOption } from '../dataset/constant/Graffiti'
+import { IFootnoteOption } from '../interface/Footnote'
+import { defaultFootnoteOption } from '../dataset/constant/Footnote'
 // import { IWhiteSpaceOption } from '../interface/WhiteSpace'
 // import { defaultWhiteSpaceOption } from '../dataset/constant/WhiteSpace'
 
@@ -177,6 +179,10 @@ export function mergeOption(
     ...defaultColumnOption,
     ...options.column
   }
+  const footnoteOptions: Required<IFootnoteOption> = {
+    ...defaultFootnoteOption,
+    ...options.footnote
+  }
   const modeRuleOption: DeepRequired<IModeRule> = {
     print: {
       ...defaultModeRuleOption.print,
@@ -231,6 +237,7 @@ export function mergeOption(
     inactiveAlpha: 0.6,
     historyMaxRecordCount: 100,
     wordBreak: WordBreak.BREAK_WORD,
+    hangPunctuation: false,
     printPixelRatio: 3,
     maskMargin: [0, 0, 0, 0],
     letterClass: [LETTER_CLASS.ENGLISH],
@@ -267,6 +274,7 @@ export function mergeOption(
     list: listOptions,
     // magnifier: magnifierOptions,
     // accessibility: accessibilityOptions,
-    column: columnOptions
+    column: columnOptions,
+    footnote: footnoteOptions
   }
 }

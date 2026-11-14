@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.9.0 (2026-11-14)
+
+### Added
+- Footnotes: `footnote` elements (ported from canvas-editor 1.2.0 #747). The
+  reference is drawn as a superscript number, counted in document order, and
+  the note is listed at the foot of the page that holds the reference, after
+  its number and below a short separator line; the body text on that page
+  breaks earlier to make room. Notes take at most half the page; lines that do
+  not fit are left out, as in the editor. Paging mode only. Styled with
+  `options.footnote` (`size`, `color`, `lineColor`, `lineWidth`, `gap`).
+- Tab stops: `tabStops` on elements (ported from canvas-editor 1.1.0 #256).
+  Each stop has a `position` (editor pixels from the left text edge), a `type`
+  (`'left'`, `'center'` or `'right'` — where the text after the tab starts,
+  centres or ends) and an optional `leader` (`'dot'`, `'hyphen'` or
+  `'underline'`) that fills the gap.
+- `options.hangPunctuation`: a closing CJK punctuation mark that does not fit
+  at the end of a line hangs past the margin instead of taking the previous
+  character to the next line (ported from canvas-editor 1.1.0 #692). Off by
+  default.
+- The types follow canvas-editor 1.2.0 (`ElementType.FOOTNOTE`, `tabStops`,
+  `footnoteId`, `options.footnote`, `options.hangPunctuation`), so
+  `editor.command.getValue()` from 1.2.0 goes to `DrawPdf` without a cast.
+
+### Changed
+- A tab with no tab stop to reach now moves to the next multiple of
+  `defaultTabWidth` from the left text edge, as in the editor since 1.1.0. It
+  used to always be `defaultTabWidth` wide, so text after a tab that did not
+  start on a column moves left.
+
+### Fixed
+- A word next to a surround image moves past the image, or to the next line,
+  as a whole; only the letters overlapping the image used to move, splitting
+  the word (canvas-editor #1200).
+- Centred and right-aligned lines are aligned within `indentRight`, as in
+  canvas-editor 1.1.0.
+- A line whose text exactly fills the width no longer wraps its last word
+  because of rounding.
+
 ## 0.8.0 (2026-10-30)
 
 ### Added
